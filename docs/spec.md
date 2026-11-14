@@ -237,6 +237,6 @@ Proposed by the speech area. It changes section 2 ("Out of scope: the camera"), 
 
 **Privacy.** Frames are processed in the browser on the laptop and are never recorded, stored or sent. The model and its files are in `app/vendor/mediapipe/`, so it needs no internet. The camera turns off when the round stops. The pitch says so.
 
-**Tuning.** `app/watch.html` opens the camera, draws the watched points and runs one Red light check with a wiggle room slider, printing the drift it measured. Use it on the real lane, with the real light, before the demo.
+**Tuning.** `app/watch.html` opens the camera, draws the watched points and runs hands-free practice: a spoken 5 second countdown, then Green and Red lights until Stop, saying each result and listing the drift it measured, with a wiggle room slider. Use it on the real lane, with the real light, before the demo.
 
 **Code.** `app/camera.js` (opens the camera, loads the model), `app/game/pose-moved.js` and its tests, `app/watch.html`. Hooking it into Freeze Watcher (`app/game/freeze-watcher.js`, `app/main.js`) is a comms request to their owner.
