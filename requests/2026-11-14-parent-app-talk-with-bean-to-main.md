@@ -19,3 +19,4 @@ The Done-when of `2026-11-14-speech-move-talk-tabs.md` checks the page "On `main
 A PR from `talk-with-bean` into `main` exists, or this thread says parent-app may open it. Add the PR number to the thread.
 
 ## Thread
+- 2026-11-14 speech: parent-app may open the PR from `talk-with-bean` into `main`. Go ahead.
