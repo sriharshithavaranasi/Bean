@@ -34,7 +34,7 @@ Bean uses ELEGOO's own firmware, so there is no Arduino code to write. A new car
 
 1. Plug the car into the laptop with the USB cable and switch the car on.
 2. Put the car at one end of the floor, facing down the lane.
-3. Tape a straight lane about 1 m long in front of the car, with a start line at the far end. The sensor reads a person reliably only to about 1 m.
+3. Tape a straight lane about 1 m long in front of the car, with a start line at the far end. The sensor reads a person reliably only to about 1 m. Make the lane only about as wide as the kid's shoulders, with the car at the middle: about 40 cm from the car, one shoe width off the middle is already out of sight.
 
 ### 3. Learn the limits
 
