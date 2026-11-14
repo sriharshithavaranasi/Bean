@@ -225,19 +225,25 @@ const startLabel = () =>
   ($('start').textContent =
     shown === 'win' ? 'Play again' : shown === 'idle' ? 'Start' : performance.now() < restartUntil ? 'Press again to restart' : 'Restart');
 let tabUntil = 0; // a tab was pressed once during a round: a second press before this time stops the round and switches
-let tabWarn = '';
-let shownHint = '';
+const tabWarn = (tab, label = '') => {
+  $(`warn-${tab}`).textContent = label && 'Press again to stop';
+  $('tab-note').textContent = label && `Press ${label} again to stop the round.`;
+};
+const TALK_GLYPH = $('tab-talk').querySelector('path').getAttribute('d'); // the speech bubble on the Talk tab
 const idleStatus = () => (talking() ? 'Talk with Bean' : `Let’s play ${chosenGame()}`);
-function show(phase, hint = talking() ? 'Coming soon.' : (switchOn() && SWITCH_HINT[phase]) || SCREEN[phase].hint, status = phase === 'idle' ? idleStatus() : SCREEN[phase].status) {
+function show(phase, hint = talking() ? 'Coming soon: Bean takes turns talking with your kid.' : (switchOn() && SWITCH_HINT[phase]) || SCREEN[phase].hint, status = phase === 'idle' ? idleStatus() : SCREEN[phase].status) {
   shown = phase;
   document.body.dataset.phase = phase;
   $('status').textContent = status;
-  shownHint = hint;
-  $('hint').textContent = performance.now() < tabUntil && !['idle', 'win'].includes(phase) ? tabWarn : hint;
+  $('hint').textContent = hint;
   // shortcut: Talk with Bean is not built yet, the speech area fills it in and shows Start and Stop again.
   $('controls').hidden = talking();
-  $('glyph-path').setAttribute('d', SCREEN[phase].glyph);
-  if (phase === 'idle' || phase === 'win') restartUntil = tabUntil = 0;
+  $('glyph-path').setAttribute('d', phase === 'idle' && talking() ? TALK_GLYPH : SCREEN[phase].glyph);
+  if (phase === 'idle' || phase === 'win') {
+    restartUntil = tabUntil = 0;
+    tabWarn('move');
+    tabWarn('talk');
+  }
   startLabel();
   $('step').textContent = phase === 'idle' ? 'Start' : phase === 'win' ? 'Play again' : 'Step';
   $('ready').hidden = phase !== 'caught';
@@ -433,8 +439,8 @@ for (const tab of ['move', 'talk']) {
     if (tab === settings().tab) return;
     if (shown !== 'idle' && shown !== 'win' && performance.now() >= tabUntil) {
       tabUntil = performance.now() + 4000;
-      $('hint').textContent = tabWarn = `Press ${$(`tab-${tab}`).textContent.trim()} again to stop the round.`;
-      setTimeout(() => performance.now() >= tabUntil && $('hint').textContent === tabWarn && ($('hint').textContent = shownHint), 4000);
+      tabWarn(tab, $(`tab-${tab}`).querySelector('.label').textContent);
+      setTimeout(() => performance.now() >= tabUntil && tabWarn(tab), 4000);
       return;
     }
     tabUntil = 0;
@@ -493,7 +499,7 @@ show('idle');
 // ---------- phone remote (spec, section 13) ----------
 // The laptop sends what its screen shows; the phone copies it and sends its presses back through scripts/serve.mjs.
 const CLICKS = ['start', 'stop', 'ready', 'goodtry', 'yes', 'no', 'reset', 'tab-move', 'tab-talk'];
-const TEXTS = ['status', 'hint', 'reading', 'track-text', 'start', 'step', 'reset'];
+const TEXTS = ['status', 'hint', 'reading', 'track-text', 'start', 'step', 'reset', 'warn-move', 'warn-talk', 'tab-note'];
 const HIDDEN = ['readout', 'track', 'timer', 'controls', 'step', 'parent', 'ready', 'goodtry', 'yes', 'no'];
 const snapshot = () => ({
   phase: document.body.dataset.phase,
