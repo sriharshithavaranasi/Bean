@@ -2,6 +2,7 @@ import { createGame, DEFAULTS } from './game/freeze-watcher.js';
 import { makeMockRobot } from './robot-mock.js';
 import { connectSerial } from './robot-serial.js';
 import { playCue, praise, silence, unlockAudio } from './signals.js';
+import { fixSettings, LIMITS, load, save } from './store.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -15,37 +16,33 @@ const SCREEN = {
 };
 const LIGHT = { green: [0, 255, 0], red: [255, 0, 0], caught: [255, 80, 0], win: [255, 255, 255] };
 
-// Saved on this device only (spec, section 3). Private browsing may refuse storage.
-function load(key, fallback) {
-  try {
-    return { ...fallback, ...JSON.parse(localStorage.getItem(key)) };
-  } catch {
-    return { ...fallback };
-  }
-}
-function save(key, value) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    // keep playing without saving
-  }
-}
-
 // ---------- grown-up settings ----------
 // field id -> [game setting, how many of the game's units one of the field's units is]
 const FIELDS = {
   greenMin: ['greenMinMs', 1000], greenMax: ['greenMaxMs', 1000], settle: ['settleMs', 1000],
   look: ['lookMs', 1000], leewayCm: ['leewayCm', 1], winCm: ['winCm', 1],
 };
-const saved = load('bean-settings', {});
+const rulers = {};
+function settings() {
+  const raw = {};
+  for (const [id, [key, unit]] of Object.entries(FIELDS)) {
+    const v = $(`s-${id}`).value;
+    raw[key] = v === '' ? null : Math.round(v * unit);
+  }
+  return fixSettings(raw);
+}
+// The boxes show what the next round will really use: a bad value is fixed where the grown-up typed it.
+function showSettings(s) {
+  for (const [id, [key, unit]] of Object.entries(FIELDS)) $(`s-${id}`).value = rulers[id].value = s[key] / unit;
+}
 for (const [id, [key, unit]] of Object.entries(FIELDS)) {
   const input = $(`s-${id}`);
-  input.value = (saved[key] ?? DEFAULTS[key]) / unit;
+  [input.min, input.max] = LIMITS[key].map((n) => n / unit);
   // The − and + buttons and the drag ruler all drive this one number box.
   const name = input.labels[0].firstChild.textContent.trim();
-  const ruler = Object.assign(document.createElement('input'), {
-    type: 'range', className: 'ruler', min: input.min, max: input.max, step: input.step || 1, value: input.value, tabIndex: -1,
-  });
+  const ruler = (rulers[id] = Object.assign(document.createElement('input'), {
+    type: 'range', className: 'ruler', min: input.min, max: input.max, step: input.step || 1, tabIndex: -1,
+  }));
   ruler.setAttribute('aria-hidden', 'true'); // same value as the number box, for pointers only
   const changed = () => input.dispatchEvent(new Event('change'));
   const stepper = (text, label, step) => {
@@ -59,29 +56,19 @@ for (const [id, [key, unit]] of Object.entries(FIELDS)) {
   num.append(stepper('+', 'More', () => input.stepUp()), ruler);
   ruler.addEventListener('input', () => ((input.value = ruler.value), changed()));
   input.addEventListener('change', () => {
-    ruler.value = input.value;
-    save('bean-settings', settings());
+    const s = settings();
+    showSettings(s);
+    save('bean-settings', s);
   });
 }
-function settings() {
-  const s = {};
-  for (const [id, [key, unit]] of Object.entries(FIELDS)) {
-    const input = $(`s-${id}`);
-    const n = Number(input.value);
-    // An empty or out-of-range box falls back to the default instead of breaking the round.
-    const ok = input.value !== '' && n >= Number(input.min) && n <= Number(input.max);
-    s[key] = ok ? n * unit : DEFAULTS[key];
-  }
-  s.greenMaxMs = Math.max(s.greenMaxMs, s.greenMinMs);
-  return s;
-}
+showSettings(fixSettings(load('bean-settings', {})));
 if (matchMedia('(min-width: 860px)').matches) $('settings').open = true;
 
 // ---------- progress ----------
-const ZERO = { rounds: 0, wins: 0, freezes: 0, words: 0 };
+const ZERO = { rounds: 0, wins: 0, freezes: 0, words: 0, caught: 0 }; // caught is counted but never shown (spec, section 10)
 let totals = load('bean-progress', ZERO);
 function drawTotals() {
-  for (const key of Object.keys(ZERO)) $(`t-${key}`).textContent = totals[key];
+  for (const dd of document.querySelectorAll('#totals dd')) dd.textContent = totals[dd.id.slice(2)];
 }
 function bump(key) {
   totals[key]++;
@@ -136,6 +123,7 @@ async function enter(phase) {
     bump('freezes');
   }
   if (phase === 'win') bump('wins');
+  if (phase === 'caught') bump('caught');
   show(phase);
   playCue(phase);
   // Head first, then light: the firmware clears the LED on any other command.
