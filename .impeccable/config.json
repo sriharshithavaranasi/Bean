@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "app/index.html"
+        ],
+        "createdAt": "2026-11-14T05:23:00.527Z",
+        "reason": "user confirmed: keep the cream background (#fff8ef) from the team example palette, 2026-11-13"
+      }
+    ]
+  }
+}
