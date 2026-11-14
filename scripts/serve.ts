@@ -10,7 +10,7 @@ import { extname, join, normalize, sep } from 'node:path';
 
 const root = join(import.meta.dirname, '..', 'app');
 // A .ts file goes out as JavaScript: its types are stripped as it is served, so there is no build step.
-const types: Record<string, string> = { '.html': 'text/html', '.js': 'text/javascript', '.ts': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2' };
+const types: Record<string, string> = { '.html': 'text/html', '.js': 'text/javascript', '.ts': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2', '.wasm': 'application/wasm' };
 const port = Number(process.env.PORT) || 8000;
 const host = process.env.HOST || (process.argv.includes('--lan') ? '0.0.0.0' : '');
 
