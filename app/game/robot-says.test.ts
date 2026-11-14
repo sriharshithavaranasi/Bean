@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { COMMANDS, did, makeCommands, outcome, total } from './robot-says.js';
+import { COMMANDS, did, makeCommands, outcome, total } from './robot-says.ts';
 
-const body = (startCm, endCm) => ({ startCm, endCm, leewayCm: 6 });
+const body = (startCm: number | null, endCm: number | null) => ({ startCm, endCm, leewayCm: 6 });
 
 test('step closer: the distance shrank by more than the wiggle room', () => {
   assert.equal(did('closer', body(150, 130)), true);

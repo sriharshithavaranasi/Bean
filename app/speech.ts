@@ -3,20 +3,20 @@
 const Recognition = globalThis.SpeechRecognition || globalThis.webkitSpeechRecognition;
 export const canHear = !!Recognition;
 
-const tidy = (text) => ` ${text.toLowerCase().replace(/[^\p{L}\p{N}']+/gu, ' ').trim()} `;
+const tidy = (text: string) => ` ${text.toLowerCase().replace(/[^\p{L}\p{N}']+/gu, ' ').trim()} `;
 // True when one of the words was said as a whole word: "a red robot" has "red", "running" has no "run".
-export const matches = (heard, words) => words.some((word) => tidy(heard).includes(tidy(word)));
+export const matches = (heard: string, words: string[]) => words.some((word) => tidy(heard).includes(tidy(word)));
 
 let end = () => {};
 export const stopListening = () => end();
 
 // Resolves 'heard' when the microphone hears one of the words, 'accepted' when the Good try button is pressed,
 // or null when stopListening() is called. The microphone opens after `ready`, so it does not hear Bean say the word.
-export function listenFor(words, button, ready = Promise.resolve()) {
+export function listenFor(words: string[], button: HTMLElement, ready: Promise<unknown> = Promise.resolve()) {
   end();
-  return new Promise((resolve) => {
-    let rec;
-    const done = (how) => {
+  return new Promise<'heard' | 'accepted' | null>((resolve) => {
+    let rec: Recognizer | undefined;
+    const done = (how: 'heard' | 'accepted' | null) => {
       end = () => {};
       button.removeEventListener('click', accept);
       if (rec) {
@@ -31,21 +31,21 @@ export function listenFor(words, button, ready = Promise.resolve()) {
     if (!Recognition) return;
     ready.then(() => {
       if (end !== mine) return; // already over
-      rec = new Recognition();
-      Object.assign(rec, { lang: 'en-US', continuous: true, interimResults: true, maxAlternatives: 3 });
-      rec.onresult = (e) => {
+      const r = (rec = new Recognition());
+      Object.assign(r, { lang: 'en-US', continuous: true, interimResults: true, maxAlternatives: 3 });
+      r.onresult = (e) => {
         for (const result of e.results) for (const said of result) if (matches(said.transcript, words)) return done('heard');
       };
       const listen = () => {
         try {
-          rec.start();
+          r.start();
         } catch {
           // already started
         }
       };
-      rec.onend = listen; // Chrome stops after a silence: keep listening
-      rec.onerror = (e) => {
-        if (e.error === 'not-allowed' || e.error === 'service-not-allowed') rec.onend = null; // no microphone: the button still works
+      r.onend = listen; // Chrome stops after a silence: keep listening
+      r.onerror = (e) => {
+        if (e.error === 'not-allowed' || e.error === 'service-not-allowed') r.onend = null; // no microphone: the button still works
       };
       listen();
     });

@@ -1,7 +1,7 @@
 // Web Serial transport (Chrome or Edge on a laptop). The shield's switch must be on "upload", or the car hears nothing.
-import { makeLink } from './robot.js';
+import { makeLink } from './robot.ts';
 
-export async function connectSerial(onLost) {
+export async function connectSerial(onLost: () => void) {
   const port = await navigator.serial.requestPort();
   await port.open({ baudRate: 9600 });
   // Opening the port resets the UNO; it needs about 2 s to boot.

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { moved } from './movement.js';
+import { moved } from './movement.ts';
 
 const opts = { leewayCm: 5, laneCm: 200 };
 

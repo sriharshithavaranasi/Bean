@@ -1,12 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createGame, DEFAULTS } from './freeze-watcher.js';
+import { createGame, DEFAULTS, type Game } from './freeze-watcher.ts';
 
 // random() = 0, so every Green lasts exactly greenMinMs (3000).
 const newGame = () => createGame({}, () => 0);
 
 // Ticks every 100 ms from `from` until `to`, feeding distances from cmAt(t).
-function run(game, from, to, cmAt) {
+function run(game: Game, from: number, to: number, cmAt: (t: number) => number | null) {
   for (let t = from; t <= to; t += 100) game.tick(t, cmAt(t));
   return game.phase;
 }

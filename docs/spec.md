@@ -147,19 +147,22 @@ Four totals on the main screen: Rounds, Wins, Good freezes, Word tries (shown on
 
 ## 11. Code layout
 
+TypeScript, with no build step: `scripts/serve.ts` strips the types when it serves a `.ts` file, so only erasable syntax is used. `npm run typecheck` runs `tsc`.
+
 ```
 app/
   index.html        play screen, settings, dashboard
   app.css           the one stylesheet: design tokens in :root, then layout and controls
   fonts/            Fredoka and Nunito (OFL), served locally so the demo works offline
-  main.js           wires the page to the game, the robot and saved settings
-  robot.js          robot interface: connect, lookAway, lookAtKid, distanceCm, setLight
-  robot-serial.js   Web Serial transport
-  robot-mock.js     slider-driven fake robot
+  main.ts           wires the page to the game, the robot and saved settings
+  robot.ts          robot interface: connect, lookAway, lookAtKid, distanceCm, setLight
+  robot-serial.ts   Web Serial transport
+  robot-mock.ts     slider-driven fake robot
   game/             pure logic and tests (movement, freeze-watcher, steps)
-  speech.js         practice-word listener
-  signals.js        screen, sound, vibration
-  store.js          settings and progress in localStorage
+  speech.ts         practice-word listener
+  signals.ts        screen, sound, vibration
+  store.ts          settings and progress in localStorage
+  browser.d.ts      types for Web Serial and speech recognition, which TypeScript's DOM types lack
 firmware/           P2 only
 ```
 
@@ -200,7 +203,7 @@ Not taken from the example:
 
 **Phone to car.** A phone cannot open the USB serial port. The recommended route (ticket "Control the robot from a phone") keeps the laptop next to the car: the laptop tab holds the USB link, runs the game and plays the sound, and the phone opens the same page from the laptop over the local network as a remote. Speech recognition stays on the laptop, because a phone page loaded over plain HTTP may not use the microphone.
 
-This route is built. Start the server with `node scripts/serve.mjs --lan` (or set `HOST`); without it the server stays on localhost and the phone remote is off. The laptop tab shows the phone address with a 6-digit code that changes on every server start. A phone with the right code copies the laptop's stage (status, light, track, buttons, progress and settings) within half a second and sends Start, Stop, Step, the grown-up buttons, Reset and settings back. The laptop does a press only while that button is on its own screen. A wrong code gets nothing, and after 20 wrong codes no phone may connect until the server restarts. Click once on the laptop tab before playing (Connect by cable or Connect over WiFi does this), so the browser lets it play sound, and keep that tab in front, because a background tab runs its timers slowly. Venue WiFi often blocks device-to-device traffic: use a phone hotspot.
+This route is built. Start the server with `node scripts/serve.ts --lan` (or set `HOST`); without it the server stays on localhost and the phone remote is off. The laptop tab shows the phone address with a 6-digit code that changes on every server start. A phone with the right code copies the laptop's stage (status, light, track, buttons, progress and settings) within half a second and sends Start, Stop, Step, the grown-up buttons, Reset and settings back. The laptop does a press only while that button is on its own screen. A wrong code gets nothing, and after 20 wrong codes no phone may connect until the server restarts. Click once on the laptop tab before playing (Connect by cable or Connect over WiFi does this), so the browser lets it play sound, and keep that tab in front, because a background tab runs its timers slowly. Venue WiFi often blocks device-to-device traffic: use a phone hotspot.
 
 ## 14. Custom firmware protocol (P2)
 
@@ -224,7 +227,7 @@ Proposed by the speech area. It changes the scope in section 2 in two places, so
 
 **Two modes, one game.**
 
-- **Scripted (default, offline).** Short scripts written in `app/game/talk.js`: Hello (greetings and names), Questions (favourite colour, animal, food), Asking (asking Bean for a turn, a song, a dance). Any answer the microphone catches moves the script on. Bean echoes a word it heard when it can ("Blue! I love blue.").
+- **Scripted (default, offline).** Short scripts written in `app/game/talk.ts`: Hello (greetings and names), Questions (favourite colour, animal, food), Asking (asking Bean for a turn, a song, a dance). Any answer the microphone catches moves the script on. Bean echoes a word it heard when it can ("Blue! I love blue.").
 - **AI chat (off by default).** A grown-up turns it on. Bean's replies come from Gemini through the local server (below). If there is no key, no internet, or no reply within 3 s, Bean says the next scripted line, so the game never stalls.
 
 **One turn.**
@@ -238,7 +241,7 @@ Proposed by the speech area. It changes the scope in section 2 in two places, so
 
 Good try and They did it end the kid's turn at any time, as in section 7. Stop ends the game and silences Bean at once. A game is 6 turns, then Bean says goodbye.
 
-**AI chat, server side.** `POST /talk` on `scripts/serve.mjs`, laptop only (same `loopback` and JSON body checks as the relay). The body is the last few turns as text. The server adds the system instruction and the key from the `GEMINI_API_KEY` environment variable and calls a fast Flash-Lite model. The key never reaches the browser and is never written to a file in the repo. Without the variable, `/talk` answers 503 and the game stays scripted.
+**AI chat, server side.** `POST /talk` on `scripts/serve.ts`, laptop only (same `loopback` and JSON body checks as the relay). The body is the last few turns as text. The server adds the system instruction and the key from the `GEMINI_API_KEY` environment variable and calls a fast Flash-Lite model. The key never reaches the browser and is never written to a file in the repo. Without the variable, `/talk` answers 503 and the game stays scripted.
 
 **Bean's rules (system instruction).** Bean is a friendly robot helping a young child practise talking. One or two short sentences, simple words, always ending with an easy question or invitation to talk. Topics: animals, colours, food, games, feelings, the game they are playing. Never asks for personal information beyond the first name the grown-up typed. Never talks about scary, unsafe or grown-up topics; steers back to the game instead. Never says it is a person.
 
@@ -267,7 +270,7 @@ Tabs are a real tab list (`role="tablist"`, arrow keys move between tabs, the ch
 
 **Progress (section 10).** Adds turns taken and turns the microphone heard by itself.
 
-**Code.** `app/game/talk.js` (pure turn logic and the scripts, with tests), `speech.js` gains a listener that returns what was heard, `/talk` in `scripts/serve.mjs` (with a test), and the hookup in `main.js` (a comms request to its owner).
+**Code.** `app/game/talk.ts` (pure turn logic and the scripts, with tests), `speech.ts` gains a listener that returns what was heard, `/talk` in `scripts/serve.ts` (with a test), and the hookup in `main.ts` (a comms request to its owner).
 
 **Hardware.** Any microphone the laptop sees works: the Logitech webcam's microphone mounted on the car's body, facing the lane, is the plan. Keep the speaker away from the microphone so Bean does not hear itself.
 
@@ -277,7 +280,7 @@ Proposed by the speech area. It changes section 2 ("Out of scope: the camera"), 
 
 **Why.** The distance sensor only sees movement toward the robot, straight ahead, in a narrow cone (section 5). A webcam sees a kid step sideways, shuffle a foot or sneak at the edge of the lane, so Freeze Watcher catches what a kid actually sees as cheating.
 
-**How it decides.** A USB webcam (the team's Logitech) stands about 1 to 1.5 m behind the car, raised (on the laptop or a stand) and angled down the lane, so the kid's shoulders and hips stay in the picture from the start line to the car. Feet may be out of the picture: knees and ankles count only when they are seen. Not on the car: as the kid comes close, a camera on the car sees only their legs and loses them (on the first tuning run, a body filling 120 to 260% of the picture height was lost in about half the rounds). MediaPipe Pose Landmarker (lite model) finds 33 body points in each frame on the laptop. During Red, after the time to freeze, about 10 frames a second are kept. `poseDrift` in `app/game/pose-moved.js` compares the shoulders, hips, knees and ankles with where they were in the first three frames, as a share of the kid's torso length, so the same setting works near and far. The kid is caught when, in any three frames in a row, at least two of those points drifted more than the wiggle room. Hands and head never count: they move without meaning to, and some kids cannot hold them still. Fewer than six frames with a body, or no body found, is not caught, as in section 5.
+**How it decides.** A USB webcam (the team's Logitech) stands about 1 to 1.5 m behind the car, raised (on the laptop or a stand) and angled down the lane, so the kid's shoulders and hips stay in the picture from the start line to the car. Feet may be out of the picture: knees and ankles count only when they are seen. Not on the car: as the kid comes close, a camera on the car sees only their legs and loses them (on the first tuning run, a body filling 120 to 260% of the picture height was lost in about half the rounds). MediaPipe Pose Landmarker (lite model) finds 33 body points in each frame on the laptop. During Red, after the time to freeze, about 10 frames a second are kept. `poseDrift` in `app/game/pose-moved.ts` compares the shoulders, hips, knees and ankles with where they were in the first three frames, as a share of the kid's torso length, so the same setting works near and far. The kid is caught when, in any three frames in a row, at least two of those points drifted more than the wiggle room. Hands and head never count: they move without meaning to, and some kids cannot hold them still. Fewer than six frames with a body, or no body found, is not caught, as in section 5.
 
 **When the camera loses the kid.** No body found is not "still": that round falls back to the distance sensor (section 5), so stepping out of the picture never escapes being caught. Practice on the tuning page, like a game round, starts only once the kid is in the picture.
 
@@ -295,4 +298,4 @@ Proposed by the speech area. It changes section 2 ("Out of scope: the camera"), 
 
 **Tuning.** `app/watch.html` opens the camera, draws the watched points and runs hands-free practice: a spoken 5 second countdown, then Green and Red lights until Stop, saying each result and listing the drift it measured, with a wiggle room slider. Use it on the real lane, with the real light, before the demo.
 
-**Code.** `app/camera.js` (opens the camera, loads the model), `app/game/pose-moved.js` and its tests, `app/watch.html`. Hooking it into Freeze Watcher (`app/game/freeze-watcher.js`, `app/main.js`) is a comms request to their owner.
+**Code.** `app/camera.ts` (opens the camera, loads the model), `app/game/pose-moved.ts` and its tests, `app/watch.html`. Hooking it into Freeze Watcher (`app/game/freeze-watcher.ts`, `app/main.ts`) is a comms request to their owner.

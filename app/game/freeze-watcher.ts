@@ -1,4 +1,7 @@
-import { moved } from './movement.js';
+import { moved } from './movement.ts';
+
+export type Gate = 'off' | 'every';
+export type Phase = 'idle' | 'green' | 'red' | 'caught' | 'word' | 'win';
 
 export const DEFAULTS = {
   greenMinMs: 3000,
@@ -11,21 +14,38 @@ export const DEFAULTS = {
   caughtMs: 8000, // the round never gets stuck waiting for the kid to go back
   steps: 10, // switch presses to win
   doMs: 3000, // Robot Says: time to do each command (or to ignore a fake one)
-  gate: 'off', // practice word before Green: 'off' or 'every' (Say It to Sneak: every Green)
+  gate: 'off' as Gate, // practice word before Green: 'off' or 'every' (Say It to Sneak: every Green)
+};
+export type GameSettings = typeof DEFAULTS;
+
+export type Game = {
+  phase: Phase;
+  startCm: number;
+  until: number;
+  redStart: number;
+  readings: number[];
+  start(now: number, startCm: number): void;
+  tick(now: number, cm: number | null): Phase;
+  caught(now: number): void;
+  checking(now: number): boolean;
+  win(): void;
+  stop(): void;
+  ready(now: number): void;
+  accept(now: number): void;
 };
 
 // Phases: idle, green, red, caught, word (waiting for the practice word), win. Time and random are passed in so tests control them.
-export function createGame(settings = DEFAULTS, random = Math.random) {
+export function createGame(settings: Partial<GameSettings> = DEFAULTS, random = Math.random) {
   const s = { ...DEFAULTS, ...settings };
-  const game = { phase: 'idle', startCm: 0, until: 0, redStart: 0, readings: [] };
+  const game = { phase: 'idle', startCm: 0, until: 0, redStart: 0, readings: [] } as unknown as Game; // the methods are added below
 
-  const green = (now) => {
+  const green = (now: number) => {
     game.phase = 'green';
     game.until = now + s.greenMinMs + random() * (s.greenMaxMs - s.greenMinMs);
   };
 
   // The next Green light, or the wait for a practice word that earns it.
-  const next = (now) => {
+  const next = (now: number) => {
     if (s.gate === 'every') game.phase = 'word';
     else green(now);
   };
@@ -42,7 +62,7 @@ export function createGame(settings = DEFAULTS, random = Math.random) {
       game.redStart = now;
       game.readings = [];
     } else if (game.phase === 'red' && now - game.redStart >= s.settleMs) {
-      if (cm > 0 && cm < s.winCm) game.phase = 'win';
+      if (cm != null && cm > 0 && cm < s.winCm) game.phase = 'win';
       else {
         if (cm != null) game.readings.push(cm);
         if (now - game.redStart >= s.lookMs) {
@@ -61,7 +81,7 @@ export function createGame(settings = DEFAULTS, random = Math.random) {
     game.until = now + s.caughtMs;
   };
 
-  // Switch input (steps.js) decides caught and win with a press instead of a distance.
+  // Switch input (steps.ts) decides caught and win with a press instead of a distance.
   game.checking = (now) => game.phase === 'red' && now - game.redStart >= s.settleMs;
   game.win = () => {
     game.phase = 'win';

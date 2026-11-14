@@ -1,6 +1,6 @@
 // Sound cues. Everything is synthesised in the browser, so there are no audio files to license.
-let ctx;
-let musicTimer;
+let ctx: AudioContext | undefined;
+let musicTimer: ReturnType<typeof setInterval> | undefined;
 
 // Browsers block sound until a tap: call this from the Start button.
 export function unlockAudio() {
@@ -8,7 +8,7 @@ export function unlockAudio() {
   ctx.resume();
 }
 
-function tone(freq, startIn, length, type = 'triangle', volume = 0.15) {
+function tone(freq: number, startIn: number, length: number, type: OscillatorType = 'triangle', volume = 0.15) {
   if (!ctx) return;
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
@@ -37,11 +37,11 @@ export function stopMusic() {
 }
 
 // Resolves when the voice is done, or after 5 seconds: some browsers never report the end.
-export function say(text) {
+export function say(text: string) {
   speechSynthesis.cancel();
   const words = new SpeechSynthesisUtterance(text);
-  return new Promise((resolve) => {
-    words.onend = words.onerror = resolve;
+  return new Promise<void>((resolve) => {
+    words.onend = words.onerror = () => resolve();
     setTimeout(resolve, 5000);
     speechSynthesis.speak(words);
   });
@@ -56,10 +56,10 @@ export function silence() {
 const PRAISE = ['Great freezing!', 'So still!', 'I did not see a thing!'];
 export const praise = () => say(PRAISE[Math.floor(Math.random() * PRAISE.length)]);
 
-const buzz = (pattern) => navigator.vibrate?.(pattern); // phones only
-const BUZZ = { green: 80, red: [300, 100, 300], win: [100, 60, 100, 60, 300] };
+const buzz = (pattern: VibratePattern) => navigator.vibrate?.(pattern); // phones only
+const BUZZ: Record<string, VibratePattern> = { green: 80, red: [300, 100, 300], win: [100, 60, 100, 60, 300] };
 
-export function playCue(phase) {
+export function playCue(phase: string) {
   stopMusic();
   if (BUZZ[phase]) buzz(BUZZ[phase]);
   if (phase === 'green') {

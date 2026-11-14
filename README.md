@@ -11,7 +11,7 @@ The full design is in [docs/spec.md](docs/spec.md).
 ### What you need
 
 - The ELEGOO Smart Robot Car Kit V4.0, built, with charged batteries.
-- A laptop with Chrome or Edge, and [Node.js](https://nodejs.org) 22 or newer.
+- A laptop with Chrome or Edge, and [Node.js](https://nodejs.org) 22.18 or newer.
 - The USB cable from the kit.
 - Tape, and about 2 m of clear floor.
 - Optional: a phone on the same WiFi as the laptop, to run the game from across the room.
@@ -89,10 +89,12 @@ The app is tested against the pretend robot. These still need the real car: the 
 ## Develop
 
 ```sh
+npm install        # only for the type check
 npm test
+npm run typecheck
 ```
 
-The app is plain HTML, CSS and JavaScript modules in `app/`, with no build step and no dependencies. Game logic is pure functions in `app/game/`, tested with `node --test`. `scripts/serve.mjs` serves the app and runs the phone relay.
+The app is plain HTML, CSS and TypeScript modules in `app/`, with no build step and no runtime dependencies. `scripts/serve.ts` strips the types as it serves each `.ts` file, so only erasable TypeScript is allowed (no enums, namespaces or parameter properties), and imports name the `.ts` file. Game logic is pure functions in `app/game/`, tested with `node --test`. `scripts/serve.ts` serves the app and runs the phone relay. `npm run typecheck` runs `tsc`; the `typescript` and `@types/node` dev dependencies are only for that.
 
 ## Working here with Claude Code
 

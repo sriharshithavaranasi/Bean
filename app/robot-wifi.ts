@@ -1,10 +1,10 @@
 // WiFi transport through the camera board on the car (kit version with the ESP32 camera).
-// The laptop joins the car's own WiFi (ELEGOO-...); scripts/serve.mjs holds the connection to the car and relays it here,
+// The laptop joins the car's own WiFi (ELEGOO-...); scripts/serve.ts holds the connection to the car and relays it here,
 // because a web page cannot open the car's plain TCP port.
-import { makeLink } from './robot.js';
+import { makeLink, type Robot } from './robot.ts';
 
-export function connectWifi(onLost) {
-  return new Promise((resolve, reject) => {
+export function connectWifi(onLost: () => void) {
+  return new Promise<Robot>((resolve, reject) => {
     const car = new EventSource('/car');
     // The command goes car-ward over the server; the camera board passes it to the car's main board.
     const link = makeLink(async (text) => {

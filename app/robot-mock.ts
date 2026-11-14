@@ -1,8 +1,8 @@
 // Fake robot for working without the car. The page's slider sets the distance;
 // onChange lets the page draw the head direction and light colour.
-import { makeRobot } from './robot.js';
+import { makeRobot } from './robot.ts';
 
-export function makeMockRobot(getDistanceCm, onChange) {
+export function makeMockRobot(getDistanceCm: () => number, onChange: (change: { head?: number; light?: string }) => void) {
   return makeRobot(async (c) => {
     if (c.N === 21) return String(getDistanceCm());
     if (c.N === 5) onChange({ head: c.D2 });

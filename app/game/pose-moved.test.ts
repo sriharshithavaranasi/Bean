@@ -1,12 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { poseMoved } from './pose-moved.js';
+import { poseMoved } from './pose-moved.ts';
 
 // A standing body in MediaPipe's 33-point layout, in image coordinates (0 to 1).
 // Torso: shoulders at y 0.3, hips at y 0.6, so the torso is 0.3 tall.
 function body({ dx = 0, dy = 0, leftFoot = 0, wrist = 0, seen = 1, legs = true } = {}) {
   const p = Array.from({ length: 33 }, () => ({ x: 0.5 + dx, y: 0.5 + dy, visibility: seen }));
-  const at = (i, x, y) => (p[i] = { x: x + dx, y: y + dy, visibility: seen });
+  const at = (i: number, x: number, y: number) => (p[i] = { x: x + dx, y: y + dy, visibility: seen });
   at(11, 0.45, 0.3); at(12, 0.55, 0.3); // shoulders
   at(23, 0.47, 0.6); at(24, 0.53, 0.6); // hips
   at(25, 0.47 + leftFoot / 2, 0.75); at(26, 0.53, 0.75); // knees
@@ -16,7 +16,7 @@ function body({ dx = 0, dy = 0, leftFoot = 0, wrist = 0, seen = 1, legs = true }
   return p;
 }
 const opts = { wiggle: 0.2 };
-const jitter = (n) => Array.from({ length: n }, (_, i) => body({ dx: (i % 3 - 1) * 0.005 }));
+const jitter = (n: number) => Array.from({ length: n }, (_, i) => body({ dx: (i % 3 - 1) * 0.005 }));
 
 test('standing still with camera jitter is not caught', () => {
   assert.equal(poseMoved(jitter(12), opts), false);

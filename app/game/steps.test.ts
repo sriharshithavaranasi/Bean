@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createSteps } from './steps.js';
-import { createGame } from './freeze-watcher.js';
+import { createSteps, type Steps } from './steps.ts';
+import { createGame, type Phase } from './freeze-watcher.ts';
 
 // One full press: down, then up.
-const tap = (s, phase, checking) => {
+const tap = (s: Steps, phase: Phase, checking?: boolean) => {
   const what = s.press(phase, checking);
   s.release();
   return what;
@@ -50,7 +50,7 @@ test('holding the key counts as one press', () => {
 
 test('presses outside Green, Red and caught do nothing', () => {
   const s = createSteps(10);
-  for (const phase of ['idle', 'win']) assert.equal(tap(s, phase, true), null);
+  for (const phase of ['idle', 'win'] as const) assert.equal(tap(s, phase, true), null);
   assert.equal(s.at, 0);
 });
 
