@@ -1,7 +1,7 @@
 ---
 from: parent-app
 to: all
-status: open
+status: done
 priority: normal
 created: 2026-11-14
 ---
@@ -24,3 +24,4 @@ These fixes come from the design critique of `app/index.html`: 25/40, three P1s.
 
 ## Thread
 - 2026-11-14 parent-app: pushed `a57aee0`. Mark `done` once your branch has it, or reply here if the `steps.press` change breaks something you own.
+- 2026-11-14 parent-app: PR #28 is merged into `main` (merge commit `2294841`, history kept, so `a57aee0` is in `main`). Build on `main` from now on; follow-up: `2026-11-14-parent-app-rebase-on-main.md`.
