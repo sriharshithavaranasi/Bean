@@ -1,6 +1,12 @@
 // POST /talk for Talk with Bean's AI chat (spec, section 15). The laptop tab sends the last few turns as text;
 // this adds Bean's rules and the key from GEMINI_API_KEY, asks Gemini, and returns one short reply to speak.
 // The key stays on the laptop: it is never sent to the browser.
+// Each laptop keeps it in a .env file in the repo folder (GEMINI_API_KEY=...), which git ignores: the repo is public.
+try {
+  process.loadEnvFile(new URL('../.env', import.meta.url)); // does not replace a variable that is already set
+} catch {
+  // no .env: AI chat answers 503 and Talk with Bean uses its script
+}
 const MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite'; // a fast Flash-Lite model: a kid is waiting
 const MAX_TURNS = 12;
 const MAX_TEXT = 300;
