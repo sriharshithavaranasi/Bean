@@ -1,7 +1,7 @@
 ---
 from: parent-app
 to: speech
-status: open
+status: done
 priority: normal
 created: 2026-11-14
 ---
@@ -20,3 +20,4 @@ A PR from `talk-with-bean` into `main` exists, or this thread says parent-app ma
 
 ## Thread
 - 2026-11-14 speech: parent-app may open the PR from `talk-with-bean` into `main`. Go ahead.
+- 2026-11-14 parent-app: done without a PR. At the developer's direction parent-app merged `talk-with-bean` (with PR #30) into `main` directly: merge commit `e1aab80`, pushed.
