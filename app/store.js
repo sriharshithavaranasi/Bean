@@ -36,7 +36,7 @@ export function fixSettings(raw = {}) {
   s.greenMaxMs = Math.max(s.greenMaxMs, s.greenMinMs);
   s.steps = Math.round(s.steps);
   s.input = raw.input === 'switch' ? 'switch' : 'body'; // how the kid moves
-  s.game = raw.game === 'sneak' ? 'sneak' : 'freeze';
+  s.game = ['sneak', 'says'].includes(raw.game) ? raw.game : 'freeze';
   s.wordGate = raw.wordGate === true; // say a practice word before each green light
   // Typed as a comma list. Nothing saved gives the spec's words; an emptied list stays empty and switches the gate off.
   const words = raw.words == null ? WORDS : Array.isArray(raw.words) ? raw.words : String(raw.words).split(',');

@@ -1,4 +1,5 @@
 import { createGame } from './game/freeze-watcher.js';
+import { COMMANDS, did, makeCommands, outcome, total } from './game/robot-says.js';
 import { createSteps } from './game/steps.js';
 import { makeMockRobot } from './robot-mock.js';
 import { connectSerial } from './robot-serial.js';
@@ -15,9 +16,15 @@ const SCREEN = {
   red: { status: 'Red light!', hint: 'Bean is looking. Freeze!', glyph: 'M7 5h4v14H7zM13 5h4v14h-4z' },
   caught: { status: 'I saw you!', hint: 'Go back to the start line.', glyph: 'M12 5C6 5 2 12 2 12s4 7 10 7 10-7 10-7-4-7-10-7zm0 11a4 4 0 110-8 4 4 0 010 8z' },
   word: { status: 'Say your word', hint: 'Say it out loud, or press Good try.', glyph: 'M4 4h16v12h-9l-5 4v-4H4z' },
+  // Robot Says: the command itself is the status line.
+  says: { hint: 'Listen for “Robot says”.', glyph: 'M4 4h16v12h-9l-5 4v-4H4z' },
+  wave: { hint: 'Grown-up: press They did it or Not yet.', glyph: 'M4 4h16v12h-9l-5 4v-4H4z' },
+  point: { status: 'Yes!', hint: 'You did what Bean said.', glyph: 'M9 16.2l-3.5-3.5L4 14.2l5 5 11-11-1.5-1.5z' },
+  gotcha: { status: 'Gotcha!', hint: 'Bean did not say “Robot says”.', glyph: 'M12 5C6 5 2 12 2 12s4 7 10 7 10-7 10-7-4-7-10-7zm0 11a4 4 0 110-8 4 4 0 010 8z' },
+  miss: { status: 'Not this time', hint: 'Bean said “Robot says”. Try the next one!', glyph: 'M8 7a2 2 0 100 4 2 2 0 000-4zm8 0a2 2 0 100 4 2 2 0 000-4zM7 15h10v2H7z' },
   win: { status: 'You got me!', hint: 'You reached Bean!', glyph: 'M12 2l3 7 7 .6-5.3 4.7 1.7 7.2L12 17.8 5.6 21.5l1.7-7.2L2 9.6 9 9z' },
 };
-const LIGHT = { green: [0, 255, 0], red: [255, 0, 0], caught: [255, 80, 0], word: [0, 0, 255], win: [255, 255, 255] };
+const LIGHT = { green: [0, 255, 0], red: [255, 0, 0], caught: [255, 80, 0], word: [0, 0, 255], win: [255, 255, 255], point: [0, 255, 0], gotcha: [255, 80, 0], miss: [0, 0, 255] };
 
 // ---------- grown-up settings ----------
 // field id -> [game setting, how many of the game's units one of the field's units is]
@@ -28,7 +35,7 @@ const FIELDS = {
 const rulers = {};
 function settings() {
   const raw = {
-    input: $('s-switch').checked ? 'switch' : 'body', game: $('s-sneak').checked ? 'sneak' : 'freeze',
+    input: $('s-switch').checked ? 'switch' : 'body', game: $('s-says').checked ? 'says' : $('s-sneak').checked ? 'sneak' : 'freeze',
     wordGate: $('s-wordGate').checked, words: $('s-words').value,
   };
   for (const [id, [key, unit]] of Object.entries(FIELDS)) {
@@ -43,8 +50,7 @@ function showSettings(s) {
   $('s-switch').checked = s.input === 'switch';
   $('s-body').checked = s.input !== 'switch';
   $('s-steps').closest('.field').hidden = s.input !== 'switch';
-  $('s-sneak').checked = s.game === 'sneak';
-  $('s-freeze').checked = s.game !== 'sneak';
+  $(`s-${s.game}`).checked = true;
   $('s-wordGate').checked = s.wordGate;
   $('s-words').value = s.words.join(', ');
 }
@@ -77,7 +83,7 @@ for (const [id, [key, unit]] of Object.entries(FIELDS)) {
   ruler.addEventListener('input', () => ((input.value = ruler.value), changed()));
   input.addEventListener('change', settingChanged);
 }
-for (const id of ['s-body', 's-switch', 's-freeze', 's-sneak', 's-wordGate', 's-words']) $(id).addEventListener('change', settingChanged);
+for (const id of ['s-body', 's-switch', 's-freeze', 's-sneak', 's-says', 's-wordGate', 's-words']) $(id).addEventListener('change', settingChanged);
 showSettings(fixSettings(load('bean-settings', {})));
 if (matchMedia('(min-width: 860px)').matches) $('settings').open = true;
 
@@ -127,22 +133,32 @@ const queued = (job) => (chain = chain.then(job).catch((e) => console.error(e)))
 
 // ---------- switch input ----------
 let wonAt = 0;
+let saysOn = false; // a Robot Says round is being played
+let pressed = false;
 let steps = null; // the kid's piece on the track, while a round is played from a switch
 const switchOn = () => !!steps || $('s-switch').checked;
 const SWITCH_HINT = { idle: 'Press Start. Then press the switch when the light is green.', caught: 'Your piece is back at the start.' };
+function drawCells(at, count, text) {
+  $('track-cells').replaceChildren(
+    ...Array.from({ length: count }, (_, i) => Object.assign(document.createElement('span'), { className: i < at ? 'on' : '' })),
+  );
+  $('track-text').textContent = text;
+}
 function drawTrack() {
+  if (saysOn) return; // Robot Says counts its commands on the track
   const on = switchOn();
   $('track').hidden = $('step').hidden = !on;
   $('readout').hidden = on;
   const at = steps ? steps.at : 0;
-  const total = steps ? steps.total : Number($('s-steps').value);
-  $('track-cells').replaceChildren(
-    ...Array.from({ length: total }, (_, i) => Object.assign(document.createElement('span'), { className: i < at ? 'on' : '' })),
-  );
-  $('track-text').textContent = `Step ${at} of ${total}`;
+  const count = steps ? steps.total : Number($('s-steps').value);
+  drawCells(at, count, `Step ${at} of ${count}`);
 }
 function press() {
   if (!steps) return;
+  if (saysOn) {
+    pressed = true; // Robot Says only asks: was the switch pressed during this command?
+    return;
+  }
   const now = performance.now();
   const what = steps.press(game.phase, game.checking(now));
   if (what === 'caught') game.caught(now);
@@ -188,7 +204,64 @@ function show(phase, hint = (switchOn() && SWITCH_HINT[phase]) || SCREEN[phase].
   $('start').textContent = phase === 'win' ? 'Play again' : phase === 'idle' ? 'Start' : 'Restart';
   $('ready').hidden = phase !== 'caught';
   $('goodtry').hidden = phase !== 'word'; // on screen whenever the app waits for the word
-  $('parent').hidden = phase !== 'caught' && phase !== 'word';
+  $('yes').hidden = $('no').hidden = phase !== 'wave';
+  $('parent').hidden = !['caught', 'word', 'wave'].includes(phase);
+}
+
+// ---------- Robot Says ----------
+const DO_IT_MS = 3000; // how long the kid has to do the command (or to ignore a fake one)
+const SHOW_MS = 1800; // how long the result stays up
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+let saysRun = 0; // Stop and Restart end the running round by changing this
+let answer = () => {};
+$('yes').addEventListener('click', () => answer(true));
+$('no').addEventListener('click', () => answer(false));
+
+async function playSays(s) {
+  const mine = ++saysRun;
+  const alive = () => mine === saysRun;
+  const commands = makeCommands();
+  const outcomes = [];
+  saysOn = true;
+  $('track').hidden = false;
+  $('readout').hidden = true;
+  for (const [i, { kind, real }] of commands.entries()) {
+    const line = real ? `Robot says: ${COMMANDS[kind].toLowerCase()}` : COMMANDS[kind];
+    const hint = kind !== 'wave' && steps ? 'Press the switch for a step. Do not press for freeze.' : undefined;
+    show(kind === 'wave' ? 'wave' : 'says', hint, line);
+    drawCells(i, commands.length, `Command ${i + 1} of ${commands.length}. Score ${total(outcomes)}.`);
+    queued(() => robot.setLight(0, 0, 255));
+    // The buttons are up while Bean is still talking: a press then counts too.
+    const parent = new Promise((resolve) => (answer = resolve));
+    await say(line);
+    if (!alive()) return;
+    let seen;
+    if (kind === 'wave') {
+      seen = { parent: await parent };
+    } else if (steps) {
+      pressed = false;
+      await wait(DO_IT_MS);
+      seen = { pressed };
+    } else {
+      const startCm = await queued(() => robot.distanceCm());
+      await wait(DO_IT_MS);
+      seen = { startCm, endCm: await queued(() => robot.distanceCm()), leewayCm: s.leewayCm };
+    }
+    if (!alive()) return;
+    const result = outcome(real, did(kind, seen));
+    outcomes.push(result);
+    show(result, result === 'point' && !real ? 'Bean did not say “Robot says”. Good listening!' : undefined);
+    drawCells(i + 1, commands.length, `Command ${i + 1} of ${commands.length}. Score ${total(outcomes)}.`);
+    queued(() => robot.setLight(...LIGHT[result]));
+    say(SCREEN[result].status);
+    await wait(SHOW_MS);
+    if (!alive()) return;
+  }
+  const score = `${total(outcomes)} out of ${commands.length}`;
+  wonAt = performance.now(); // a kid still pressing the switch does not skip the score
+  show('win', 'Press Play again for eight more.', `${score}!`);
+  queued(() => robot.setLight(...LIGHT.win));
+  say(`You scored ${score}!`);
 }
 
 // ---------- practice word ----------
@@ -241,6 +314,9 @@ setInterval(() => {
 async function stopRound(hint) {
   game.stop();
   steps = null;
+  saysRun++;
+  saysOn = false;
+  answer(null);
   drawTrack();
   stopListening();
   silence();
@@ -256,6 +332,14 @@ $('start').addEventListener('click', () => {
   queued(async () => {
     await stopRound(); // Start during a round ends it first
     const s = (round = roundSettings(settings()));
+    if (s.game === 'says') {
+      if (s.input === 'switch') steps = createSteps(1); // only so the switch keys and the Step button are live
+      drawTrack();
+      bump('rounds');
+      await robot.lookAtKid(); // Bean faces the kid the whole game
+      playSays(s); // not awaited: Stop must be able to run while it plays
+      return;
+    }
     // A switch round needs no distance: the piece on the track is the kid.
     const startCm = s.input === 'switch' ? 0 : await robot.distanceCm();
     if (s.input !== 'switch' && !startCm) {

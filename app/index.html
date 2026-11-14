@@ -33,8 +33,8 @@
       <section id="parent" aria-label="Grown-up buttons" hidden>
         <button id="ready" class="primary">Kid is back at start</button>
         <button id="goodtry" class="primary" hidden>Good try</button>
-        <button id="yes" hidden disabled>They did it</button>
-        <button id="no" hidden disabled>Not yet</button>
+        <button id="yes" class="primary" hidden>They did it</button>
+        <button id="no" hidden>Not yet</button>
       </section>
 
       <section id="progress" class="card" aria-labelledby="progress-h">
@@ -70,7 +70,7 @@
         <fieldset class="choice"><legend>Game</legend>
           <label><input id="s-freeze" type="radio" name="s-game" checked> Freeze Watcher</label>
           <label><input id="s-sneak" type="radio" name="s-game"> Say It to Sneak</label>
-          <label><input type="radio" name="s-game" disabled> Robot Says <small>soon</small></label>
+          <label><input id="s-says" type="radio" name="s-game"> Robot Says</label>
         </fieldset>
         <fieldset class="choice"><legend>How the kid moves</legend>
           <label><input id="s-body" type="radio" name="s-input" checked> Moves their body</label>

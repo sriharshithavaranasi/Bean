@@ -42,6 +42,7 @@ test('practice words: a comma list is tidied, nothing saved gives the spec words
   assert.deepEqual(fixSettings({ words: '' }).words, []);
   assert.equal(fixSettings().wordGate, false);
   assert.equal(fixSettings({ game: 'sneak' }).game, 'sneak');
+  assert.equal(fixSettings({ game: 'says' }).game, 'says');
   assert.equal(fixSettings({ game: 'chess' }).game, 'freeze');
 });
 

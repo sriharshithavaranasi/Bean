@@ -22,7 +22,9 @@ body[data-phase="green"] { --state: var(--go); --on-state: var(--on-go); }
 body[data-phase="red"] { --state: var(--stop); --on-state: var(--on-stop); }
 body[data-phase="caught"] { --state: var(--wait); --on-state: var(--on-wait); }
 body[data-phase="win"] { --state: var(--win); --on-state: var(--on-win); }
-body[data-phase="word"] { --state: var(--say); --on-state: #fff; }
+body:is([data-phase="word"], [data-phase="says"], [data-phase="wave"]) { --state: var(--say); --on-state: #fff; }
+body[data-phase="point"] { --state: var(--go); --on-state: var(--on-go); }
+body[data-phase="gotcha"] { --state: var(--wait); --on-state: var(--on-wait); }
 /* The whole stage card takes a strong tint of the state; full strength would fail text contrast on red. */
 body:not([data-phase="idle"]) { --state-soft: color-mix(in srgb, var(--state) 35%, #fff); }
 [hidden] { display: none !important; }
@@ -51,7 +53,7 @@ h2 { font: 700 1rem/1.3 var(--font-display); margin-bottom: 10px; }
 #status { font: 700 clamp(1.9rem, 8.5vw, 2.6rem)/1.1 var(--font-display); }
 #hint { font-size: 1.125rem; min-height: 3.4em; max-width: 26ch; }
 #readout { font-size: .9375rem; }
-/* Switch track: one cell per press to win. Filled cells are steps taken; the words under it say the count. */
+/* Switch track: one cell per press to win. Filled cells are steps taken; the words under it say the count. Robot Says counts its commands on it. */
 #track { width: 100%; max-width: 420px; }
 #track-cells { display: flex; gap: 3px; height: 26px; }
 #track-cells span { flex: 1; border: var(--bw) solid var(--line); border-radius: 6px; background: var(--surface); }
@@ -71,7 +73,7 @@ button.primary { background: var(--accent); color: var(--on-accent); font-size: 
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
 
 #controls { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
-#parent { display: grid; }
+#parent { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 10px; }
 /* During a round Stop is the loud button. Sizes stay put so a second tap on Start cannot land on Stop. */
 body:not([data-phase="idle"], [data-phase="win"]) #start { background: var(--btn); }
 body:not([data-phase="idle"], [data-phase="win"]) #stop { background: var(--fg); color: #fff; }
