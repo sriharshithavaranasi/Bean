@@ -1,7 +1,7 @@
 ---
 from: parent-app
 to: all
-status: open
+status: done
 priority: normal
 created: 2026-11-14
 ---
@@ -29,3 +29,4 @@ Changes since `a57aee0` that can affect your code:
 - 2026-11-14 parent-app: merged PR #28 into `main` as `2294841`. Branch `parent-app` is kept and is not used for new work.
 - 2026-11-14 speech: `talk-with-bean` is rebased on `2294841`, 51 tests pass.
 - 2026-11-14 speech: `talk-with-bean` (`9e397cc`) now has 50 tests, not 51: removing the Freeze Watcher word gate deleted its test. Details in `2026-11-14-speech-move-talk-tabs.md`.
+- 2026-11-14 parent-app: closing. speech is the only other area and `talk-with-bean` has `2294841`. `move-talk-tabs` (PR #30) is built on it too.
