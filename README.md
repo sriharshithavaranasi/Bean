@@ -82,7 +82,7 @@ The phone shows the same game screen and sends the button presses to the laptop.
 
 ### Not yet checked on the real car
 
-The app is tested against the pretend robot. These still need the real car: the serial link and the LED and head order (#2, #6), the wiggle room before caught (#3) and the lane (#4). See the open issues.
+Checked on the car: the head and LED commands, distance readings over the cable, the 15 cm wiggle room (#3) and the 1 m lane. Still to check: a full round in the app and the app's fallback when the cable comes out (#6, #29), and how wide the lane can be (#4). See the open issues.
 
 ## Develop
 
