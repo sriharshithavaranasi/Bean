@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Move and Talk tabs</title>
+<style>
+@font-face { font-family: "Fredoka"; font-weight: 500 700; src: url("../../app/fonts/fredoka.woff2") format("woff2"); }
+@font-face { font-family: "Nunito"; font-weight: 400 700; src: url("../../app/fonts/nunito.woff2") format("woff2"); }
+:root {
+  --font-display: "Fredoka", ui-rounded, system-ui, sans-serif; --font-body: "Nunito", system-ui, sans-serif;
+  --bg: #fff8ef; --surface: #fff; --panel: #f3edff; --fg: #2b2140; --muted: #5d5475; --line: #2b2140; --rule: #e0d6ea;
+  --accent: #ffc83d; --focus: #1a3fd6; --idle: #d9d3e3; --go: #2fbf71; --stop: #e5484d; --say: #3e63dd;
+  --radius: 20px; --radius-btn: 14px; --bw: 2px; --gap: 12px;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 1rem/1.5 var(--font-body); }
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.15; margin: 0 0 8px; }
+.wrap { max-width: 1100px; margin: auto; padding: 24px 16px 64px; display: grid; gap: 28px; }
+.lede { color: var(--muted); max-width: 70ch; margin: 0; }
+.flow { display: flex; flex-wrap: wrap; gap: 8px; }
+.flow button { font: 600 .9rem var(--font-body); padding: 8px 12px; border: var(--bw) solid var(--line); border-radius: 999px; background: var(--surface); color: var(--fg); cursor: pointer; }
+.flow button[aria-pressed="true"] { background: var(--fg); color: #fff; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.note { background: var(--surface); border: var(--bw) dashed var(--line); border-radius: var(--radius-btn); padding: 10px 14px; margin: 0; }
+
+/* the mock: real tokens, simplified page */
+.mock { border: var(--bw) solid var(--line); border-radius: var(--radius); padding: var(--gap); background: var(--bg); display: grid; gap: var(--gap); }
+.tabs { display: grid; grid-template-columns: 1fr 1fr; border: var(--bw) solid var(--line); border-radius: var(--radius-btn); box-shadow: 0 4px 0 var(--line); overflow: hidden; background: var(--surface); }
+.tabs button { font: 700 1.15rem var(--font-display); color: var(--fg); background: var(--surface); border: 0; min-height: 52px; display: flex; gap: 8px; align-items: center; justify-content: center; cursor: pointer; }
+.tabs button + button { border-left: var(--bw) solid var(--line); }
+.tabs button[aria-selected="true"] { background: var(--accent); }
+.tabs svg { width: 22px; height: 22px; }
+.cols { display: grid; gap: var(--gap); }
+@media (min-width: 760px) { .cols { grid-template-columns: 1.25fr 1fr; align-items: start; } }
+.card { background: var(--surface); border: var(--bw) solid var(--line); border-radius: var(--radius); box-shadow: 0 4px 0 var(--line); padding: 14px; }
+.stage { text-align: center; background: color-mix(in srgb, var(--st, var(--idle)) 35%, #fff); }
+.light { width: 120px; aspect-ratio: 1; border-radius: 50%; margin: 8px auto 10px; border: 4px solid var(--line); background: var(--st, var(--idle)); }
+.row { display: flex; gap: var(--gap); }
+.btn { flex: 1; font: 700 1.05rem var(--font-display); min-height: 52px; border: var(--bw) solid var(--line); border-radius: var(--radius-btn); box-shadow: 0 4px 0 var(--line); background: var(--surface); color: var(--fg); }
+.btn.primary { background: var(--fg); color: #fff; }
+.stickers { display: grid; grid-template-columns: repeat(auto-fit, minmax(4.5rem, 1fr)); gap: 8px; }
+.stickers div { border: var(--bw) solid var(--line); border-radius: var(--radius-btn); text-align: center; padding: 6px 4px; font-size: .8rem; font-weight: 700; }
+.stickers b { display: block; font: 700 1.6rem var(--font-display); }
+.ghost { border-style: dashed; color: var(--muted); text-align: center; padding: 28px 14px; }
+.toast { background: var(--fg); color: #fff; border-radius: var(--radius-btn); padding: 8px 12px; font-weight: 700; text-align: center; }
+.phone { max-width: 360px; }
+.tag { font: 700 .75rem var(--font-body); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; }
+
+table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+th, td { text-align: left; vertical-align: top; padding: 8px; border-bottom: 1px solid var(--rule); }
+th { font-family: var(--font-display); }
+.grid2 { display: grid; gap: 20px; }
+@media (min-width: 860px) { .grid2 { grid-template-columns: 1fr 1fr; } }
+section > ul, section > ol { margin: 0; padding-left: 1.2rem; }
+.q { background: #fff3cf; border: var(--bw) solid var(--line); border-radius: var(--radius-btn); padding: 12px 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Move and Talk tabs</h1>
+    <p class="lede">The brief for the speech area's request <code>2026-11-14-speech-move-talk-tabs.md</code> and spec section 15. Two tabs at the top of the parent app: <b>Move</b> keeps today's three games, and <b>Talk</b> is an empty <code>#talk</code> panel that the speech area fills with Talk with Bean. It follows the approved Crossing Guard look. Click through the flow below.</p>
+  </header>
+
+  <section>
+    <h2>User flow</h2>
+    <div class="flow" role="group" aria-label="Flow step">
+      <button data-step="first">1. First visit</button>
+      <button data-step="sneak">2. Say It to Sneak chosen</button>
+      <button data-step="talk">3. Talk tab</button>
+      <button data-step="round">4. Tab pressed mid-round</button>
+      <button data-step="stopped">5. Pressed again</button>
+      <button data-step="phone">6. Phone remote</button>
+    </div>
+    <p class="note" id="say"></p>
+  </section>
+
+  <section class="mock" id="mock" aria-label="Page mock">
+    <div class="tabs" role="tablist" aria-label="Activity">
+      <button role="tab" id="tab-move" aria-selected="true" aria-controls="panel-move" tabindex="0">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13.5 5.5a2 2 0 1 1 0-4 2 2 0 0 1 0 4ZM9.8 8.9 7 23h2.1l1.8-8 2.1 2v6h2v-7.5l-2.1-2 .6-3A7.3 7.3 0 0 0 19 13v-2a5 5 0 0 1-4.3-2.4l-1-1.6a2 2 0 0 0-2.6-.7L6 8.3V13h2V9.6l1.8-.7"/></svg>Move</button>
+      <button role="tab" id="tab-talk" aria-selected="false" aria-controls="panel-talk" tabindex="-1">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm3 6.5a1.5 1.5 0 1 0 0 .01Zm5 0a1.5 1.5 0 1 0 0 .01Zm5 0a1.5 1.5 0 1 0 0 .01Z"/></svg>Talk</button>
+    </div>
+    <div class="toast" id="toast" hidden></div>
+    <div class="cols">
+      <div style="display:grid;gap:var(--gap)">
+        <div class="card stage" id="stage"><div class="light"></div><h3 id="status">Let’s play Freeze Watcher</h3><p id="hint" style="margin:0;color:var(--muted)">Shared on both tabs</p></div>
+        <div class="row" id="controls"><button class="btn" id="m-start">Start</button><button class="btn">Stop</button></div>
+      </div>
+      <div style="display:grid;gap:var(--gap)">
+        <div id="panel-move" role="tabpanel" aria-labelledby="tab-move" style="display:grid;gap:var(--gap)">
+          <div class="card"><h3>Progress</h3><div class="stickers" id="stickers"></div></div>
+          <div class="card"><h3>Grown-up settings ▸</h3><p style="margin:0;color:var(--muted)">Game: Freeze Watcher, Say It to Sneak, Robot Says; movement and switch rows; Practice words only for Say It to Sneak.</p></div>
+        </div>
+        <div id="panel-talk" role="tabpanel" aria-labelledby="tab-talk" hidden>
+          <div class="card ghost"><code>&lt;section id="talk"&gt;</code><br>Empty for now. The speech area fills it with Talk with Bean: its game, settings and progress (Turns taken, Turns heard).</div>
+        </div>
+        <div class="card" style="background:var(--panel)"><h3>Robot <span class="tag">shared</span></h3><p style="margin:0;color:var(--muted)">Connect by cable or WiFi, pretend robot slider.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid2">
+    <section>
+      <h2>Users and goals</h2>
+      <ul>
+        <li><b>Grown-up</b> (parent, teacher, therapist): picks the activity, runs rounds, reads progress that means something for the chosen game.</li>
+        <li><b>Kid</b>: never touches the tabs; sees and hears only the stage.</li>
+        <li><b>Speech area</b> (teammates): needs a <code>#talk</code> element to mount Talk with Bean into.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Screens and states</h2>
+      <ul>
+        <li><b>Move tab</b> (default, first visit): today's page minus nothing; Word tries shows only for Say It to Sneak (already on <code>talk-with-bean</code>).</li>
+        <li><b>Talk tab</b>: stage, Robot card, and the empty <code>#talk</code> panel. Start is hidden until Talk with Bean exists, so nothing is shown that does not work.</li>
+        <li><b>Mid-round tab press</b>: same rule as Restart. The first press warns, a second press within 4 s stops the round and switches.</li>
+        <li><b>Phone remote</b>: shows the same tab as the laptop; pressing a tab on the phone switches the laptop.</li>
+        <li>Loading, empty and error: none new. Storage refused (private browsing) opens on Move every time.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Components</h2>
+      <table>
+        <tr><th>Piece</th><th>Built how</th></tr>
+        <tr><td>Tab bar</td><td><code>role="tablist"</code>, two <code>role="tab"</code> buttons with roving <code>tabindex</code>. Left and Right arrows, Home and End move and select. 52 px tall, ink outline, offset shadow like the buttons; chosen tab filled <code>--accent</code>.</td></tr>
+        <tr><td>Move panel</td><td><code>role="tabpanel"</code> wrapping the Progress and Grown-up settings cards.</td></tr>
+        <tr><td>Talk panel</td><td><code>role="tabpanel"</code> holding an empty <code>&lt;section id="talk"&gt;</code>.</td></tr>
+        <tr><td>Shared</td><td>Stage, Start, Stop, Step, the grown-up buttons and the Robot card stay outside the panels.</td></tr>
+      </table>
+    </section>
+    <section>
+      <h2>Data per screen</h2>
+      <table>
+        <tr><th>Data</th><th>Where</th></tr>
+        <tr><td>Chosen tab <code>tab: 'move' | 'talk'</code></td><td>Saved in <code>bean-settings</code> through <code>fixSettings()</code>; anything else becomes <code>'move'</code>.</td></tr>
+        <tr><td>Move progress</td><td><code>bean-progress</code> as today.</td></tr>
+        <tr><td>Talk progress</td><td>Owned by the speech area.</td></tr>
+        <tr><td>Phone remote</td><td>Already mirrors <code>settings</code>, so the tab rides along with no new relay message.</td></tr>
+      </table>
+    </section>
+    <section>
+      <h2>Design tokens</h2>
+      <p style="margin:0">No new tokens. Uses <code>--accent</code> #ffc83d for the chosen tab, <code>--surface</code> #fff for the other, <code>--line</code> #2b2140 for outline and shadow, <code>--radius-btn</code> 14px, <code>--bw</code> 2px, Fredoka 700 for the labels, and <code>--focus</code> #1a3fd6 for the focus ring. Contrast: #2b2140 on #ffc83d is 9.7:1, and on #fff it is 15.1:1.</p>
+    </section>
+    <section>
+      <h2>Not in this change</h2>
+      <ul>
+        <li>Talk with Bean itself, its settings and progress, and <code>POST /talk</code>: the speech area builds them.</li>
+        <li>Any animation on the tab switch.</li>
+      </ul>
+    </section>
+  </div>
+
+  <section class="q">
+    <h2>Open questions</h2>
+    <ol>
+      <li><b>Robot card position.</b> Today the order is Progress, Robot, Settings. A tab panel is one block, so Robot moves below Settings, under the panel (shown above). The other choice is Robot first, above the panel.</li>
+      <li><b>Mid-round tab press.</b> The proposal reuses the Restart rule (press twice within 4 s). The other choice: switch at once and stop the round, as the request's wording allows.</li>
+      <li><b>Start on the Talk tab.</b> The proposal hides it until Talk with Bean exists. The speech area then shows it.</li>
+    </ol>
+  </section>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const sticker = (n, label, bg) => `<div style="background:${bg}"><b>${n}</b>${label}</div>`;
+function tab(name) {
+  for (const t of ['move', 'talk']) {
+    const on = t === name;
+    $('tab-' + t).setAttribute('aria-selected', on);
+    $('tab-' + t).tabIndex = on ? 0 : -1;
+    $('panel-' + t).hidden = !on;
+  }
+  $('m-start').hidden = name === 'talk';
+  $('status').textContent = name === 'talk' ? 'Talk with Bean' : $('status').dataset.move || 'Let’s play Freeze Watcher';
+}
+const STEPS = {
+  first: ['Opens on Move. Freeze Watcher shows Rounds, Wins, Good freezes: no Word tries.', () => { tab('move'); stickers(false); }],
+  sneak: ['Say It to Sneak chosen in settings: the Word tries sticker appears.', () => { tab('move'); stickers(true); }],
+  talk: ['Talk tab: same stage and Robot card; the empty #talk panel; Start hidden until Talk with Bean exists. Choice is saved.', () => { tab('talk'); }],
+  round: ['A round is running and the grown-up presses Talk: nothing switches yet, a warning shows.', () => { tab('move'); stickers(false); $('stage').style.setProperty('--st', 'var(--go)'); $('status').textContent = 'Green light!'; toast('Press Talk again to stop the round'); }],
+  stopped: ['Second press within 4 s: the round stops (as Stop does) and the Talk tab opens.', () => { tab('talk'); }],
+  phone: ['The phone remote shows the laptop’s tab. Pressing a tab on the phone switches the laptop.', () => { tab('move'); stickers(false); $('mock').classList.add('phone'); }],
+};
+function stickers(words) {
+  $('stickers').innerHTML = sticker(1, 'Rounds', '#ffeeb8') + sticker(0, 'Wins', '#e5d6f5') + sticker(2, 'Good freezes', '#c5ecd6') + (words ? sticker(3, 'Word tries', '#c7d2f7') : '');
+}
+function toast(text) { $('toast').textContent = text; $('toast').hidden = !text; }
+function go(step) {
+  toast(''); $('mock').classList.remove('phone'); $('stage').style.removeProperty('--st');
+  STEPS[step][1]();
+  $('say').textContent = STEPS[step][0];
+  document.querySelectorAll('[data-step]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.step === step));
+}
+document.querySelectorAll('[data-step]').forEach((b) => b.addEventListener('click', () => go(b.dataset.step)));
+// The mock's own tabs work too, with arrow keys.
+const tabs = [...document.querySelectorAll('[role="tab"]')];
+tabs.forEach((t, i) => {
+  t.addEventListener('click', () => tab(t.id.slice(4)));
+  t.addEventListener('keydown', (e) => {
+    const j = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+    if (j == null) return;
+    e.preventDefault();
+    const next = tabs[(j + tabs.length) % tabs.length];
+    next.focus(); tab(next.id.slice(4));
+  });
+});
+go('first');
+</script>
+</body>
+</html>
