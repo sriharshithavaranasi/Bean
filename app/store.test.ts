@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { fixSettings, load, roundSettings, type Settings } from './store.ts';
 import { DEFAULTS } from './game/freeze-watcher.ts';
 
-const spec = { greenMinMs: 3000, greenMaxMs: 7000, settleMs: 1000, lookMs: 2500, leewayCm: 6, winCm: 12, game: 'freeze', tab: 'move', words: ['rabbit', 'red', 'robot', 'run'] };
+const spec = { greenMinMs: 3000, greenMaxMs: 7000, settleMs: 1000, lookMs: 2500, leewayCm: 15, winCm: 12, game: 'freeze', tab: 'move', words: ['rabbit', 'red', 'robot', 'run'] };
 
 test('nothing saved reads as the spec defaults', () => {
   assert.deepEqual(fixSettings(load('bean-settings', {})), spec);

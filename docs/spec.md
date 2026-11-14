@@ -57,7 +57,7 @@ Not yet verified on the real car (ticket "Flash stock firmware"):
 
 ## 5. Red Light, Green Light (core game)
 
-Set-up: tape a straight lane about 2 m long in front of the car with a start line at the far end. The kid waits at the start line. Pressing Start records the start distance.
+Set-up: tape a straight lane about 1.4 m long in front of the car (the sensor reads up to 150 cm) with a start line at the far end. The kid waits at the start line. Pressing Start records the start distance.
 
 | State | Robot | App | Leaves when |
 | --- | --- | --- | --- |
@@ -71,7 +71,7 @@ Catching movement, during Red:
 
 1. Ignore the "time to freeze" setting (1 s by default). The servo is settling and the kid is still stopping.
 2. Read the distance about every 100 ms for the rest of the look time.
-3. Drop readings of 0 or beyond the lane length.
+3. Drop readings of 0, and of 150 or more: the stock firmware caps at 150 and sends 150 when it hears no echo.
 4. Compare the median of the first three readings with the median of the last three. The kid is caught if the distance shrank by more than the leeway.
 5. With fewer than four good readings, the kid is not caught. Standing still must never be caught.
 
@@ -115,11 +115,11 @@ Labels are in plain words, as shown. Settings are saved on the device.
 | Longest green light | 7 s |
 | Time to freeze before the robot checks | 1 s |
 | How long the robot stares | 2.5 s |
-| Wiggle room before caught | 6 cm (replace with the measured value from the calibration ticket) |
+| Wiggle room before caught | 15 cm (still readings on the car, 2026-11-14: the old 6 cm with 150s kept falsely caught 9 of 43 Red lights; 15 cm with 150s dropped caught 0; recheck with a person, #3) |
 | Win when closer than | 12 cm |
 | Practice words (Say It to Sneak only) | rabbit, red, robot, run |
 
-Lane length stays at 200 cm and is not shown to parents.
+Lane length stays at 150 cm, the sensor's limit, and is not shown to parents.
 
 ## 10. Progress (P1)
 

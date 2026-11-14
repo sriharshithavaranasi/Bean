@@ -13,7 +13,7 @@ The full design is in [docs/spec.md](docs/spec.md).
 - The ELEGOO Smart Robot Car Kit V4.0, built, with charged batteries.
 - A laptop with Chrome or Edge, and [Node.js](https://nodejs.org) 22.18 or newer.
 - The USB cable from the kit.
-- Tape, and about 2 m of clear floor.
+- Tape, and about 1.5 m of clear floor.
 - Optional: a phone on the same WiFi as the laptop, to run the game from across the room.
 
 No car yet? Skip to step 4. The app plays with a pretend robot: a slider stands in for the distance sensor.
@@ -34,7 +34,7 @@ Bean uses ELEGOO's own firmware, so there is no Arduino code to write. A new car
 
 1. Plug the car into the laptop with the USB cable and switch the car on.
 2. Put the car at one end of the floor, facing down the lane.
-3. Tape a straight lane about 2 m long in front of the car, with a start line at the far end.
+3. Tape a straight lane about 1.4 m long in front of the car, with a start line at the far end. The sensor reads up to 150 cm.
 
 ### 3. Learn the limits
 

@@ -69,7 +69,7 @@ test('a 0 reading (sensor saw nothing) does not win', () => {
 test('defaults match the spec, section 9', () => {
   assert.deepEqual(
     { settleMs: DEFAULTS.settleMs, lookMs: DEFAULTS.lookMs, leewayCm: DEFAULTS.leewayCm, winCm: DEFAULTS.winCm },
-    { settleMs: 1000, lookMs: 2500, leewayCm: 6, winCm: 12 },
+    { settleMs: 1000, lookMs: 2500, leewayCm: 15, winCm: 12 },
   );
 });
 

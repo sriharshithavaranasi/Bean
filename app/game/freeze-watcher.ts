@@ -8,9 +8,9 @@ export const DEFAULTS = {
   greenMaxMs: 7000,
   lookMs: 2500,
   settleMs: 1000, // head is still turning and the kid is still stopping
-  leewayCm: 6,
+  leewayCm: 15, // still car readings: 0 false catches in 43 Red lights; the old 6 with 150s kept caught 9 (issue #3)
   winCm: 12,
-  laneCm: 200,
+  laneCm: 150, // the sensor reads up to 150 cm
   caughtMs: 8000, // the round never gets stuck waiting for the kid to go back
   gate: 'off' as Gate, // practice word before Green: 'off' or 'every' (Say It to Sneak: every Green)
 };
