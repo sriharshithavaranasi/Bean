@@ -139,9 +139,7 @@ input[type="range"]::-moz-range-track { box-sizing: border-box; height: 18px; bo
 input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; box-sizing: border-box; width: 30px; height: 30px; margin-top: -8px; border-radius: 50%; background: var(--accent); border: 2px solid var(--line); box-shadow: 0 3px 0 var(--line); }
 input[type="range"]::-moz-range-thumb { box-sizing: border-box; width: 30px; height: 30px; border-radius: 50%; background: var(--accent); border: 2px solid var(--line); box-shadow: 0 3px 0 var(--line); }
 
-/* On or off setting, and the practice word list. */
-.toggle { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 12px 0; border-top: 1px solid var(--rule); font-weight: 700; cursor: pointer; }
-.toggle input { flex: none; width: 26px; height: 26px; margin: 0; accent-color: var(--fg); }
+/* The practice word list. */
 .words { display: grid; gap: 6px; padding: 12px 0; border-top: 1px solid var(--rule); }
 .words label { font-weight: 700; }
 .words input { font: 700 1.0625rem/1.2 var(--font-body); min-height: 48px; width: 100%; padding: 8px 12px; color: var(--fg); background: var(--surface); border: var(--bw) solid var(--line); border-radius: var(--radius-btn); }

@@ -91,7 +91,7 @@ How the kid moves:
 Games:
 
 - **Freeze Watcher (P0).** Section 5.
-- **Say It to Sneak (P1).** Freeze Watcher with the word gate always on and a fixed 3 second Green light. Every Green light is earned with a practice word.
+- **Say It to Sneak (P1).** Freeze Watcher with a practice word before every Green light and a fixed 3 second Green light. Every Green light is earned with a practice word.
 - **Robot Says (P1).** Eight commands, with a score out of 8. The robot faces the kid the whole time. Each command is spoken with or without "Robot says" (about 7 in 10 are real; "freeze" is always real). The time to do each command is read before every command, so a grown-up can change it during the game.
 
 | Command | Checked by |
@@ -105,7 +105,7 @@ A real command done scores a point. A fake command ignored scores a point. A fak
 
 ## 7. Speech
 
-Web Speech API in Chrome. Recognition is weak on kids' voices, so the Good try button is always on screen whenever the app is listening. The word gate in Freeze Watcher can be switched off in settings.
+Web Speech API in Chrome. Recognition is weak on kids' voices, so the Good try button is always on screen whenever the app is listening. Only Say It to Sneak listens for words; Freeze Watcher and Robot Says never ask the kid to speak.
 
 ## 8. Signals
 
@@ -137,14 +137,13 @@ Labels are in plain words, as shown. Settings are saved on the device.
 | Win when closer than | 12 cm |
 | Switch presses to win | 10 |
 | Time to do each command (Robot Says only) | 3 s, from 1 to 15 s |
-| Say a practice word before each green light | off |
-| Practice words | rabbit, red, robot, run |
+| Practice words (Say It to Sneak only) | rabbit, red, robot, run |
 
 Lane length stays at 200 cm and is not shown to parents.
 
 ## 10. Progress (P1)
 
-Four totals on the main screen: Rounds, Wins, Good freezes, Word tries. Times caught is counted but not shown, so the screen stays encouraging. Finishing all eight Robot Says commands counts as a win, whatever the score. One Reset button that asks first. Totals are saved on the device.
+Four totals on the main screen: Rounds, Wins, Good freezes, Word tries (shown only for Say It to Sneak). Times caught is counted but not shown, so the screen stays encouraging. Finishing all eight Robot Says commands counts as a win, whatever the score. One Reset button that asks first. Totals are saved on the device.
 
 ## 11. Code layout
 
@@ -243,13 +242,13 @@ Good try and They did it end the kid's turn at any time, as in section 7. Stop e
 
 **Bean's rules (system instruction).** Bean is a friendly robot helping a young child practise talking. One or two short sentences, simple words, always ending with an easy question or invitation to talk. Topics: animals, colours, food, games, feelings, the game they are playing. Never asks for personal information beyond the first name the grown-up typed. Never talks about scary, unsafe or grown-up topics; steers back to the game instead. Never says it is a person.
 
-**Layout: Move and Talk tabs.** Talk with Bean is a different activity from Red Light, Green Light, so the page gets two tabs at the top. Each tab shows only its own games, settings and progress, so no counter is shown that means nothing for the game being played (today "Word tries" shows in Freeze Watcher even with practice words off).
+**Layout: Move and Talk tabs.** Talk with Bean is a different activity from Red Light, Green Light, so the page gets two tabs at the top. Each tab shows only its own games, settings and progress, so no counter is shown that means nothing for the game being played.
 
 | | Move tab | Talk tab |
 | --- | --- | --- |
 | Games | Freeze Watcher, Say It to Sneak, Robot Says | Talk with Bean |
-| Progress | Rounds, Wins, Good freezes; Word tries only when the chosen game uses practice words (Say It to Sneak, or the word gate on) | Turns taken, Turns heard by the microphone |
-| Settings | Section 9 rows for movement, the switch and the word gate | Script, kid's first name, wait for an answer, AI chat, practice words |
+| Progress | Rounds, Wins, Good freezes; Word tries only for Say It to Sneak | Turns taken, Turns heard by the microphone |
+| Settings | Section 9 rows for movement and the switch | Script, kid's first name, wait for an answer, AI chat, practice words |
 | Shared | Stage, Start, Stop, Good try, They did it, the Robot card | same |
 
 Tabs are a real tab list (`role="tablist"`, arrow keys move between tabs, the chosen tab is remembered on the device). Switching tab during a round stops the round first, as Start does. The phone remote copies the chosen tab.

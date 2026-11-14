@@ -44,7 +44,7 @@ const rulers = {};
 function settings() {
   const raw = {
     input: $('s-switch').checked ? 'switch' : 'body', game: $('s-says').checked ? 'says' : $('s-sneak').checked ? 'sneak' : 'freeze',
-    wordGate: $('s-wordGate').checked, words: $('s-words').value,
+    words: $('s-words').value,
   };
   for (const [id, [key, unit]] of Object.entries(FIELDS)) {
     const v = $(`s-${id}`).value;
@@ -60,10 +60,9 @@ function showSettings(s) {
   // Only the settings the chosen game uses are shown; the hidden ones keep their values.
   const unused = { freeze: ['doIt'], sneak: ['greenMin', 'greenMax', 'doIt'], says: ['greenMin', 'greenMax', 'settle', 'look', 'winCm', 'steps'] }[s.game];
   for (const id of Object.keys(FIELDS)) $(`s-${id}`).closest('.field').hidden = unused.includes(id) || (id === 'steps' && s.input !== 'switch');
-  $('s-wordGate').closest('.toggle').hidden = s.game !== 'freeze';
-  $('s-words').closest('.words').hidden = s.game === 'says';
+  // Only Say It to Sneak asks for practice words.
+  $('s-words').closest('.words').hidden = $('t-words').parentElement.hidden = s.game !== 'sneak';
   $(`s-${s.game}`).checked = true;
-  $('s-wordGate').checked = s.wordGate;
   $('s-words').value = s.words.join(', ');
 }
 function settingChanged(s = settings()) {
@@ -95,7 +94,7 @@ for (const [id, [key, unit]] of Object.entries(FIELDS)) {
   ruler.addEventListener('input', () => ((input.value = ruler.value), changed()));
   input.addEventListener('change', () => settingChanged());
 }
-for (const id of ['s-body', 's-switch', 's-freeze', 's-sneak', 's-says', 's-wordGate', 's-words']) $(id).addEventListener('change', () => settingChanged());
+for (const id of ['s-body', 's-switch', 's-freeze', 's-sneak', 's-says', 's-words']) $(id).addEventListener('change', () => settingChanged());
 showSettings(fixSettings(load('bean-settings', {})));
 if (matchMedia('(min-width: 860px)').matches) $('settings').open = true;
 
