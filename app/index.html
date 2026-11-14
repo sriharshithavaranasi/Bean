@@ -17,7 +17,13 @@
         <h1 id="status" role="status" aria-live="assertive">Bean is ready</h1>
         <p id="hint"></p>
         <p id="readout">Distance: <output id="reading">none yet</output></p>
+        <div id="track" hidden>
+          <div id="track-cells" aria-hidden="true"></div>
+          <p id="track-text"></p>
+        </div>
       </section>
+
+      <button id="step" class="primary" hidden>Step</button>
 
       <div id="controls">
         <button id="start" class="primary">Start</button>
@@ -66,10 +72,12 @@
           <label><input type="radio" name="s-game" disabled> Say It to Sneak <small>soon</small></label>
           <label><input type="radio" name="s-game" disabled> Robot Says <small>soon</small></label>
         </fieldset>
-        <fieldset class="choice" hidden><legend>How the kid moves</legend>
-          <label><input type="radio" name="s-input" checked> Moves their body</label>
-          <label><input type="radio" name="s-input" disabled> Presses a switch <small>soon</small></label>
+        <fieldset class="choice"><legend>How the kid moves</legend>
+          <label><input id="s-body" type="radio" name="s-input" checked> Moves their body</label>
+          <label><input id="s-switch" type="radio" name="s-input"> Presses a switch</label>
         </fieldset>
+        <div class="field"><label for="s-steps">Switch presses to win</label>
+          <span class="num"><span class="val"><input id="s-steps" type="number" inputmode="numeric"><span class="unit" aria-hidden="true">steps</span></span></span></div>
         <div class="field"><label for="s-greenMin">Shortest green light <span class="vh">(seconds)</span></label>
           <span class="num"><span class="val"><input id="s-greenMin" type="number" inputmode="decimal" step="0.5"><span class="unit" aria-hidden="true">sec</span></span></span></div>
         <div class="field"><label for="s-greenMax">Longest green light <span class="vh">(seconds)</span></label>

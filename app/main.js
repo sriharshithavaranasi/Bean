@@ -1,4 +1,5 @@
-import { createGame, DEFAULTS } from './game/freeze-watcher.js';
+import { createGame } from './game/freeze-watcher.js';
+import { createSteps } from './game/steps.js';
 import { makeMockRobot } from './robot-mock.js';
 import { connectSerial } from './robot-serial.js';
 import { playCue, praise, silence, unlockAudio } from './signals.js';
@@ -20,11 +21,11 @@ const LIGHT = { green: [0, 255, 0], red: [255, 0, 0], caught: [255, 80, 0], win:
 // field id -> [game setting, how many of the game's units one of the field's units is]
 const FIELDS = {
   greenMin: ['greenMinMs', 1000], greenMax: ['greenMaxMs', 1000], settle: ['settleMs', 1000],
-  look: ['lookMs', 1000], leewayCm: ['leewayCm', 1], winCm: ['winCm', 1],
+  look: ['lookMs', 1000], leewayCm: ['leewayCm', 1], winCm: ['winCm', 1], steps: ['steps', 1],
 };
 const rulers = {};
 function settings() {
-  const raw = {};
+  const raw = { input: $('s-switch').checked ? 'switch' : 'body' };
   for (const [id, [key, unit]] of Object.entries(FIELDS)) {
     const v = $(`s-${id}`).value;
     raw[key] = v === '' ? null : Math.round(v * unit);
@@ -34,6 +35,16 @@ function settings() {
 // The boxes show what the next round will really use: a bad value is fixed where the grown-up typed it.
 function showSettings(s) {
   for (const [id, [key, unit]] of Object.entries(FIELDS)) $(`s-${id}`).value = rulers[id].value = s[key] / unit;
+  $('s-switch').checked = s.input === 'switch';
+  $('s-body').checked = s.input !== 'switch';
+  $('s-steps').closest('.field').hidden = s.input !== 'switch';
+}
+function settingChanged() {
+  const s = settings();
+  showSettings(s);
+  save('bean-settings', s);
+  drawTrack();
+  if (shown === 'idle') show('idle');
 }
 for (const [id, [key, unit]] of Object.entries(FIELDS)) {
   const input = $(`s-${id}`);
@@ -55,12 +66,9 @@ for (const [id, [key, unit]] of Object.entries(FIELDS)) {
   num.prepend(stepper('−', 'Less', () => input.stepDown()));
   num.append(stepper('+', 'More', () => input.stepUp()), ruler);
   ruler.addEventListener('input', () => ((input.value = ruler.value), changed()));
-  input.addEventListener('change', () => {
-    const s = settings();
-    showSettings(s);
-    save('bean-settings', s);
-  });
+  input.addEventListener('change', settingChanged);
 }
+for (const id of ['s-body', 's-switch']) $(id).addEventListener('change', settingChanged);
 showSettings(fixSettings(load('bean-settings', {})));
 if (matchMedia('(min-width: 860px)').matches) $('settings').open = true;
 
@@ -107,7 +115,61 @@ let shown = 'idle';
 let chain = Promise.resolve();
 const queued = (job) => (chain = chain.then(job).catch((e) => console.error(e)));
 
-function show(phase, hint = SCREEN[phase].hint) {
+// ---------- switch input ----------
+let wonAt = 0;
+let steps = null; // the kid's piece on the track, while a round is played from a switch
+const switchOn = () => !!steps || $('s-switch').checked;
+const SWITCH_HINT = { idle: 'Press Start. Then press the switch when the light is green.', caught: 'Your piece is back at the start.' };
+function drawTrack() {
+  const on = switchOn();
+  $('track').hidden = $('step').hidden = !on;
+  $('readout').hidden = on;
+  const at = steps ? steps.at : 0;
+  const total = steps ? steps.total : Number($('s-steps').value);
+  $('track-cells').replaceChildren(
+    ...Array.from({ length: total }, (_, i) => Object.assign(document.createElement('span'), { className: i < at ? 'on' : '' })),
+  );
+  $('track-text').textContent = `Step ${at} of ${total}`;
+}
+function press() {
+  if (!steps) return;
+  const now = performance.now();
+  const what = steps.press(game.phase, game.checking(now));
+  if (what === 'caught') game.caught(now);
+  if (what === 'win') {
+    game.win();
+    wonAt = now;
+  }
+  if (!what) return;
+  drawTrack();
+  // The tick may already have shown this phase; it never shows a win it did not decide.
+  queued(async () => {
+    if (game.phase !== shown && game.phase !== 'idle') await enter(game.phase);
+  });
+}
+// The switch is Space, Enter or the Step button. During a round those keys step instead of pressing Start;
+// they still work as usual in a form field and on the other buttons, so Stop stays reachable by keyboard.
+// For 2 seconds after a win they do nothing, so a kid still pressing does not skip the win by hitting Play again.
+const isSwitchKey = (e) =>
+  steps && shown !== 'idle' && (shown !== 'win' || performance.now() - wonAt < 2000) && (e.key === ' ' || e.key === 'Enter') &&
+  !e.target.closest('input, select, textarea, summary, button:not(#start, #step)');
+addEventListener('keydown', (e) => {
+  if (!isSwitchKey(e)) return;
+  e.preventDefault();
+  press();
+});
+addEventListener('keyup', (e) => {
+  if (e.key !== ' ' && e.key !== 'Enter') return;
+  if (isSwitchKey(e)) e.preventDefault(); // Space clicks a focused button on key up
+  steps?.release();
+});
+$('step').addEventListener('click', (e) => {
+  if (e.detail === 0) return; // keyboard click: the key handlers above already counted it
+  press();
+  steps?.release();
+});
+
+function show(phase, hint = (switchOn() && SWITCH_HINT[phase]) || SCREEN[phase].hint) {
   shown = phase;
   document.body.dataset.phase = phase;
   $('status').textContent = SCREEN[phase].status;
@@ -138,7 +200,7 @@ setInterval(() => {
   ticking = true;
   queued(async () => {
     // The head points away during Green, so there is nothing to measure.
-    const cm = game.phase === 'green' ? null : await robot.distanceCm();
+    const cm = steps || game.phase === 'green' ? null : await robot.distanceCm();
     if (cm != null) $('reading').textContent = `${cm} cm`;
     const phase = game.tick(performance.now(), cm);
     if (phase !== shown && phase !== 'idle') await enter(phase);
@@ -147,6 +209,8 @@ setInterval(() => {
 
 async function stopRound(hint) {
   game.stop();
+  steps = null;
+  drawTrack();
   silence();
   show('idle', hint);
   await robot.lookAtKid();
@@ -159,14 +223,18 @@ $('start').addEventListener('click', () => {
   unlockAudio();
   queued(async () => {
     await stopRound(); // Start during a round ends it first
-    const startCm = await robot.distanceCm();
-    if (!startCm) {
+    const s = settings();
+    // A switch round needs no distance: the piece on the track is the kid.
+    const startCm = s.input === 'switch' ? 0 : await robot.distanceCm();
+    if (s.input !== 'switch' && !startCm) {
       show('idle', 'Bean cannot see you. Stand in the lane, facing Bean, and press Start again.');
       return;
     }
-    $('reading').textContent = `${startCm} cm`;
+    if (s.input === 'switch') steps = createSteps(s.steps);
+    else $('reading').textContent = `${startCm} cm`;
+    drawTrack();
     bump('rounds');
-    game = createGame(settings());
+    game = createGame(s);
     game.start(performance.now(), startCm);
     await enter('green');
   });
@@ -198,4 +266,5 @@ $('connect').addEventListener('click', async () => {
   }
 });
 
+drawTrack();
 show('idle');

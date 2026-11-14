@@ -3,7 +3,13 @@ import assert from 'node:assert/strict';
 import { fixSettings, load } from './store.js';
 import { DEFAULTS } from './game/freeze-watcher.js';
 
-const spec = { greenMinMs: 3000, greenMaxMs: 7000, settleMs: 1000, lookMs: 2500, leewayCm: 6, winCm: 12 };
+const spec = { greenMinMs: 3000, greenMaxMs: 7000, settleMs: 1000, lookMs: 2500, leewayCm: 6, winCm: 12, steps: 10, input: 'body' };
+
+test('how the kid moves is body unless switch is saved', () => {
+  assert.equal(fixSettings({ input: 'switch' }).input, 'switch');
+  assert.equal(fixSettings({ input: 'jetpack' }).input, 'body');
+  assert.equal(fixSettings({ steps: 4.6 }).steps, 5);
+});
 
 test('nothing saved reads as the spec defaults', () => {
   assert.deepEqual(fixSettings(load('bean-settings', {})), spec);

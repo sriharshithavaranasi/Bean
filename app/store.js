@@ -20,7 +20,7 @@ export function save(key, value) {
 // Lowest and highest value a grown-up may set, in the game's own units.
 export const LIMITS = {
   greenMinMs: [1000, 30000], greenMaxMs: [1000, 30000], settleMs: [200, 5000],
-  lookMs: [1000, 10000], leewayCm: [2, 50], winCm: [5, 50],
+  lookMs: [1000, 10000], leewayCm: [2, 50], winCm: [5, 50], steps: [2, 30],
 };
 
 // Fixes bad values instead of breaking the round: a missing or non-numeric value becomes the default,
@@ -32,5 +32,7 @@ export function fixSettings(raw = {}) {
     s[key] = Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : DEFAULTS[key];
   }
   s.greenMaxMs = Math.max(s.greenMaxMs, s.greenMinMs);
+  s.steps = Math.round(s.steps);
+  s.input = raw.input === 'switch' ? 'switch' : 'body'; // how the kid moves
   return s;
 }

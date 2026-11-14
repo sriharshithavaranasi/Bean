@@ -9,6 +9,7 @@ export const DEFAULTS = {
   winCm: 12,
   laneCm: 200,
   caughtMs: 8000, // the round never gets stuck waiting for the kid to go back
+  steps: 10, // switch presses to win
 };
 
 // Phases: idle, green, red, caught, win. Time and random are passed in so tests control them.
@@ -37,16 +38,25 @@ export function createGame(settings = DEFAULTS, random = Math.random) {
       else {
         if (cm != null) game.readings.push(cm);
         if (now - game.redStart >= s.lookMs) {
-          if (moved(game.readings, s)) {
-            game.phase = 'caught';
-            game.until = now + s.caughtMs;
-          } else green(now);
+          if (moved(game.readings, s)) game.caught(now);
+          else green(now);
         }
       }
-    } else if (game.phase === 'caught' && (cm >= game.startCm - s.leewayCm || now >= game.until)) {
+    } else if (game.phase === 'caught' && ((cm != null && cm >= game.startCm - s.leewayCm) || now >= game.until)) {
       green(now);
     }
     return game.phase;
+  };
+
+  game.caught = (now) => {
+    game.phase = 'caught';
+    game.until = now + s.caughtMs;
+  };
+
+  // Switch input (steps.js) decides caught and win with a press instead of a distance.
+  game.checking = (now) => game.phase === 'red' && now - game.redStart >= s.settleMs;
+  game.win = () => {
+    game.phase = 'win';
   };
 
   game.stop = () => {
