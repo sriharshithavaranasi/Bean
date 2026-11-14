@@ -243,6 +243,17 @@ Good try and They did it end the kid's turn at any time, as in section 7. Stop e
 
 **Bean's rules (system instruction).** Bean is a friendly robot helping a young child practise talking. One or two short sentences, simple words, always ending with an easy question or invitation to talk. Topics: animals, colours, food, games, feelings, the game they are playing. Never asks for personal information beyond the first name the grown-up typed. Never talks about scary, unsafe or grown-up topics; steers back to the game instead. Never says it is a person.
 
+**Layout: Move and Talk tabs.** Talk with Bean is a different activity from Red Light, Green Light, so the page gets two tabs at the top. Each tab shows only its own games, settings and progress, so no counter is shown that means nothing for the game being played (today "Word tries" shows in Freeze Watcher even with practice words off).
+
+| | Move tab | Talk tab |
+| --- | --- | --- |
+| Games | Freeze Watcher, Say It to Sneak, Robot Says | Talk with Bean |
+| Progress | Rounds, Wins, Good freezes; Word tries only when the chosen game uses practice words (Say It to Sneak, or the word gate on) | Turns taken, Turns heard by the microphone |
+| Settings | Section 9 rows for movement, the switch and the word gate | Script, kid's first name, wait for an answer, AI chat, practice words |
+| Shared | Stage, Start, Stop, Good try, They did it, the Robot card | same |
+
+Tabs are a real tab list (`role="tablist"`, arrow keys move between tabs, the chosen tab is remembered on the device). Switching tab during a round stops the round first, as Start does. The phone remote copies the chosen tab.
+
 **Settings (added to section 9).**
 
 | Setting | Choices or default |
