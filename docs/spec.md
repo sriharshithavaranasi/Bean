@@ -14,7 +14,7 @@ Priorities are used on every ticket.
 | --- | --- | --- |
 | P0 | Needed for the demo | Red Light, Green Light on the real car, with music, lights and win detection, run from the parent app (section 13) |
 | P1 | Makes the pitch true | Parent app on a phone, speech practice, Say It to Sneak, grown-up settings, progress, multi-sensory signals |
-| P2 | Stretch | Gyro spin, push button, buzzer, custom firmware |
+| P2 | Stretch | Gyro spin, custom firmware |
 
 Out of scope: the camera, accounts, a server, a database, a native phone app.
 
@@ -57,7 +57,7 @@ Not yet verified on the real car (ticket "Flash stock firmware"):
 
 ## 5. Red Light, Green Light (core game)
 
-Set-up: tape a straight lane about 1.4 m long in front of the car (the sensor reads up to 150 cm) with a start line at the far end. The kid waits at the start line. Pressing Start records the start distance.
+Set-up: tape a straight lane about 1 m long in front of the car (the sensor reads a person reliably to about 1 m, #3) with a start line at the far end. The kid waits at the start line. Pressing Start records the start distance.
 
 | State | Robot | App | Leaves when |
 | --- | --- | --- | --- |
