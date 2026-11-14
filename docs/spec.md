@@ -233,7 +233,7 @@ Proposed by the speech area. It changes section 2 ("Out of scope: the camera"), 
 | --- | --- |
 | Bean watches with | The distance sensor, or the webcam (shown when a camera is found) |
 | Camera | Default camera, or a named one |
-| Webcam wiggle room | 0.2 of torso length, from 0.05 to 0.6 (replace with the value tuned on `app/watch.html`) |
+| Webcam wiggle room | 0.15 of torso length, from 0.05 to 0.6. Tuned on `app/watch.html` with the Logitech: standing still drifted 0.00 to 0.11, real moves 0.20 to 1.49 |
 
 **Privacy.** Frames are processed in the browser on the laptop and are never recorded, stored or sent. The model and its files are in `app/vendor/mediapipe/`, so it needs no internet. The camera turns off when the round stops. The pitch says so.
 
