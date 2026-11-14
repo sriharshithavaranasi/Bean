@@ -7,6 +7,7 @@ import { connectWifi } from './robot-wifi.js';
 import { playCue, praise, say, silence, unlockAudio } from './signals.js';
 import { canHear, listenFor, stopListening } from './speech.js';
 import { fixSettings, LIMITS, load, roundSettings, save } from './store.js';
+import { playTalk, stopTalk } from './talk-play.js';
 
 const $ = (id) => document.getElementById(id);
 // A phone opens the laptop's address with ?code=: it is then only a remote for the game running on the laptop.
@@ -231,13 +232,11 @@ const tabWarn = (tab, label = '') => {
 };
 const TALK_GLYPH = $('tab-talk').querySelector('path').getAttribute('d'); // the speech bubble on the Talk tab
 const idleStatus = () => (talking() ? 'Talk with Bean' : `Let’s play ${chosenGame()}`);
-function show(phase, hint = talking() ? 'Coming soon: Bean takes turns talking with your kid.' : (switchOn() && SWITCH_HINT[phase]) || SCREEN[phase].hint, status = phase === 'idle' ? idleStatus() : SCREEN[phase].status) {
+function show(phase, hint = talking() ? 'Press Start, then take turns talking with Bean.' : (switchOn() && SWITCH_HINT[phase]) || SCREEN[phase].hint, status = phase === 'idle' ? idleStatus() : SCREEN[phase].status) {
   shown = phase;
   document.body.dataset.phase = phase;
   $('status').textContent = status;
   $('hint').textContent = hint;
-  // shortcut: Talk with Bean is not built yet, the speech area fills it in and shows Start and Stop again.
-  $('controls').hidden = talking();
   $('glyph-path').setAttribute('d', phase === 'idle' && talking() ? TALK_GLYPH : SCREEN[phase].glyph);
   if (phase === 'idle' || phase === 'win') {
     restartUntil = tabUntil = 0;
@@ -383,6 +382,7 @@ async function stopRound(hint) {
   game.stop();
   steps = null;
   saysRun++;
+  stopTalk();
   saysOn = false;
   $('timer').hidden = true;
   answer(null);
@@ -397,10 +397,15 @@ async function stopRound(hint) {
 $('stop').addEventListener('click', () => queued(() => stopRound()));
 
 function start() {
-  if (talking()) return; // shortcut: Talk with Bean is not built yet, the speech area fills it in
   unlockAudio();
   queued(async () => {
     await stopRound(); // Start during a round ends it first
+    if (talking()) {
+      await robot.lookAtKid(); // Bean faces the kid the whole talk
+      // not awaited: Stop must be able to run while it plays
+      playTalk({ show, say, light: (rgb) => queued(() => robot.setLight(...rgb)), goodtry: $('goodtry') });
+      return;
+    }
     const s = (round = roundSettings(settings()));
     if (s.game === 'says') {
       if (s.input === 'switch') steps = createSteps(1); // only so the switch keys and the Step button are live

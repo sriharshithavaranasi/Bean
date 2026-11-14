@@ -267,6 +267,8 @@ Tabs are a real tab list (`role="tablist"`, arrow keys move between tabs, the ch
 
 **Progress (section 10).** Adds turns taken and turns the microphone heard by itself.
 
-**Code.** `app/game/talk.js` (pure turn logic and the scripts, with tests), `speech.js` gains a listener that returns what was heard, `/talk` in `scripts/serve.mjs` (with a test), and the hookup in `main.js` (a comms request to its owner).
+**Code.** `app/game/talk.js` (pure: the three scripts, Bean's replies and `fixTalk` for saved settings, with tests), `listenAny` in `app/speech.js` (any answer, Good try or silence, with tests on a fake microphone), and `app/talk-play.js` (the Talk tab's settings, progress and turn loop). `main.js` starts it from Start on the Talk tab and ends it from `stopRound`. Settings are saved as `bean-talk`, progress as `bean-talk-progress` (Talks, Turns taken, Heard by the mic).
+
+**Built so far.** Scripted mode. AI chat (`/talk` on `scripts/serve.mjs` with Gemini) is the next step and is not built yet.
 
 **Hardware.** Any microphone the laptop sees works: the Logitech webcam's microphone mounted on the car's body, facing the lane, is the plan. Keep the speaker away from the microphone so Bean does not hear itself.

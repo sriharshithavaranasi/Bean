@@ -51,3 +51,56 @@ export function listenFor(words, button, ready = Promise.resolve()) {
     });
   });
 }
+
+// Talk with Bean (spec, section 15): listens for any answer, not for set words.
+// Resolves the words heard, '' when Good try is pressed, or null when nothing was said within `ms`
+// (counted from `ready`, so Bean's own line is not timed) or stopListening() was called.
+// shortcut: repeats listenFor's microphone handling so Say It to Sneak stays untouched; merge them once both are settled.
+export function listenAny(button, ready = Promise.resolve(), ms = 6000) {
+  end();
+  return new Promise((resolve) => {
+    let rec;
+    let timer;
+    const done = (said) => {
+      end = () => {};
+      clearTimeout(timer);
+      button.removeEventListener('click', accept);
+      if (rec) {
+        rec.onend = null;
+        rec.abort();
+      }
+      resolve(said);
+    };
+    const accept = () => done('');
+    const mine = (end = () => done(null));
+    const wait = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => done(null), ms);
+    };
+    button.addEventListener('click', accept);
+    ready.then(() => {
+      if (end !== mine) return; // already over
+      wait();
+      if (!Recognition) return; // no microphone: Good try or the wait still ends the turn
+      rec = new Recognition();
+      Object.assign(rec, { lang: 'en-US', continuous: true, interimResults: false, maxAlternatives: 1 });
+      rec.onspeechstart = wait; // the kid started talking: give them the full wait to finish
+      rec.onresult = (e) => {
+        const said = [...e.results].filter((r) => r.isFinal).map((r) => r[0].transcript).join(' ').trim();
+        if (said) done(said);
+      };
+      const listen = () => {
+        try {
+          rec.start();
+        } catch {
+          // already started
+        }
+      };
+      rec.onend = listen; // Chrome stops after a silence: keep listening
+      rec.onerror = (e) => {
+        if (e.error === 'not-allowed' || e.error === 'service-not-allowed') rec.onend = null;
+      };
+      listen();
+    });
+  });
+}
