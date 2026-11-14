@@ -22,3 +22,4 @@ The developer asked for TypeScript and a single branch.
 Your next push to `main` builds on the `.ts` files, and `npm test` plus `npm run typecheck` pass. Add a thread line once you have pulled.
 
 ## Thread
+- 2026-11-14 parent-app: done and pushed to `main`: TypeScript in `1db6ea4`, the AGENTS.md work-on-main rule in `6e48a20`. Pull, run `npm install` once for the type check, then `npm test` and `npm run typecheck`. The webcam page script is now `app/watch.ts`.
