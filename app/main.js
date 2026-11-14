@@ -3,6 +3,7 @@ import { COMMANDS, did, makeCommands, outcome, total } from './game/robot-says.j
 import { createSteps } from './game/steps.js';
 import { makeMockRobot } from './robot-mock.js';
 import { connectSerial } from './robot-serial.js';
+import { connectWifi } from './robot-wifi.js';
 import { playCue, praise, say, silence, unlockAudio } from './signals.js';
 import { canHear, listenFor, stopListening } from './speech.js';
 import { fixSettings, LIMITS, load, roundSettings, save } from './store.js';
@@ -391,23 +392,28 @@ $('distance').addEventListener('input', () => {
 
 if (!('serial' in navigator)) {
   $('connect').disabled = true;
-  $('link').textContent = 'Playing with the pretend robot. The real car needs Chrome or Edge on a laptop.';
+  $('link').textContent = 'Playing with the pretend robot. The cable needs Chrome or Edge on a laptop; WiFi works in any browser.';
 }
 
-$('connect').addEventListener('click', async () => {
+// The car is reached over the USB cable or over its own WiFi (the kit's camera board).
+async function connectRobot(open, check) {
   try {
     $('link').textContent = 'Connecting…';
-    robot = await connectSerial(() => {
+    robot = await open(() => {
       robot = mock;
       $('mock').hidden = false;
-      $('link').textContent = 'Lost the robot. Check the cable, then connect again. Playing with the pretend robot for now.';
+      $('link').textContent = `Lost the robot. ${check}, then connect again. Playing with the pretend robot for now.`;
     });
     $('mock').hidden = true;
     $('link').textContent = 'Robot connected.';
   } catch {
-    $('link').textContent = 'Could not connect. Check the cable and try again.';
+    $('link').textContent = `Could not connect. ${check} and try again.`;
   }
-});
+}
+$('connect').addEventListener('click', () => connectRobot(connectSerial, 'Check the cable'));
+$('connect-wifi').addEventListener('click', () =>
+  connectRobot(connectWifi, 'Check that the car is on and this laptop is on its ELEGOO WiFi'),
+);
 
 drawTrack();
 show('idle');
@@ -443,7 +449,7 @@ function mirror(s) {
 }
 
 if (remote) {
-  $('connect').hidden = $('mock').hidden = true;
+  $('connect').hidden = $('connect-wifi').hidden = $('mock').hidden = true;
   $('link').textContent = 'Connecting to the laptop…';
   // Capture phase: these buttons only ask the laptop. The Step button already goes through press().
   addEventListener('click', (e) => {

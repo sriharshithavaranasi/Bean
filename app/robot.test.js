@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeRobot, parseReplies } from './robot.js';
+import { makeLink, makeRobot, parseReplies } from './robot.js';
 
 test('parses replies and keeps a partial one', () => {
   assert.deepEqual(parseReplies('{1_ok}{2_137}{3_1'), {
@@ -33,4 +33,15 @@ test('sends the stock firmware commands', async () => {
     { N: 5, D1: 1, D2: 90 },
     { N: 8, D1: 0, D2: 255, D3: 0, D4: 0 },
   ]);
+});
+
+test('a link matches each reply to its command, and a missing reply is null', async () => {
+  const sent = [];
+  const link = makeLink(async (text) => sent.push(JSON.parse(text)), 20);
+  const cm = link.robot.distanceCm();
+  link.receive('{Heartbeat}{1_');
+  link.receive('42}');
+  assert.equal(await cm, 42);
+  assert.deepEqual(sent[0], { H: '1', N: 21, D1: 2 });
+  assert.equal(await link.robot.lookAway(), null); // no reply within 20 ms
 });

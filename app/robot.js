@@ -20,6 +20,41 @@ export function makeRobot(send) {
   };
 }
 
+// Matches replies to commands for any wire (USB cable or WiFi). write(text) sends one command;
+// receive(text) takes whatever arrived. A missing reply resolves to null after replyMs; send never throws or stalls the game.
+export function makeLink(write, replyMs = 500) {
+  const waiting = new Map(); // id -> resolve
+  let nextId = 1;
+  let buffer = '';
+  async function send(command, wantReply) {
+    const id = String(nextId++);
+    const reply = wantReply
+      ? new Promise((resolve) => {
+          waiting.set(id, resolve);
+          setTimeout(() => {
+            waiting.delete(id);
+            resolve(null);
+          }, replyMs);
+        })
+      : null;
+    try {
+      await write(JSON.stringify({ H: id, ...command }));
+    } catch {
+      return null;
+    }
+    return reply;
+  }
+  function receive(text) {
+    const parsed = parseReplies(buffer + text);
+    buffer = parsed.rest;
+    for (const { id, value } of parsed.replies) {
+      waiting.get(id)?.(value);
+      waiting.delete(id);
+    }
+  }
+  return { robot: makeRobot(send), receive };
+}
+
 // Pulls complete "{id_value}" replies out of a serial buffer.
 // Returns the replies and whatever partial text is left over.
 export function parseReplies(buffer) {
