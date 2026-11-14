@@ -1,4 +1,4 @@
-// Web Serial transport (Chrome or Edge on a laptop). Untested on the real car: see issue #6.
+// Web Serial transport (Chrome or Edge on a laptop). The shield's switch must be on "upload", or the car hears nothing.
 import { makeLink } from './robot.js';
 
 export async function connectSerial(onLost) {
@@ -8,7 +8,8 @@ export async function connectSerial(onLost) {
   await new Promise((r) => setTimeout(r, 2000));
 
   const writer = port.writable.getWriter();
-  const link = makeLink((text) => writer.write(new TextEncoder().encode(text)));
+  // The real car answers an LED command in up to 600 ms (measured over the cable), so wait 800.
+  const link = makeLink((text) => writer.write(new TextEncoder().encode(text)), 800);
 
   (async () => {
     const reader = port.readable.pipeThrough(new TextDecoderStream()).getReader();

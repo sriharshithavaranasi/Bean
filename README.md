@@ -57,8 +57,8 @@ Open http://localhost:8000 in Chrome or Edge on the laptop.
 ### 5. Connect and play
 
 1. Connect the car one of two ways:
-   - **Cable:** press **Connect by cable**, then pick the car's port (unplug and replug the car to see which one it is). The car resets and takes about 2 seconds to wake up. If the car does not answer, move the shield's upload switch to the other side: the camera board shares the cable's line.
-   - **WiFi** (kits with the camera): switch the car on, join the laptop to the car's own WiFi (named `ELEGOO-` and a code, no password), then press **Connect over WiFi**. The car's WiFi has no internet, so the app cannot listen for practice words; press Good try instead.
+   - **Cable:** press **Connect by cable**, then pick the car's port (unplug and replug the car to see which one it is). On Windows it shows as `USB-SERIAL CH340`; if no such port appears, install the CH340 driver (`CH341SER.EXE` from wch-ic.com) and replug. The car resets and takes about 2 seconds to wake up. Set the shield's switch (next to the USB port) to **upload** first: on **cam**, the camera board holds the line the cable uses and the car hears nothing.
+   - **WiFi** (kits with the camera): set the shield's switch to **cam**, switch the car on, join the laptop to the car's own WiFi (named `ELEGOO-` and a code, no password), then press **Connect over WiFi**. The car's WiFi has no internet, so the app cannot listen for practice words; press Good try instead.
 2. Open **Grown-up settings** to pick the game (Freeze Watcher, Say It to Sneak or Robot Says) and how the kid moves (their body, or a switch).
 3. The kid stands on the start line, facing Bean.
 4. Press **Start**. Turn the volume up: the music, voice and cues come from the laptop.
