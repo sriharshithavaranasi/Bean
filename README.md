@@ -82,7 +82,7 @@ The phone shows the same game screen and sends the button presses to the laptop.
 
 ### Not yet checked on the real car
 
-Checked on the car: the head and LED commands, distance readings over the cable, the 15 cm wiggle room (#3) and the 1 m lane. Still to check: a full round in the app and the app's fallback when the cable comes out (#6, #29), and how wide the lane can be (#4). See the open issues.
+Checked on the car: the head and LED commands, distance readings over the cable, a full round in the app, the fallback when the cable comes out, the 15 cm wiggle room (#3) and the 1 m lane. Still to check: how wide the lane can be (#4). See the open issues.
 
 ## Develop
 
