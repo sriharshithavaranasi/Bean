@@ -6,6 +6,7 @@ import { readFile } from 'node:fs/promises';
 import { connect } from 'node:net';
 import { networkInterfaces } from 'node:os';
 import { extname, join, normalize, sep } from 'node:path';
+import { answer } from './talk.mjs';
 
 const root = join(import.meta.dirname, '..', 'app');
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2' };
@@ -108,6 +109,12 @@ function openCar(req, res) {
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
   if (url.pathname.startsWith('/relay/')) return host ? relay(req, res, url) : res.writeHead(404).end();
+  if (url.pathname === '/talk') {
+    // Talk with Bean's AI chat (scripts/talk.mjs): only the laptop tab may use it, so the key is never used for a phone.
+    if (!loopback(req) || req.method !== 'POST') return res.writeHead(403).end();
+    const { status, body: out } = await answer(await body(req));
+    return res.writeHead(status, { 'content-type': 'application/json' }).end(JSON.stringify(out));
+  }
   if (url.pathname === '/car' || url.pathname === '/car/send') {
     if (!loopback(req)) return res.writeHead(403).end();
     if (req.method === 'GET' && url.pathname === '/car') return openCar(req, res);

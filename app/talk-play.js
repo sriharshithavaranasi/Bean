@@ -1,12 +1,13 @@
 // Talk with Bean on the Talk tab (spec, section 15): its settings, progress and the turn-by-turn game.
 // main.js starts it with playTalk and ends it with stopTalk, like a Robot Says round.
-import { KEEP_GOING, SCRIPTS, fixTalk, goodbye, replyTo, turnsFor } from './game/talk.js';
+import { KEEP_GOING, SCRIPTS, fixTalk, goodbye, nextLine, replyTo, turnsFor } from './game/talk.js';
 import { listenAny } from './speech.js';
 import { load, save } from './store.js';
 
 const $ = (id) => document.getElementById(id);
 const GREEN = [0, 255, 0]; // Bean is talking
 const BLUE = [0, 0, 255]; // Bean is listening: the kid's turn
+const YELLOW = [255, 200, 0]; // Bean is thinking (AI chat)
 const WHITE = [255, 255, 255];
 const YOUR_TURN = 'Your turn! Say it out loud, or press Good try.';
 
@@ -30,17 +31,21 @@ $('talk').innerHTML = `
     <div class="words"><label for="t-wait">Wait for an answer <span class="vh">(seconds)</span></label>
       <input id="t-wait" type="number" inputmode="numeric" min="3" max="20" step="1" aria-describedby="t-wait-help">
       <p id="t-wait-help">Seconds, from 3 to 20. Bean then says the answer for the kid and waits again.</p></div>
+    <div class="words"><label class="check"><input id="t-ai" type="checkbox" aria-describedby="t-ai-help"> AI chat with Gemini</label>
+      <p id="t-ai-help">Bean makes up its own replies. What the kid says is sent to Google. Needs the Gemini key on this laptop and the internet; without them Bean uses its script.</p>
+      <p id="t-ai-note"></p></div>
   </details>`;
 
 // ---------- settings ----------
 function readForm() {
   const picked = document.querySelector('input[name="t-script"]:checked');
-  return fixTalk({ script: picked?.value, name: $('t-name').value, waitMs: $('t-wait').value * 1000 });
+  return fixTalk({ script: picked?.value, name: $('t-name').value, waitMs: $('t-wait').value * 1000, ai: $('t-ai').checked });
 }
 function showForm(s) {
   for (const r of document.querySelectorAll('input[name="t-script"]')) r.checked = r.value === s.script;
   $('t-name').value = s.name;
   $('t-wait').value = s.waitMs / 1000;
+  $('t-ai').checked = s.ai;
 }
 const changed = () => {
   const s = readForm();
@@ -74,6 +79,24 @@ $('talk-reset').addEventListener('click', () => {
 });
 draw();
 
+// ---------- AI chat ----------
+// Asks the laptop's /talk (scripts/talk.mjs) for Bean's next line. null when Gemini cannot answer within 3 seconds.
+async function askBean(turns, name) {
+  try {
+    const res = await fetch('/talk', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name, turns: turns.slice(-8) }), signal: AbortSignal.timeout(3000),
+    });
+    if (res.ok) return (await res.json()).reply ?? null;
+    $('t-ai-note').textContent = res.status === 503
+      ? 'No Gemini key on this laptop, so Bean used its script. Set GEMINI_API_KEY before npm start.'
+      : 'Gemini did not answer, so Bean used its script.';
+  } catch {
+    $('t-ai-note').textContent = 'Gemini took too long or the internet is off, so Bean used its script.';
+  }
+  return null;
+}
+
 // ---------- the game ----------
 let run = 0; // Stop and Start end the running talk by changing this
 export const stopTalk = () => run++;
@@ -95,7 +118,12 @@ export async function playTalk({ show, say, light, goodtry }) {
     return listenAny(goodtry, Promise.resolve(), s.waitMs);
   };
 
-  for (const [i, turn] of turnsFor(s.script, s.name).entries()) {
+  const turns = turnsFor(s.script, s.name);
+  if (s.ai) {
+    if (await playAi()) end();
+    return;
+  }
+  for (const [i, turn] of turns.entries()) {
     await beanSays(turn.bean, 'Listen to Bean.');
     if (!alive()) return;
     let heard = await kidsTurn(turn.bean);
@@ -115,9 +143,51 @@ export async function playTalk({ show, say, light, goodtry }) {
     }
     if (!alive()) return;
   }
-  bump('talks');
-  light(WHITE);
-  const bye = goodbye(s.name);
-  show('win', 'Press Play again to talk some more.', bye);
-  say(bye);
+  end();
+
+  // AI chat: Gemini writes Bean's next line from the talk so far. Returns false when the talk was stopped.
+  async function playAi() {
+    $('t-ai-note').textContent = '';
+    const history = [];
+    let line = turns[0].bean; // the chosen script still opens the talk
+    for (const [i, turn] of turns.entries()) {
+      history.push({ from: 'bean', text: line });
+      await beanSays(line, 'Listen to Bean.');
+      if (!alive()) return false;
+      let heard = await kidsTurn(line);
+      if (!alive()) return false;
+      if (heard === null) {
+        await beanSays('Take your time. You can say anything you like!', 'Bean waits for you.');
+        if (!alive()) return false;
+        heard = await kidsTurn(line);
+        if (!alive()) return false;
+      }
+      const next = turns[i + 1];
+      if (heard === null) {
+        line = next ? `${KEEP_GOING} ${next.bean}` : KEEP_GOING;
+        if (!next) await beanSays(line, 'That is okay.');
+        continue;
+      }
+      bump('turns');
+      if (heard) bump('heard');
+      history.push({ from: 'kid', text: heard });
+      if (!next) {
+        await beanSays(replyTo(turn, heard, i), 'Bean answers.'); // the last turn ends with goodbye, not a new question
+        return alive();
+      }
+      light(YELLOW);
+      show('word', 'Bean is thinking.', line);
+      ({ line } = await nextLine({ ask: (h) => askBean(h, s.name), history, turn, next, heard, i }));
+      if (!alive()) return false;
+    }
+    return true;
+  }
+
+  function end() {
+    bump('talks');
+    light(WHITE);
+    const bye = goodbye(s.name);
+    show('win', 'Press Play again to talk some more.', bye);
+    say(bye);
+  }
 }

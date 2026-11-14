@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SCRIPTS, fixTalk, goodbye, replyTo, turnsFor } from './talk.js';
+import { SCRIPTS, fixTalk, goodbye, nextLine, replyTo, turnsFor } from './talk.js';
 
 test('every script has 6 turns, each with a line, a model answer, expected words and a reply', () => {
   for (const [key, script] of Object.entries(SCRIPTS)) {
@@ -37,12 +37,30 @@ test('part of a longer word is not echoed', () => {
 });
 
 test('fixTalk keeps settings safe: known script, short plain name, wait inside 3 to 20 seconds', () => {
-  assert.deepEqual(fixTalk({}), { script: 'hello', name: '', waitMs: 6000 });
-  assert.deepEqual(fixTalk({ script: 'asking', name: '  Maya  ', waitMs: 9000 }), { script: 'asking', name: 'Maya', waitMs: 9000 });
+  assert.deepEqual(fixTalk({}), { script: 'hello', name: '', waitMs: 6000, ai: false });
+  assert.deepEqual(fixTalk({ script: 'asking', name: '  Maya  ', waitMs: 9000, ai: true }), { script: 'asking', name: 'Maya', waitMs: 9000, ai: true });
+  assert.equal(fixTalk({ ai: 'yes' }).ai, false); // only a real true turns AI chat on
   assert.equal(fixTalk({ script: 'nope' }).script, 'hello');
   assert.equal(fixTalk({ waitMs: 500 }).waitMs, 3000);
   assert.equal(fixTalk({ waitMs: 99999 }).waitMs, 20000);
   assert.equal(fixTalk({ waitMs: 'abc' }).waitMs, 6000);
   assert.equal(fixTalk({ name: '<b>Maya</b> the great and wonderful explorer' }).name.length <= 20, true);
   assert.doesNotMatch(fixTalk({ name: '<b>Maya</b>' }).name, /[<>]/);
+});
+
+test('AI chat: Bean says what Gemini answered', async () => {
+  const [turn, next] = turnsFor('questions', 'Maya');
+  const seen = [];
+  const ask = async (history) => (seen.push(history), 'Blue like the sky! What animal do you like?');
+  const history = [{ from: 'bean', text: turn.bean }, { from: 'kid', text: 'blue' }];
+  assert.deepEqual(await nextLine({ ask, history, turn, next, heard: 'blue', i: 0 }), { line: 'Blue like the sky! What animal do you like?', fromAi: true });
+  assert.deepEqual(seen, [history]);
+});
+
+test('AI chat: with no answer from Gemini, Bean replies from its script and asks the next scripted question', async () => {
+  const [turn, next] = turnsFor('questions', 'Maya');
+  const { line, fromAi } = await nextLine({ ask: async () => null, history: [], turn, next, heard: 'blue', i: 0 });
+  assert.equal(fromAi, false);
+  assert.match(line, /blue/i);
+  assert.ok(line.endsWith(next.bean));
 });

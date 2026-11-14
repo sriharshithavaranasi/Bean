@@ -54,12 +54,22 @@ export function replyTo(turn, heard, i) {
   return capital(word ? turn.echo.replaceAll('{word}', word) : PRAISE[i % PRAISE.length]);
 }
 
-// Saved settings are fixed, never trusted: a known script, a short plain first name, a wait of 3 to 20 seconds.
+// AI chat: Bean's next line. ask(history) resolves Gemini's reply, or null (no key, no internet, too slow);
+// then Bean answers from its script and asks the next scripted question, so the talk never stalls.
+export async function nextLine({ ask, history, turn, next, heard, i }) {
+  const ai = await ask(history);
+  if (ai) return { line: ai, fromAi: true };
+  return { line: next ? `${replyTo(turn, heard, i)} ${next.bean}` : replyTo(turn, heard, i), fromAi: false };
+}
+
+// Saved settings are fixed, never trusted: a known script, a short plain first name, a wait of 3 to 20 seconds,
+// and AI chat only when it was really switched on (it sends the kid's words to Google).
 export function fixTalk(raw = {}) {
   const wait = raw.waitMs == null || raw.waitMs === '' ? NaN : Number(raw.waitMs);
   return {
     script: Object.hasOwn(SCRIPTS, raw.script) ? raw.script : 'hello',
     name: String(raw.name ?? '').replace(/[^\p{L} '-]/gu, '').trim().slice(0, 20),
     waitMs: Number.isFinite(wait) ? Math.min(20000, Math.max(3000, wait)) : 6000,
+    ai: raw.ai === true,
   };
 }
