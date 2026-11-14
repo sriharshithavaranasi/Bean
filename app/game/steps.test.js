@@ -48,9 +48,19 @@ test('holding the key counts as one press', () => {
   assert.equal(s.press('green'), 'step');
 });
 
-test('presses outside Green and Red do nothing', () => {
+test('presses outside Green, Red and caught do nothing', () => {
   const s = createSteps(10);
-  for (const phase of ['idle', 'caught', 'win']) assert.equal(tap(s, phase, true), null);
+  for (const phase of ['idle', 'win']) assert.equal(tap(s, phase, true), null);
+  assert.equal(s.at, 0);
+});
+
+test('after a catch the next press says the kid is ready, but not the press still held from the catch', () => {
+  const s = createSteps(10);
+  tap(s, 'green');
+  assert.equal(s.press('red', true), 'caught');
+  assert.equal(s.press('caught'), null); // the same press, still held
+  s.release();
+  assert.equal(tap(s, 'caught'), 'ready');
   assert.equal(s.at, 0);
 });
 

@@ -10,6 +10,7 @@ export const DEFAULTS = {
   laneCm: 200,
   caughtMs: 8000, // the round never gets stuck waiting for the kid to go back
   steps: 10, // switch presses to win
+  doMs: 3000, // Robot Says: time to do each command (or to ignore a fake one)
   gate: 'off', // practice word before Green: 'off', 'held' (after a Red held still) or 'every' (every Green)
 };
 

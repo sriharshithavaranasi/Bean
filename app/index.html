@@ -21,6 +21,7 @@
           <div id="track-cells" aria-hidden="true"></div>
           <p id="track-text"></p>
         </div>
+        <div id="timer" aria-hidden="true" hidden></div>
       </section>
 
       <button id="step" class="primary" hidden>Step</button>
@@ -36,7 +37,10 @@
         <button id="yes" class="primary" hidden>They did it</button>
         <button id="no" hidden>Not yet</button>
       </section>
+    </div>
 
+    <div class="col">
+      <!-- First in this column, not under the game: on a phone the order is the same, and on a laptop the sticky game column fits the screen. -->
       <section id="progress" class="card" aria-labelledby="progress-h">
         <div class="head">
           <h2 id="progress-h">Progress</h2>
@@ -49,9 +53,7 @@
           <div><dt>Word tries</dt><dd id="t-words">0</dd></div>
         </dl>
       </section>
-    </div>
 
-    <div class="col">
       <section id="robot" class="card" aria-labelledby="robot-h">
         <h2 id="robot-h">Robot</h2>
         <div class="row">
@@ -86,6 +88,8 @@
           <span class="num"><span class="val"><input id="s-settle" type="number" inputmode="decimal" step="0.1"><span class="unit" aria-hidden="true">sec</span></span></span></div>
         <div class="field"><label for="s-look">How long Bean stares <span class="vh">(seconds)</span></label>
           <span class="num"><span class="val"><input id="s-look" type="number" inputmode="decimal" step="0.5"><span class="unit" aria-hidden="true">sec</span></span></span></div>
+        <div class="field"><label for="s-doIt">Time to do each command <span class="vh">(seconds)</span></label>
+          <span class="num"><span class="val"><input id="s-doIt" type="number" inputmode="decimal" step="0.5"><span class="unit" aria-hidden="true">sec</span></span></span></div>
         <div class="field"><label for="s-leewayCm">Wiggle room before caught <span class="vh">(cm)</span></label>
           <span class="num"><span class="val"><input id="s-leewayCm" type="number" inputmode="numeric"><span class="unit" aria-hidden="true">cm</span></span></span></div>
         <div class="field"><label for="s-winCm">Win when closer than <span class="vh">(cm)</span></label>

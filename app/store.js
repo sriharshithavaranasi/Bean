@@ -20,7 +20,7 @@ export function save(key, value) {
 // Lowest and highest value a grown-up may set, in the game's own units.
 export const LIMITS = {
   greenMinMs: [1000, 30000], greenMaxMs: [1000, 30000], settleMs: [200, 5000],
-  lookMs: [1000, 10000], leewayCm: [2, 50], winCm: [5, 50], steps: [2, 30],
+  lookMs: [1000, 10000], leewayCm: [2, 50], winCm: [5, 50], steps: [2, 30], doMs: [1000, 15000],
 };
 
 const WORDS = ['rabbit', 'red', 'robot', 'run'];

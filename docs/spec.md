@@ -136,6 +136,7 @@ Labels are in plain words, as shown. Settings are saved on the device.
 | Wiggle room before caught | 6 cm (replace with the measured value from the calibration ticket) |
 | Win when closer than | 12 cm |
 | Switch presses to win | 10 |
+| Time to do each command (Robot Says only) | 3 s, from 1 to 15 s |
 | Say a practice word before each green light | off |
 | Practice words | rabbit, red, robot, run |
 

@@ -11,7 +11,8 @@ const $ = (id) => document.getElementById(id);
 
 // Glyphs are a second cue beside colour: face = ready, arrow = go, bars = freeze, eye = seen, speech bubble = say the word, star = win.
 const SCREEN = {
-  idle: { status: 'Bean is ready', hint: 'Stand on the start line, then press Start.', glyph: 'M8 7a2 2 0 100 4 2 2 0 000-4zm8 0a2 2 0 100 4 2 2 0 000-4zM7 14h10a5 5 0 01-10 0z' },
+  // The idle status names the chosen game (show).
+  idle: { hint: 'Stand on the start line, then press Start.', glyph: 'M8 7a2 2 0 100 4 2 2 0 000-4zm8 0a2 2 0 100 4 2 2 0 000-4zM7 14h10a5 5 0 01-10 0z' },
   green: { status: 'Green light!', hint: 'Bean is not looking. Sneak closer!', glyph: 'M12 4l7 8h-4v8H9v-8H5z' },
   red: { status: 'Red light!', hint: 'Bean is looking. Freeze!', glyph: 'M7 5h4v14H7zM13 5h4v14h-4z' },
   caught: { status: 'I saw you!', hint: 'Go back to the start line.', glyph: 'M12 5C6 5 2 12 2 12s4 7 10 7 10-7 10-7-4-7-10-7zm0 11a4 4 0 110-8 4 4 0 010 8z' },
@@ -30,7 +31,7 @@ const LIGHT = { green: [0, 255, 0], red: [255, 0, 0], caught: [255, 80, 0], word
 // field id -> [game setting, how many of the game's units one of the field's units is]
 const FIELDS = {
   greenMin: ['greenMinMs', 1000], greenMax: ['greenMaxMs', 1000], settle: ['settleMs', 1000],
-  look: ['lookMs', 1000], leewayCm: ['leewayCm', 1], winCm: ['winCm', 1], steps: ['steps', 1],
+  look: ['lookMs', 1000], leewayCm: ['leewayCm', 1], winCm: ['winCm', 1], steps: ['steps', 1], doIt: ['doMs', 1000],
 };
 const rulers = {};
 function settings() {
@@ -50,7 +51,7 @@ function showSettings(s) {
   $('s-switch').checked = s.input === 'switch';
   $('s-body').checked = s.input !== 'switch';
   // Only the settings the chosen game uses are shown; the hidden ones keep their values.
-  const unused = { sneak: ['greenMin', 'greenMax'], says: ['greenMin', 'greenMax', 'settle', 'look', 'winCm', 'steps'] }[s.game] || [];
+  const unused = { freeze: ['doIt'], sneak: ['greenMin', 'greenMax', 'doIt'], says: ['greenMin', 'greenMax', 'settle', 'look', 'winCm', 'steps'] }[s.game];
   for (const id of Object.keys(FIELDS)) $(`s-${id}`).closest('.field').hidden = unused.includes(id) || (id === 'steps' && s.input !== 'switch');
   $('s-wordGate').closest('.toggle').hidden = s.game !== 'freeze';
   $('s-words').closest('.words').hidden = s.game === 'says';
@@ -141,7 +142,10 @@ let saysOn = false; // a Robot Says round is being played
 let pressed = false;
 let steps = null; // the kid's piece on the track, while a round is played from a switch
 const switchOn = () => !!steps || $('s-switch').checked;
-const SWITCH_HINT = { idle: 'Press Start. Then press the switch when the light is green.', caught: 'Your piece is back at the start.' };
+const SWITCH_HINT = {
+  idle: 'Press the switch to start.', green: 'Bean is not looking. Press to step closer!',
+  caught: 'Your piece is back at the start. Press the switch to go again.',
+};
 function drawCells(at, count, text) {
   $('track-cells').replaceChildren(
     ...Array.from({ length: count }, (_, i) => Object.assign(document.createElement('span'), { className: i < at ? 'on' : '' })),
@@ -158,14 +162,17 @@ function drawTrack() {
   drawCells(at, count, `Step ${at} of ${count}`);
 }
 function press() {
+  const now = performance.now();
+  // The switch starts the round itself: from idle, and once the win has been up for 2 seconds.
+  if (shown === 'idle' || (shown === 'win' && now - wonAt >= 2000)) return start();
   if (!steps) return;
   if (saysOn) {
     pressed = true; // Robot Says only asks: was the switch pressed during this command?
     return;
   }
-  const now = performance.now();
   const what = steps.press(game.phase, game.checking(now));
   if (what === 'caught') game.caught(now);
+  if (what === 'ready') game.ready(now);
   if (what === 'win') {
     game.win();
     wonAt = now;
@@ -177,16 +184,15 @@ function press() {
     if (game.phase !== shown && game.phase !== 'idle') await enter(game.phase);
   });
 }
-// The switch is Space, Enter or the Step button. During a round those keys step instead of pressing Start;
+// The switch is Space, Enter or the Step button. In switch mode those keys start and step instead of pressing Start;
 // they still work as usual in a form field and on the other buttons, so Stop stays reachable by keyboard.
-// For 2 seconds after a win they do nothing, so a kid still pressing does not skip the win by hitting Play again.
+// For 2 seconds after a win they do nothing (press), so a kid still pressing does not skip the win by starting again.
 const isSwitchKey = (e) =>
-  steps && shown !== 'idle' && (shown !== 'win' || performance.now() - wonAt < 2000) && (e.key === ' ' || e.key === 'Enter') &&
-  !e.target.closest('input, select, textarea, summary, button:not(#start, #step)');
+  switchOn() && (e.key === ' ' || e.key === 'Enter') && !e.target.closest('input, select, textarea, summary, button:not(#start, #step)');
 addEventListener('keydown', (e) => {
   if (!isSwitchKey(e)) return;
   e.preventDefault();
-  press();
+  if (!e.repeat) press(); // a held key is one press, also the one that started the round
 });
 addEventListener('keyup', (e) => {
   if (e.key !== ' ' && e.key !== 'Enter') return;
@@ -199,7 +205,8 @@ $('step').addEventListener('click', (e) => {
   steps?.release();
 });
 
-function show(phase, hint = (switchOn() && SWITCH_HINT[phase]) || SCREEN[phase].hint, status = SCREEN[phase].status) {
+const chosenGame = () => document.querySelector('[name="s-game"]:checked').labels[0].textContent.trim();
+function show(phase, hint = (switchOn() && SWITCH_HINT[phase]) || SCREEN[phase].hint, status = phase === 'idle' ? `Let’s play ${chosenGame()}` : SCREEN[phase].status) {
   shown = phase;
   document.body.dataset.phase = phase;
   $('status').textContent = status;
@@ -213,8 +220,12 @@ function show(phase, hint = (switchOn() && SWITCH_HINT[phase]) || SCREEN[phase].
 }
 
 // ---------- Robot Says ----------
-const DO_IT_MS = 3000; // how long the kid has to do the command (or to ignore a fake one)
 const SHOW_MS = 1800; // how long the result stays up
+// The bar along the bottom of the stage shrinks while the kid has time to do the command.
+function drain(ms) {
+  $('timer').hidden = false;
+  $('timer').animate([{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }], { duration: ms, fill: 'forwards' });
+}
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 let saysRun = 0; // Stop and Restart end the running round by changing this
 let answer = () => {};
@@ -244,14 +255,17 @@ async function playSays(s) {
       seen = { parent: await parent };
     } else if (steps) {
       pressed = false;
-      await wait(DO_IT_MS);
+      drain(s.doMs);
+      await wait(s.doMs);
       seen = { pressed };
     } else {
       const startCm = await queued(() => robot.distanceCm());
-      await wait(DO_IT_MS);
+      drain(s.doMs);
+      await wait(s.doMs);
       seen = { startCm, endCm: await queued(() => robot.distanceCm()), leewayCm: s.leewayCm };
     }
     if (!alive()) return;
+    $('timer').hidden = true; // only this round's own timer: Stop hides it otherwise
     const result = outcome(real, did(kind, seen));
     outcomes.push(result);
     show(result, result === 'point' && !real ? 'Bean did not say “Robot says”. Good listening!' : undefined);
@@ -320,6 +334,7 @@ async function stopRound(hint) {
   steps = null;
   saysRun++;
   saysOn = false;
+  $('timer').hidden = true;
   answer(null);
   drawTrack();
   stopListening();
@@ -331,7 +346,7 @@ async function stopRound(hint) {
 
 $('stop').addEventListener('click', () => queued(() => stopRound()));
 
-$('start').addEventListener('click', () => {
+function start() {
   unlockAudio();
   queued(async () => {
     await stopRound(); // Start during a round ends it first
@@ -358,7 +373,8 @@ $('start').addEventListener('click', () => {
     game.start(performance.now(), startCm);
     await enter(game.phase);
   });
-});
+}
+$('start').addEventListener('click', start);
 
 $('ready').addEventListener('click', () => game.ready(performance.now()));
 

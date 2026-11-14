@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { fixSettings, load, roundSettings } from './store.js';
 import { DEFAULTS } from './game/freeze-watcher.js';
 
-const spec = { greenMinMs: 3000, greenMaxMs: 7000, settleMs: 1000, lookMs: 2500, leewayCm: 6, winCm: 12, steps: 10, input: 'body', game: 'freeze', wordGate: false, words: ['rabbit', 'red', 'robot', 'run'] };
+const spec = { greenMinMs: 3000, greenMaxMs: 7000, settleMs: 1000, lookMs: 2500, leewayCm: 6, winCm: 12, steps: 10, doMs: 3000, input: 'body', game: 'freeze', wordGate: false, words: ['rabbit', 'red', 'robot', 'run'] };
 
 test('how the kid moves is body unless switch is saved', () => {
   assert.equal(fixSettings({ input: 'switch' }).input, 'switch');
@@ -21,8 +21,8 @@ test('saved values are read back', () => {
 });
 
 test('numbers stay inside their limits', () => {
-  const s = fixSettings({ settleMs: 1, lookMs: 99999, leewayCm: -4, winCm: 500 });
-  assert.deepEqual([s.settleMs, s.lookMs, s.leewayCm, s.winCm], [200, 10000, 2, 50]);
+  const s = fixSettings({ settleMs: 1, lookMs: 99999, leewayCm: -4, winCm: 500, doMs: 100 });
+  assert.deepEqual([s.settleMs, s.lookMs, s.leewayCm, s.winCm, s.doMs], [200, 10000, 2, 50, 1000]);
 });
 
 test('a longest green below the shortest is raised to match', () => {
