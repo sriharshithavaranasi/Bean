@@ -49,7 +49,11 @@ function showSettings(s) {
   for (const [id, [key, unit]] of Object.entries(FIELDS)) $(`s-${id}`).value = rulers[id].value = s[key] / unit;
   $('s-switch').checked = s.input === 'switch';
   $('s-body').checked = s.input !== 'switch';
-  $('s-steps').closest('.field').hidden = s.input !== 'switch';
+  // Only the settings the chosen game uses are shown; the hidden ones keep their values.
+  const unused = { sneak: ['greenMin', 'greenMax'], says: ['greenMin', 'greenMax', 'settle', 'look', 'winCm', 'steps'] }[s.game] || [];
+  for (const id of Object.keys(FIELDS)) $(`s-${id}`).closest('.field').hidden = unused.includes(id) || (id === 'steps' && s.input !== 'switch');
+  $('s-wordGate').closest('.toggle').hidden = s.game !== 'freeze';
+  $('s-words').closest('.words').hidden = s.game === 'says';
   $(`s-${s.game}`).checked = true;
   $('s-wordGate').checked = s.wordGate;
   $('s-words').value = s.words.join(', ');

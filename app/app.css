@@ -162,9 +162,9 @@ input[type="range"]::-moz-range-thumb { box-sizing: border-box; width: 30px; hei
 @keyframes pop-caught { from { transform: scale(.85); } }
 @keyframes pop-win { from { transform: scale(.85); } }
 @keyframes pop-word { from { transform: scale(.85); } }
-body[data-phase="green"] #light { animation: pop-green .28s cubic-bezier(.16, 1, .3, 1); }
-body[data-phase="red"] #light { animation: pop-red .28s cubic-bezier(.16, 1, .3, 1); }
-body[data-phase="caught"] #light { animation: pop-caught .28s cubic-bezier(.16, 1, .3, 1); }
+body:is([data-phase="green"], [data-phase="point"]) #light { animation: pop-green .28s cubic-bezier(.16, 1, .3, 1); }
+body:is([data-phase="red"], [data-phase="miss"]) #light { animation: pop-red .28s cubic-bezier(.16, 1, .3, 1); }
+body:is([data-phase="caught"], [data-phase="gotcha"]) #light { animation: pop-caught .28s cubic-bezier(.16, 1, .3, 1); }
 body[data-phase="win"] #light { animation: pop-win .28s cubic-bezier(.16, 1, .3, 1); }
-body[data-phase="word"] #light { animation: pop-word .28s cubic-bezier(.16, 1, .3, 1); }
+body:is([data-phase="word"], [data-phase="says"], [data-phase="wave"]) #light { animation: pop-word .28s cubic-bezier(.16, 1, .3, 1); }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
