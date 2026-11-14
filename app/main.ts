@@ -306,17 +306,22 @@ if (!('serial' in navigator)) {
 }
 
 // The car is reached over the USB cable.
+// The button stays off while connecting and connected: a second open fails on the open port and would report "Could not connect".
 async function connectRobot(open: (onLost: () => void) => Promise<Robot>, check: string) {
+  const button = $<HTMLButtonElement>('connect');
+  button.disabled = true;
   try {
     $('link').textContent = 'Connecting…';
     robot = await open(() => {
       robot = mock;
       $('mock').hidden = false;
+      button.disabled = false;
       $('link').textContent = `Lost the robot. ${check}, then connect again. Playing with the pretend robot for now.`;
     });
     $('mock').hidden = true;
     $('link').textContent = 'Robot connected.';
   } catch {
+    button.disabled = false;
     $('link').textContent = `Could not connect. ${check} and try again.`;
   }
 }
