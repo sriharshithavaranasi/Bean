@@ -237,7 +237,7 @@ function show(phase, hint = talking() ? 'Coming soon.' : (switchOn() && SWITCH_H
   // shortcut: Talk with Bean is not built yet, the speech area fills it in and shows Start and Stop again.
   $('controls').hidden = talking();
   $('glyph-path').setAttribute('d', SCREEN[phase].glyph);
-  if (phase === 'idle' || phase === 'win') restartUntil = 0;
+  if (phase === 'idle' || phase === 'win') restartUntil = tabUntil = 0;
   startLabel();
   $('step').textContent = phase === 'idle' ? 'Start' : phase === 'win' ? 'Play again' : 'Step';
   $('ready').hidden = phase !== 'caught';
@@ -431,21 +431,19 @@ $('start').addEventListener('click', () => {
 for (const tab of ['move', 'talk']) {
   $(`tab-${tab}`).addEventListener('click', () => {
     if (tab === settings().tab) return;
-    const go = () => {
+    if (shown !== 'idle' && shown !== 'win' && performance.now() >= tabUntil) {
+      tabUntil = performance.now() + 4000;
+      $('hint').textContent = tabWarn = `Press ${$(`tab-${tab}`).textContent.trim()} again to stop the round.`;
+      setTimeout(() => performance.now() >= tabUntil && $('hint').textContent === tabWarn && ($('hint').textContent = shownHint), 4000);
+      return;
+    }
+    tabUntil = 0;
+    // Queued behind a Start that is still measuring, so that round is stopped too. A won round is cleared like a stopped one.
+    queued(async () => {
+      if (shown !== 'idle') await stopRound();
       settingChanged(fixSettings({ ...settings(), tab }));
       show('idle');
-    };
-    if (shown === 'idle' || shown === 'win') return go();
-    if (performance.now() < tabUntil) {
-      tabUntil = 0;
-      return queued(async () => {
-        await stopRound();
-        go();
-      });
-    }
-    tabUntil = performance.now() + 4000;
-    $('hint').textContent = tabWarn = `Press ${$(`tab-${tab}`).textContent.trim()} again to stop the round.`;
-    setTimeout(() => performance.now() >= tabUntil && $('hint').textContent === tabWarn && ($('hint').textContent = shownHint), 4000);
+    });
   });
 }
 // Arrow keys, Home and End move between the tabs (ARIA tabs pattern). click() so a phone sends it to the laptop.
