@@ -37,7 +37,7 @@ export function fixSettings(raw = {}) {
   s.steps = Math.round(s.steps);
   s.input = raw.input === 'switch' ? 'switch' : 'body'; // how the kid moves
   s.game = ['sneak', 'says'].includes(raw.game) ? raw.game : 'freeze';
-  s.wordGate = raw.wordGate === true; // say a practice word before each green light
+  s.tab = raw.tab === 'talk' ? 'talk' : 'move'; // Move or Talk tab (spec, section 15)
   // Typed as a comma list. Nothing saved gives the spec's words; an emptied list stays empty and switches the gate off.
   const words = raw.words == null ? WORDS : Array.isArray(raw.words) ? raw.words : String(raw.words).split(',');
   s.words = words.map((w) => String(w).trim().toLowerCase().slice(0, 30)).filter(Boolean).slice(0, 20);
@@ -48,6 +48,6 @@ export function fixSettings(raw = {}) {
 // 3 second Green (spec, section 6). With no practice words there is nothing to ask for.
 export function roundSettings(s) {
   const sneak = s.game === 'sneak';
-  const gate = !s.words.length ? 'off' : sneak ? 'every' : s.wordGate ? 'held' : 'off';
+  const gate = sneak && s.words.length ? 'every' : 'off';
   return { ...s, ...(sneak && { greenMinMs: 3000, greenMaxMs: 3000 }), gate };
 }

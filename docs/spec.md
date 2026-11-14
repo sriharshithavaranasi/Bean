@@ -91,7 +91,7 @@ How the kid moves:
 Games:
 
 - **Freeze Watcher (P0).** Section 5.
-- **Say It to Sneak (P1).** Freeze Watcher with the word gate always on and a fixed 3 second Green light. Every Green light is earned with a practice word.
+- **Say It to Sneak (P1).** Freeze Watcher with a practice word before every Green light and a fixed 3 second Green light. Every Green light is earned with a practice word.
 - **Robot Says (P1).** Eight commands, with a score out of 8. The robot faces the kid the whole time. Each command is spoken with or without "Robot says" (about 7 in 10 are real; "freeze" is always real). The time to do each command is read before every command, so a grown-up can change it during the game.
 
 | Command | Checked by |
@@ -105,7 +105,7 @@ A real command done scores a point. A fake command ignored scores a point. A fak
 
 ## 7. Speech
 
-Web Speech API in Chrome. Recognition is weak on kids' voices, so the Good try button is always on screen whenever the app is listening. The word gate in Freeze Watcher can be switched off in settings.
+Web Speech API in Chrome. Recognition is weak on kids' voices, so the Good try button is always on screen whenever the app is listening. Only Say It to Sneak listens for words; Freeze Watcher and Robot Says never ask the kid to speak.
 
 ## 8. Signals
 
@@ -137,14 +137,13 @@ Labels are in plain words, as shown. Settings are saved on the device.
 | Win when closer than | 12 cm |
 | Switch presses to win | 10 |
 | Time to do each command (Robot Says only) | 3 s, from 1 to 15 s |
-| Say a practice word before each green light | off |
-| Practice words | rabbit, red, robot, run |
+| Practice words (Say It to Sneak only) | rabbit, red, robot, run |
 
 Lane length stays at 200 cm and is not shown to parents.
 
 ## 10. Progress (P1)
 
-Four totals on the main screen: Rounds, Wins, Good freezes, Word tries. Times caught is counted but not shown, so the screen stays encouraging. Finishing all eight Robot Says commands counts as a win, whatever the score. One Reset button that asks first. Totals are saved on the device.
+Four totals on the main screen: Rounds, Wins, Good freezes, Word tries (shown only for Say It to Sneak). Times caught is counted but not shown, so the screen stays encouraging. Finishing all eight Robot Says commands counts as a win, whatever the score. One Reset button that asks first. Totals are saved on the device.
 
 ## 11. Code layout
 
@@ -216,6 +215,61 @@ The example talks to the car in short text lines instead of the stock JSON. This
 | `D <cm>` | from car | Distance, streamed without being asked |
 | `B` or `T` | from car | Button pressed or robot tapped: the kid wins |
 | `READY` | from car | Boot finished |
+
+## 15. Talk with Bean (P1, proposed)
+
+Proposed by the speech area. It changes the scope in section 2 in two places, so the team agrees before it is built: the local server gains one endpoint, and the kid's words leave the laptop when AI chat is on.
+
+**Goal.** Back-and-forth conversation practice. Bean says something, waits for the kid's turn, answers what they said, and invites the next turn. It practises greetings, answering questions, asking for things and taking turns.
+
+**Two modes, one game.**
+
+- **Scripted (default, offline).** Short scripts written in `app/game/talk.js`: Hello (greetings and names), Questions (favourite colour, animal, food), Asking (asking Bean for a turn, a song, a dance). Any answer the microphone catches moves the script on. Bean echoes a word it heard when it can ("Blue! I love blue.").
+- **AI chat (off by default).** A grown-up turns it on. Bean's replies come from Gemini through the local server (below). If there is no key, no internet, or no reply within 3 s, Bean says the next scripted line, so the game never stalls.
+
+**One turn.**
+
+| Step | Bean | Screen | Car |
+| --- | --- | --- | --- |
+| Bean talks | Says its line through the speaker | Bean's line as text | Head faces the kid, small wiggle |
+| Kid's turn | Listens (microphone opens after Bean stops talking) | "Your turn!" | LED blue |
+| No answer after the wait time | Models an answer ("You can say: hi Bean!"), then listens again | "Your turn!" | LED blue |
+| Thinking (AI chat only) | Silent, up to 3 s | "Bean is thinking" | LED yellow |
+
+Good try and They did it end the kid's turn at any time, as in section 7. Stop ends the game and silences Bean at once. A game is 6 turns, then Bean says goodbye.
+
+**AI chat, server side.** `POST /talk` on `scripts/serve.mjs`, laptop only (same `loopback` and JSON body checks as the relay). The body is the last few turns as text. The server adds the system instruction and the key from the `GEMINI_API_KEY` environment variable and calls a fast Flash-Lite model. The key never reaches the browser and is never written to a file in the repo. Without the variable, `/talk` answers 503 and the game stays scripted.
+
+**Bean's rules (system instruction).** Bean is a friendly robot helping a young child practise talking. One or two short sentences, simple words, always ending with an easy question or invitation to talk. Topics: animals, colours, food, games, feelings, the game they are playing. Never asks for personal information beyond the first name the grown-up typed. Never talks about scary, unsafe or grown-up topics; steers back to the game instead. Never says it is a person.
+
+**Layout: Move and Talk tabs.** Talk with Bean is a different activity from Red Light, Green Light, so the page gets two tabs at the top. Each tab shows only its own games, settings and progress, so no counter is shown that means nothing for the game being played.
+
+| | Move tab | Talk tab |
+| --- | --- | --- |
+| Games | Freeze Watcher, Say It to Sneak, Robot Says | Talk with Bean |
+| Progress | Rounds, Wins, Good freezes; Word tries only for Say It to Sneak | Turns taken, Turns heard by the microphone |
+| Settings | Section 9 rows for movement and the switch | Script, kid's first name, wait for an answer, AI chat, practice words |
+| Shared | Stage, Start, Stop, Good try, They did it, the Robot card | same |
+
+Tabs are a real tab list (`role="tablist"`, arrow keys move between tabs, the chosen tab is remembered on the device). Switching tab during a round asks first, as Restart does: the first press turns the pressed tab amber with "Press again to stop", and a second press within 4 seconds stops the round and switches. The kid's hint on the stage is never replaced by the warning. The phone remote copies the chosen tab.
+
+**Settings (added to section 9).**
+
+| Setting | Choices or default |
+| --- | --- |
+| Game | adds Talk with Bean |
+| Script | Hello, Questions, Asking |
+| Kid's first name | empty (Bean says "friend") |
+| Wait for an answer | 6 s, from 3 to 20 s |
+| AI chat (sends what the kid says to Google) | off |
+
+**Privacy.** Speech-to-text in Chrome already sends audio to Google. With AI chat on, the kid's words also go to Gemini. The setting says so in its label, it is off by default, and the pitch says so. Nothing is stored apart from the turn count in progress.
+
+**Progress (section 10).** Adds turns taken and turns the microphone heard by itself.
+
+**Code.** `app/game/talk.js` (pure turn logic and the scripts, with tests), `speech.js` gains a listener that returns what was heard, `/talk` in `scripts/serve.mjs` (with a test), and the hookup in `main.js` (a comms request to its owner).
+
+**Hardware.** Any microphone the laptop sees works: the Logitech webcam's microphone mounted on the car's body, facing the lane, is the plan. Keep the speaker away from the microphone so Bean does not hear itself.
 
 ## 16. Webcam watcher (P1, proposed)
 

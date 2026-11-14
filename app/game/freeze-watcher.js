@@ -11,7 +11,7 @@ export const DEFAULTS = {
   caughtMs: 8000, // the round never gets stuck waiting for the kid to go back
   steps: 10, // switch presses to win
   doMs: 3000, // Robot Says: time to do each command (or to ignore a fake one)
-  gate: 'off', // practice word before Green: 'off', 'held' (after a Red held still) or 'every' (every Green)
+  gate: 'off', // practice word before Green: 'off' or 'every' (Say It to Sneak: every Green)
 };
 
 // Phases: idle, green, red, caught, word (waiting for the practice word), win. Time and random are passed in so tests control them.
@@ -25,8 +25,8 @@ export function createGame(settings = DEFAULTS, random = Math.random) {
   };
 
   // The next Green light, or the wait for a practice word that earns it.
-  const next = (now, held) => {
-    if (s.gate === 'every' || (held && s.gate === 'held')) game.phase = 'word';
+  const next = (now) => {
+    if (s.gate === 'every') game.phase = 'word';
     else green(now);
   };
 
@@ -47,7 +47,7 @@ export function createGame(settings = DEFAULTS, random = Math.random) {
         if (cm != null) game.readings.push(cm);
         if (now - game.redStart >= s.lookMs) {
           if (moved(game.readings, s)) game.caught(now);
-          else next(now, true);
+          else next(now);
         }
       }
     } else if (game.phase === 'caught' && ((cm != null && cm >= game.startCm - s.leewayCm) || now >= game.until)) {

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { fixSettings, load, roundSettings } from './store.js';
 import { DEFAULTS } from './game/freeze-watcher.js';
 
-const spec = { greenMinMs: 3000, greenMaxMs: 7000, settleMs: 1000, lookMs: 2500, leewayCm: 6, winCm: 12, steps: 10, doMs: 3000, input: 'body', game: 'freeze', wordGate: false, words: ['rabbit', 'red', 'robot', 'run'] };
+const spec = { greenMinMs: 3000, greenMaxMs: 7000, settleMs: 1000, lookMs: 2500, leewayCm: 6, winCm: 12, steps: 10, doMs: 3000, input: 'body', game: 'freeze', tab: 'move', words: ['rabbit', 'red', 'robot', 'run'] };
 
 test('how the kid moves is body unless switch is saved', () => {
   assert.equal(fixSettings({ input: 'switch' }).input, 'switch');
@@ -40,18 +40,21 @@ test('practice words: a comma list is tidied, nothing saved gives the spec words
   assert.deepEqual(fixSettings({ words: ' Ball ,, red car,  ' }).words, ['ball', 'red car']);
   assert.deepEqual(fixSettings({ words: ['sun'] }).words, ['sun']);
   assert.deepEqual(fixSettings({ words: '' }).words, []);
-  assert.equal(fixSettings().wordGate, false);
   assert.equal(fixSettings({ game: 'sneak' }).game, 'sneak');
   assert.equal(fixSettings({ game: 'says' }).game, 'says');
   assert.equal(fixSettings({ game: 'chess' }).game, 'freeze');
 });
 
-test('round settings: the gate follows the setting, the game and the word list', () => {
+test('the tab is Move unless Talk is saved', () => {
+  assert.equal(fixSettings({ tab: 'talk' }).tab, 'talk');
+  assert.equal(fixSettings({ tab: 'dance' }).tab, 'move');
+});
+
+test('round settings: only Say It to Sneak asks for words, and only with a word list', () => {
   const base = fixSettings();
-  assert.equal(roundSettings(base).gate, 'off');
-  assert.equal(roundSettings({ ...base, wordGate: true }).gate, 'held');
-  assert.equal(roundSettings({ ...base, wordGate: true, words: [] }).gate, 'off');
-  const sneak = roundSettings({ ...base, game: 'sneak' }); // gate setting is off
+  assert.equal(roundSettings(base).gate, 'off'); // Freeze Watcher never asks for a word
+  assert.equal(roundSettings({ ...base, wordGate: true }).gate, 'off'); // an old saved setting is ignored
+  const sneak = roundSettings({ ...base, game: 'sneak' });
   assert.deepEqual([sneak.gate, sneak.greenMinMs, sneak.greenMaxMs], ['every', 3000, 3000]);
   assert.equal(roundSettings({ ...base, game: 'sneak', words: [] }).gate, 'off');
 });
