@@ -48,12 +48,15 @@ Source: `04 Related chip information/Communication protocol for Smart Robot Car.
 
 Pins on the TB6612 shield: ultrasonic trigger 13 and echo 12, head servo 10, RGB LED 4, mode button 2, IR receiver 9, line sensors A0 to A2.
 
+Checked on the real car (2026-11-14):
+
+- The car has the TB6612 shield with the MPU6050 gyro: it prints `MPU6050_chip_id: 52` at boot, and only the `TB6612 & MPU6050` firmware prints that line.
+- The shield's upload switch must be in the upload position for USB serial to reach the UNO.
+- Opening the serial port resets the UNO. The app waits 2 seconds before the first command, and that is enough.
+
 Not yet verified on the real car (ticket "Flash stock firmware"):
 
-- Which shield and gyro the car has (TB6612 or DRV8835, MPU6050 or QMI8658C). The firmware folder differs for each.
-- The firmware switches the LED off when any other mode command arrives (read from the source, not yet seen on the car). The app sets the head first and the light second.
-- The shield's upload switch may need to be in the upload position for USB serial to reach the UNO.
-- Opening the serial port resets the UNO. Wait about 2 seconds before the first command.
+- The firmware switches the LED off when any other mode command arrives (read from the source, not yet seen on the car). The app sets the head first and the light second, so it works either way.
 
 ## 5. Red Light, Green Light (core game)
 
