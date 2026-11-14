@@ -148,7 +148,8 @@ let wonAt = 0;
 let saysOn = false; // a Robot Says round is being played
 let pressed = false;
 let steps = null; // the kid's piece on the track, while a round is played from a switch
-const switchOn = () => !!steps || $('s-switch').checked;
+// During a round the round's own way of moving counts; the setting only applies to the next round.
+const switchOn = () => !!steps || (!saysOn && ['idle', 'win'].includes(game.phase) && $('s-switch').checked);
 const SWITCH_HINT = {
   idle: 'Press the switch to start.', green: 'Bean is not looking. Press to step closer!',
   caught: 'Your piece is back at the start. Press the switch to go again.',
@@ -420,7 +421,7 @@ $('distance').addEventListener('input', () => {
 });
 
 if (!('serial' in navigator)) {
-  $('connect').disabled = true;
+  $('connect').hidden = true;
   $('link').textContent = 'Playing with the pretend robot. The cable needs Chrome or Edge on a laptop; WiFi works in any browser.';
 }
 
