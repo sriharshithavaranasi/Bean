@@ -56,7 +56,9 @@
     let cam = null;
     let collecting = null; // frames of the current check, or null
 
+    const note = (text) => $('log').append(Object.assign(document.createElement('li'), { textContent: text }));
     $('wiggle').oninput = () => ($('wiggle-out').value = Number($('wiggle').value).toFixed(2));
+    $('wiggle').onchange = () => note(`Wiggle room set to ${$('wiggle-out').value}`);
 
     async function fillCameras() {
       const pick = $('cam').value;
@@ -78,7 +80,10 @@
       $('try').disabled = false;
       loop();
     };
-    $('cam').onchange = () => cam && $('on').click();
+    $('cam').onchange = () => {
+      note(`Camera switched to ${$('cam').selectedOptions[0].text}`);
+      if (cam) $('on').click();
+    };
 
     const ctx = $('dots').getContext('2d');
     let lastSeen = null;
@@ -132,10 +137,13 @@
         const drift = poseDrift(frames);
         const wiggle = Number($('wiggle').value);
         const seen = frames.filter(Boolean).length;
+        // How tall the body looks: shoulders to ankles, as a share of the picture height. Small means far away.
+        const tall = frames.filter(Boolean).map((b) => Math.max(b[27].y, b[28].y) - Math.min(b[11].y, b[12].y));
+        const size = tall.length ? `${Math.round((tall.reduce((a, b) => a + b, 0) / tall.length) * 100)}% of the picture tall` : 'no body';
         const verdict = seen < 6 ? 'Could not see you' : drift > wiggle ? 'I saw you move' : 'So still';
         say(verdict);
         $('log').append(Object.assign(document.createElement('li'), {
-          textContent: `${verdict}: drift ${drift.toFixed(2)}, wiggle room ${wiggle.toFixed(2)}, ${seen} of ${frames.length} frames with a body`,
+          textContent: `${verdict}: drift ${drift.toFixed(2)}, wiggle room ${wiggle.toFixed(2)}, ${seen} of ${frames.length} frames with a body, ${size}, ${$('cam').selectedOptions[0].text}`,
         }));
         await wait(1500);
       }
