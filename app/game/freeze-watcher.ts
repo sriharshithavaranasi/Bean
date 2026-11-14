@@ -12,8 +12,6 @@ export const DEFAULTS = {
   winCm: 12,
   laneCm: 200,
   caughtMs: 8000, // the round never gets stuck waiting for the kid to go back
-  steps: 10, // switch presses to win
-  doMs: 3000, // Robot Says: time to do each command (or to ignore a fake one)
   gate: 'off' as Gate, // practice word before Green: 'off' or 'every' (Say It to Sneak: every Green)
 };
 export type GameSettings = typeof DEFAULTS;
@@ -27,8 +25,6 @@ export type Game = {
   start(now: number, startCm: number): void;
   tick(now: number, cm: number | null): Phase;
   caught(now: number): void;
-  checking(now: number): boolean;
-  win(): void;
   stop(): void;
   ready(now: number): void;
   accept(now: number): void;
@@ -79,12 +75,6 @@ export function createGame(settings: Partial<GameSettings> = DEFAULTS, random = 
   game.caught = (now) => {
     game.phase = 'caught';
     game.until = now + s.caughtMs;
-  };
-
-  // Switch input (steps.ts) decides caught and win with a press instead of a distance.
-  game.checking = (now) => game.phase === 'red' && now - game.redStart >= s.settleMs;
-  game.win = () => {
-    game.phase = 'win';
   };
 
   game.stop = () => {

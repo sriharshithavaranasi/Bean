@@ -20,13 +20,12 @@ export function save(key: string, value: unknown) {
 // Lowest and highest value a grown-up may set, in the game's own units.
 export const LIMITS = {
   greenMinMs: [1000, 30000], greenMaxMs: [1000, 30000], settleMs: [200, 5000],
-  lookMs: [1000, 10000], leewayCm: [2, 50], winCm: [5, 50], steps: [2, 30], doMs: [1000, 15000],
+  lookMs: [1000, 10000], leewayCm: [2, 50], winCm: [5, 50],
 } satisfies Record<string, [number, number]>;
 export type Limited = keyof typeof LIMITS;
 
 export type Settings = Record<Limited, number> & {
-  input: 'body' | 'switch'; // how the kid moves
-  game: 'freeze' | 'sneak' | 'says';
+  game: 'freeze' | 'sneak';
   tab: 'move' | 'talk';
   words: string[];
 };
@@ -42,9 +41,7 @@ export function fixSettings(raw: Record<string, unknown> = {}): Settings {
     s[key] = Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : DEFAULTS[key];
   }
   s.greenMaxMs = Math.max(s.greenMaxMs, s.greenMinMs);
-  s.steps = Math.round(s.steps);
-  s.input = raw.input === 'switch' ? 'switch' : 'body'; // how the kid moves
-  s.game = raw.game === 'sneak' || raw.game === 'says' ? raw.game : 'freeze';
+  s.game = raw.game === 'sneak' ? 'sneak' : 'freeze'; // a saved Robot Says from before falls back
   s.tab = raw.tab === 'talk' ? 'talk' : 'move'; // Move or Talk tab (spec, section 15)
   // Typed as a comma list. Nothing saved gives the spec's words; an emptied list stays empty and switches the gate off.
   const words = raw.words == null ? WORDS : Array.isArray(raw.words) ? raw.words : String(raw.words).split(',');

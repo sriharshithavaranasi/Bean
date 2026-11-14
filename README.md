@@ -1,6 +1,6 @@
 # Bean
 
-Bean is a robot car that plays Red Light, Green Light with a kid. Bean is the watcher: it turns its head away for Green light, looks back for Red light, and catches anyone it sees moving closer. Kids can sneak by walking, crawling or rolling, or play from an adaptive switch. A parent or therapist runs the game from a laptop or a phone.
+Bean is a robot car that plays Red Light, Green Light with a kid. Bean is the watcher: it turns its head away for Green light, looks back for Red light, and catches anyone it sees moving closer. Kids can sneak by walking, crawling or rolling. A parent or therapist runs the game from a laptop or a phone.
 
 Bean is a play and practice tool that can support therapy. It is not a treatment.
 
@@ -56,15 +56,13 @@ Open http://localhost:8000 in Chrome or Edge on the laptop.
 
 ### 5. Connect and play
 
-1. Connect the car one of two ways:
-   - **Cable:** press **Connect by cable**, then pick the car's port (unplug and replug the car to see which one it is). On Windows it shows as `USB-SERIAL CH340`; if no such port appears, install the CH340 driver (`CH341SER.EXE` from wch-ic.com) and replug. The car resets and takes about 2 seconds to wake up. Set the shield's switch (next to the USB port) to **upload** first: on **cam**, the camera board holds the line the cable uses and the car hears nothing.
-   - **WiFi** (kits with the camera): set the shield's switch to **cam**, switch the car on, join the laptop to the car's own WiFi (named `ELEGOO-` and a code, no password), then press **Connect over WiFi**. The car's WiFi has no internet, so the app cannot listen for practice words; press Good try instead.
-2. Open **Grown-up settings** to pick the game (Freeze Watcher, Say It to Sneak or Robot Says) and how the kid moves (their body, or a switch).
+1. Connect the car by cable: press **Connect by cable**, then pick the car's port (unplug and replug the car to see which one it is). On Windows it shows as `USB-SERIAL CH340`; if no such port appears, install the CH340 driver (`CH341SER.EXE` from wch-ic.com) and replug. The car resets and takes about 2 seconds to wake up. Set the shield's switch (next to the USB port) to **upload** first: on **cam**, the camera board holds the line the cable uses and the car hears nothing.
+2. Open **Grown-up settings** to pick the game (Red Light, Green Light or Say It to Sneak).
 3. The kid stands on the start line, facing Bean.
 4. Press **Start**. Turn the volume up: the music, voice and cues come from the laptop.
 5. Green light: Bean looks away and the kid sneaks closer. Red light: Bean looks back and the kid freezes. Moving during Red light sends the kid back to the start. Reaching Bean wins.
 
-If the car is lost (cable out, car off, WiFi dropped), the app says so and keeps playing with the pretend robot. Fix it and press the connect button again.
+If the car is lost (cable out, car off), the app says so and keeps playing with the pretend robot. Fix it and press the connect button again.
 
 ### 6. Optional: run it from a phone
 
@@ -80,7 +78,7 @@ The laptop stays next to the car and does the sound and listening. The phone bec
 3. Open http://localhost:8000 on the laptop and connect the car (step 5). That click also lets the laptop play sound. Keep that tab in front.
 4. The Robot card on the laptop shows an address with a 6-digit code. Open that address on the phone.
 
-The phone shows the same game screen and sends the button presses to the laptop. A phone without the code cannot control the game. Venue WiFi often blocks phones from reaching laptops: if the phone cannot connect, put both on a phone hotspot. When the car is on WiFi, join the phone to the car's WiFi too.
+The phone shows the same game screen and sends the button presses to the laptop. A phone without the code cannot control the game. Venue WiFi often blocks phones from reaching laptops: if the phone cannot connect, put both on a phone hotspot.
 
 ### Not yet checked on the real car
 

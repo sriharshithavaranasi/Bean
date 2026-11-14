@@ -24,7 +24,7 @@ export function makeRobot(send: Send) {
   };
 }
 
-// Matches replies to commands for any wire (USB cable or WiFi). write(text) sends one command;
+// Matches replies to commands for the wire (the USB cable). write(text) sends one command;
 // receive(text) takes whatever arrived. A missing reply resolves to null after replyMs; send never throws or stalls the game.
 export function makeLink(write: (text: string) => unknown, replyMs = 500) {
   const waiting = new Map<string, (value: string | null) => void>(); // id -> resolve

@@ -4,7 +4,7 @@ Hackathon project, Entertainment track. A robot car plays Red Light, Green Light
 
 ## 1. Who it is for
 
-Kids who cannot easily join running games, mainly kids with limited mobility. They sneak by walking, crawling or rolling, or they play from an adaptive switch. A parent or therapist sets the pace and the practice words.
+Kids who cannot easily join running games, mainly kids with limited mobility. They sneak by walking, crawling or rolling. A parent or therapist sets the pace and the practice words.
 
 ## 2. Scope
 
@@ -12,8 +12,8 @@ Priorities are used on every ticket.
 
 | Priority | Meaning | What is in it |
 | --- | --- | --- |
-| P0 | Needed for the demo | Freeze Watcher on the real car, with music, lights and win detection, run from the parent app (section 13) |
-| P1 | Makes the pitch true | Parent app on a phone, switch input, speech practice, Say It to Sneak, Robot Says, grown-up settings, progress, multi-sensory signals |
+| P0 | Needed for the demo | Red Light, Green Light on the real car, with music, lights and win detection, run from the parent app (section 13) |
+| P1 | Makes the pitch true | Parent app on a phone, speech practice, Say It to Sneak, grown-up settings, progress, multi-sensory signals |
 | P2 | Stretch | Gyro spin, push button, buzzer, custom firmware |
 
 Out of scope: the camera, accounts, a server, a database, a native phone app.
@@ -55,7 +55,7 @@ Not yet verified on the real car (ticket "Flash stock firmware"):
 - The shield's upload switch may need to be in the upload position for USB serial to reach the UNO.
 - Opening the serial port resets the UNO. Wait about 2 seconds before the first command.
 
-## 5. Freeze Watcher (core game)
+## 5. Red Light, Green Light (core game)
 
 Set-up: tape a straight lane about 2 m long in front of the car with a start line at the far end. The kid waits at the start line. Pressing Start records the start distance.
 
@@ -79,33 +79,16 @@ Win: a reading under the win distance during Red.
 
 Limits to say out loud in the demo: the sensor sees a narrow cone straight ahead, and it sees movement toward the robot, not side to side.
 
-## 6. Games and input
+## 6. Games
 
-The parent picks a **game** and, separately, **how the kid moves**. Any game works with either input.
+The parent picks a game. In both, the kid moves toward the robot and the distance sensor checks them.
 
-How the kid moves:
-
-- **Body.** The kid moves toward the robot and the distance sensor checks them.
-- **Switch.** For kids who play from an adaptive switch. The switch is Space, Enter or a big on-screen button. Each press during Green moves the kid's piece one step along a track on the screen. A press while the robot is checking is caught and sends the piece back to the start. Reaching the last step wins. Holding the key counts as one press.
-
-Games:
-
-- **Freeze Watcher (P0).** Section 5.
-- **Say It to Sneak (P1).** Freeze Watcher with a practice word before every Green light and a fixed 3 second Green light. Every Green light is earned with a practice word.
-- **Robot Says (P1).** Eight commands, with a score out of 8. The robot faces the kid the whole time. Each command is spoken with or without "Robot says" (about 7 in 10 are real; "freeze" is always real). The time to do each command is read before every command, so a grown-up can change it during the game.
-
-| Command | Checked by |
-| --- | --- |
-| Take one step closer | Distance shrank by more than the leeway (switch: a press) |
-| Take one step back | Distance grew by more than the leeway (switch: a press) |
-| Freeze like a statue | Distance held still (switch: no press) |
-| Wave hello | Parent presses They did it or Not yet |
-
-A real command done scores a point. A fake command ignored scores a point. A fake command obeyed is "Gotcha!".
+- **Red Light, Green Light (P0).** Section 5.
+- **Say It to Sneak (P1).** Red Light, Green Light with a practice word before every Green light and a fixed 3 second Green light. Every Green light is earned with a practice word.
 
 ## 7. Speech
 
-Web Speech API in Chrome. Recognition is weak on kids' voices, so the Good try button is always on screen whenever the app is listening. Only Say It to Sneak listens for words; Freeze Watcher and Robot Says never ask the kid to speak.
+Web Speech API in Chrome. Recognition is weak on kids' voices, so the Good try button is always on screen whenever the app is listening. Only Say It to Sneak listens for words; Red Light, Green Light never asks the kid to speak.
 
 ## 8. Signals
 
@@ -126,8 +109,7 @@ Labels are in plain words, as shown. Settings are saved on the device.
 
 | Setting | Choices or default |
 | --- | --- |
-| Game | Freeze Watcher, Say It to Sneak, Robot Says |
-| How the kid moves | Moves their body toward the robot, or presses a switch |
+| Game | Red Light, Green Light, Say It to Sneak |
 | Robot looks away by | Turning its head. Spinning the whole car is listed only when the P2 firmware is present |
 | Shortest green light | 3 s |
 | Longest green light | 7 s |
@@ -135,15 +117,13 @@ Labels are in plain words, as shown. Settings are saved on the device.
 | How long the robot stares | 2.5 s |
 | Wiggle room before caught | 6 cm (replace with the measured value from the calibration ticket) |
 | Win when closer than | 12 cm |
-| Switch presses to win | 10 |
-| Time to do each command (Robot Says only) | 3 s, from 1 to 15 s |
 | Practice words (Say It to Sneak only) | rabbit, red, robot, run |
 
 Lane length stays at 200 cm and is not shown to parents.
 
 ## 10. Progress (P1)
 
-Four totals on the main screen: Rounds, Wins, Good freezes, Word tries (shown only for Say It to Sneak). Times caught is counted but not shown, so the screen stays encouraging. Finishing all eight Robot Says commands counts as a win, whatever the score. One Reset button that asks first. Totals are saved on the device.
+Three totals on the main screen: Rounds, Wins, Word tries (shown only for Say It to Sneak). Times caught is counted but not shown, so the screen stays encouraging. One Reset button that asks first. Totals are saved on the device.
 
 ## 11. Code layout
 
@@ -158,7 +138,7 @@ app/
   robot.ts          robot interface: connect, lookAway, lookAtKid, distanceCm, setLight
   robot-serial.ts   Web Serial transport
   robot-mock.ts     slider-driven fake robot
-  game/             pure logic and tests (movement, freeze-watcher, steps)
+  game/             pure logic and tests (movement, freeze-watcher, pose-moved)
   speech.ts         practice-word listener
   signals.ts        screen, sound, vibration
   store.ts          settings and progress in localStorage
@@ -179,9 +159,9 @@ The reference is the team's single-page example (`message.txt`, shared 2026-11-1
 
 One page, phone first, in this order:
 
-1. **Stage.** A big round light in the state colour, a status line ("Bean is ready", "Green light!", "Red light!", "I saw you!", "You got me!"), a hint line, the switch track when switch input is on, and the live distance.
-2. **Start and Stop.** Stop is always available. It ends the round, silences music and speech, stops listening, turns the robot to face the kid and sends the stop command. During a round Start becomes Restart, which asks first: a second press within 4 seconds restarts. In switch mode the big Step button reads Start at idle and Play again after a win.
-3. **Parent buttons.** Good try (word), Kid is back at start, They did it, Not yet. Each is shown only while the game is waiting for it.
+1. **Stage.** A big round light in the state colour, a status line ("Bean is ready", "Green light!", "Red light!", "I saw you!", "You got me!"), a hint line and the live distance.
+2. **Start and Stop.** Stop is always available. It ends the round, silences music and speech, stops listening, turns the robot to face the kid and sends the stop command. During a round Start becomes Restart, which asks first: a second press within 4 seconds restarts.
+3. **Parent buttons.** Good try (word), Kid is back at start. Each is shown only while the game is waiting for it.
 4. **Progress.** Section 10.
 5. **Robot.** Connect, link state, and the pretend-robot distance slider when no car is connected.
 6. **Grown-up settings.** Section 9.
@@ -203,7 +183,7 @@ Not taken from the example:
 
 **Phone to car.** A phone cannot open the USB serial port. The recommended route (ticket "Control the robot from a phone") keeps the laptop next to the car: the laptop tab holds the USB link, runs the game and plays the sound, and the phone opens the same page from the laptop over the local network as a remote. Speech recognition stays on the laptop, because a phone page loaded over plain HTTP may not use the microphone.
 
-This route is built. Start the server with `node scripts/serve.ts --lan` (or set `HOST`); without it the server stays on localhost and the phone remote is off. The laptop tab shows the phone address with a 6-digit code that changes on every server start. A phone with the right code copies the laptop's stage (status, light, track, buttons, progress and settings) within half a second and sends Start, Stop, Step, the grown-up buttons, Reset and settings back. The laptop does a press only while that button is on its own screen. A wrong code gets nothing, and after 20 wrong codes no phone may connect until the server restarts. Click once on the laptop tab before playing (Connect by cable or Connect over WiFi does this), so the browser lets it play sound, and keep that tab in front, because a background tab runs its timers slowly. Venue WiFi often blocks device-to-device traffic: use a phone hotspot.
+This route is built. Start the server with `node scripts/serve.ts --lan` (or set `HOST`); without it the server stays on localhost and the phone remote is off. The laptop tab shows the phone address with a 6-digit code that changes on every server start. A phone with the right code copies the laptop's stage (status, light, buttons, progress and settings) within half a second and sends Start, Stop, the grown-up buttons, Reset and settings back. The laptop does a press only while that button is on its own screen. A wrong code gets nothing, and after 20 wrong codes no phone may connect until the server restarts. Click once on the laptop tab before playing (Connect by cable does this), so the browser lets it play sound, and keep that tab in front, because a background tab runs its timers slowly. Venue WiFi often blocks device-to-device traffic: use a phone hotspot.
 
 ## 14. Custom firmware protocol (P2)
 
@@ -239,7 +219,7 @@ Proposed by the speech area. It changes the scope in section 2 in two places, so
 | No answer after the wait time | Models an answer ("You can say: hi Bean!"), then listens again | "Your turn!" | LED blue |
 | Thinking (AI chat only) | Silent, up to 3 s | "Bean is thinking" | LED yellow |
 
-Good try and They did it end the kid's turn at any time, as in section 7. Stop ends the game and silences Bean at once. A game is 6 turns, then Bean says goodbye.
+Good try ends the kid's turn at any time, as in section 7. Stop ends the game and silences Bean at once. A game is 6 turns, then Bean says goodbye.
 
 **AI chat, server side.** `POST /talk` on `scripts/serve.ts`, laptop only (same `loopback` and JSON body checks as the relay). The body is the last few turns as text. The server adds the system instruction and the key from the `GEMINI_API_KEY` environment variable and calls a fast Flash-Lite model. The key never reaches the browser and is never written to a file in the repo. Without the variable, `/talk` answers 503 and the game stays scripted.
 
@@ -249,10 +229,10 @@ Good try and They did it end the kid's turn at any time, as in section 7. Stop e
 
 | | Move tab | Talk tab |
 | --- | --- | --- |
-| Games | Freeze Watcher, Say It to Sneak, Robot Says | Talk with Bean |
-| Progress | Rounds, Wins, Good freezes; Word tries only for Say It to Sneak | Turns taken, Turns heard by the microphone |
-| Settings | Section 9 rows for movement and the switch | Script, kid's first name, wait for an answer, AI chat, practice words |
-| Shared | Stage, Start, Stop, Good try, They did it, the Robot card | same |
+| Games | Red Light, Green Light, Say It to Sneak | Talk with Bean |
+| Progress | Rounds, Wins; Word tries only for Say It to Sneak | Turns taken, Turns heard by the microphone |
+| Settings | Section 9 rows for movement | Script, kid's first name, wait for an answer, AI chat, practice words |
+| Shared | Stage, Start, Stop, Good try, the Robot card | same |
 
 Tabs are a real tab list (`role="tablist"`, arrow keys move between tabs, the chosen tab is remembered on the device). Switching tab during a round asks first, as Restart does: the first press turns the pressed tab amber with "Press again to stop", and a second press within 4 seconds stops the round and switches. The kid's hint on the stage is never replaced by the warning. The phone remote copies the chosen tab.
 
@@ -278,7 +258,7 @@ Tabs are a real tab list (`role="tablist"`, arrow keys move between tabs, the ch
 
 Proposed by the speech area. It changes section 2 ("Out of scope: the camera"), so the team agrees before it reaches the game.
 
-**Why.** The distance sensor only sees movement toward the robot, straight ahead, in a narrow cone (section 5). A webcam sees a kid step sideways, shuffle a foot or sneak at the edge of the lane, so Freeze Watcher catches what a kid actually sees as cheating.
+**Why.** The distance sensor only sees movement toward the robot, straight ahead, in a narrow cone (section 5). A webcam sees a kid step sideways, shuffle a foot or sneak at the edge of the lane, so Red Light, Green Light catches what a kid actually sees as cheating.
 
 **How it decides.** A USB webcam (the team's Logitech) stands about 1 to 1.5 m behind the car, raised (on the laptop or a stand) and angled down the lane, so the kid's shoulders and hips stay in the picture from the start line to the car. Feet may be out of the picture: knees and ankles count only when they are seen. Not on the car: as the kid comes close, a camera on the car sees only their legs and loses them (on the first tuning run, a body filling 120 to 260% of the picture height was lost in about half the rounds). MediaPipe Pose Landmarker (lite model) finds 33 body points in each frame on the laptop. During Red, after the time to freeze, about 10 frames a second are kept. `poseDrift` in `app/game/pose-moved.ts` compares the shoulders, hips, knees and ankles with where they were in the first three frames, as a share of the kid's torso length, so the same setting works near and far. The kid is caught when, in any three frames in a row, at least two of those points drifted more than the wiggle room. Hands and head never count: they move without meaning to, and some kids cannot hold them still. Fewer than six frames with a body, or no body found, is not caught, as in section 5.
 
@@ -298,4 +278,4 @@ Proposed by the speech area. It changes section 2 ("Out of scope: the camera"), 
 
 **Tuning.** `app/watch.html` opens the camera, draws the watched points and runs hands-free practice: a spoken 5 second countdown, then Green and Red lights until Stop, saying each result and listing the drift it measured, with a wiggle room slider. Use it on the real lane, with the real light, before the demo.
 
-**Code.** `app/camera.ts` (opens the camera, loads the model), `app/game/pose-moved.ts` and its tests, `app/watch.html`. Hooking it into Freeze Watcher (`app/game/freeze-watcher.ts`, `app/main.ts`) is a comms request to their owner.
+**Code.** `app/camera.ts` (opens the camera, loads the model), `app/game/pose-moved.ts` and its tests, `app/watch.html`. Hooking it into Red Light, Green Light (`app/game/freeze-watcher.ts`, `app/main.ts`) is a comms request to their owner.

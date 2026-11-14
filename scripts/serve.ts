@@ -4,7 +4,7 @@ import { randomInt } from 'node:crypto';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { stripTypeScriptTypes } from 'node:module';
-import { connect, type AddressInfo, type Socket } from 'node:net';
+import type { AddressInfo } from 'node:net';
 import { networkInterfaces } from 'node:os';
 import { extname, join, normalize, sep } from 'node:path';
 
@@ -77,47 +77,9 @@ async function relay(req: IncomingMessage, res: ServerResponse, url: URL) {
   res.writeHead(404).end();
 }
 
-// ---------- car over WiFi ----------
-// The camera board on the car makes its own WiFi and passes JSON commands on TCP port 100 to the main board.
-// It drops a client that does not send {Heartbeat} for about 4 seconds. Only the laptop tab may use this.
-const [carHost, carPort = 100] = (process.env.CAR || '192.168.4.1').split(':');
-let car: Socket | null = null; // the one open connection to the car
-function openCar(req: IncomingMessage, res: ServerResponse) {
-  car?.destroy(); // a new tab takes over the car
-  const socket = (car = connect({ host: carHost, port: Number(carPort), timeout: 4000 }));
-  let heard = Date.now();
-  // Our heartbeat keeps the car's side open; the car beats every second, so 4 quiet seconds mean it is gone.
-  const beat = setInterval(() => (Date.now() - heard > 4000 ? socket.destroy() : socket.write('{Heartbeat}')), 1000);
-  socket.on('connect', () => {
-    socket.setTimeout(0);
-    heard = Date.now();
-    res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store' }).flushHeaders();
-  });
-  socket.on('data', (d) => {
-    heard = Date.now();
-    res.write(`data: ${JSON.stringify(String(d))}\n\n`);
-  });
-  socket.on('timeout', () => socket.destroy()); // could not connect in 4 seconds
-  socket.on('error', () => {}); // close follows
-  socket.on('close', () => {
-    clearInterval(beat);
-    if (car === socket) car = null;
-    res.headersSent ? res.end() : res.writeHead(502).end();
-  });
-  req.on('close', () => socket.destroy());
-}
-
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', 'http://x');
   if (url.pathname.startsWith('/relay/')) return host ? relay(req, res, url) : res.writeHead(404).end();
-  if (url.pathname === '/car' || url.pathname === '/car/send') {
-    if (!loopback(req)) return res.writeHead(403).end();
-    if (req.method === 'GET' && url.pathname === '/car') return openCar(req, res);
-    const data = req.method === 'POST' && url.pathname === '/car/send' && (await body(req));
-    if (!data || !car) return res.writeHead(data ? 409 : 400).end();
-    car.write(data);
-    return res.writeHead(204).end();
-  }
   const path = normalize(join(root, decodeURIComponent(url.pathname)));
   if (!path.startsWith(root + sep)) return res.writeHead(403).end();
   try {

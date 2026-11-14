@@ -1,14 +1,9 @@
 import { createGame } from './game/freeze-watcher.ts';
-import { COMMANDS, did, makeCommands, outcome, total } from './game/robot-says.ts';
-import { createSteps } from './game/steps.ts';
 import { makeMockRobot } from './robot-mock.ts';
 import { connectSerial } from './robot-serial.ts';
-import { connectWifi } from './robot-wifi.ts';
 import { playCue, praise, say, silence, unlockAudio } from './signals.ts';
 import { canHear, listenFor, stopListening } from './speech.ts';
 import { fixSettings, LIMITS, load, roundSettings, save, type Limited, type Settings } from './store.ts';
-import type { Outcome, Seen } from './game/robot-says.ts';
-import type { Steps } from './game/steps.ts';
 import type { Robot } from './robot.ts';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -27,27 +22,21 @@ const SCREEN: Record<string, { status?: string; hint: string; glyph: string }> =
   red: { status: 'Red light!', hint: 'Bean is looking. Freeze!', glyph: 'M7 5h4v14H7zM13 5h4v14h-4z' },
   caught: { status: 'I saw you!', hint: 'Go back to the start line.', glyph: 'M12 5C6 5 2 12 2 12s4 7 10 7 10-7 10-7-4-7-10-7zm0 11a4 4 0 110-8 4 4 0 010 8z' },
   word: { status: 'Say your word', hint: 'Say it out loud, or press Good try.', glyph: 'M4 4h16v12h-9l-5 4v-4H4z' },
-  // Robot Says: the command itself is the status line.
-  says: { hint: 'Listen for “Robot says”.', glyph: 'M4 4h16v12h-9l-5 4v-4H4z' },
-  wave: { hint: 'Grown-up: press They did it or Not yet.', glyph: 'M4 4h16v12h-9l-5 4v-4H4z' },
-  point: { status: 'Yes!', hint: 'You did what Bean said.', glyph: 'M9 16.2l-3.5-3.5L4 14.2l5 5 11-11-1.5-1.5z' },
-  gotcha: { status: 'Gotcha!', hint: 'Bean did not say “Robot says”.', glyph: 'M12 5C6 5 2 12 2 12s4 7 10 7 10-7 10-7-4-7-10-7zm0 11a4 4 0 110-8 4 4 0 010 8z' },
-  miss: { status: 'Not this time', hint: 'Bean said “Robot says”. Try the next one!', glyph: 'M8 7a2 2 0 100 4 2 2 0 000-4zm8 0a2 2 0 100 4 2 2 0 000-4zM7 15h10v2H7z' },
   win: { status: 'You got me!', hint: 'You reached Bean!', glyph: 'M12 2l3 7 7 .6-5.3 4.7 1.7 7.2L12 17.8 5.6 21.5l1.7-7.2L2 9.6 9 9z' },
 };
-const LIGHT: Record<string, [number, number, number]> = { green: [0, 255, 0], red: [255, 0, 0], caught: [255, 80, 0], word: [0, 0, 255], win: [255, 255, 255], point: [0, 255, 0], gotcha: [255, 80, 0], miss: [0, 0, 255] };
+const LIGHT: Record<string, [number, number, number]> = { green: [0, 255, 0], red: [255, 0, 0], caught: [255, 80, 0], word: [0, 0, 255], win: [255, 255, 255] };
 
 // ---------- grown-up settings ----------
 // field id -> [game setting, how many of the game's units one of the field's units is]
 const FIELDS: Record<string, [Limited, number]> = {
   greenMin: ['greenMinMs', 1000], greenMax: ['greenMaxMs', 1000], settle: ['settleMs', 1000],
-  look: ['lookMs', 1000], leewayCm: ['leewayCm', 1], winCm: ['winCm', 1], steps: ['steps', 1], doIt: ['doMs', 1000],
+  look: ['lookMs', 1000], leewayCm: ['leewayCm', 1], winCm: ['winCm', 1],
 };
 const rulers: Record<string, HTMLInputElement> = {};
 const talking = () => $('tab-talk').getAttribute('aria-selected') === 'true';
 function settings() {
   const raw: Record<string, unknown> = {
-    input: $<HTMLInputElement>('s-switch').checked ? 'switch' : 'body', game: $<HTMLInputElement>('s-says').checked ? 'says' : $<HTMLInputElement>('s-sneak').checked ? 'sneak' : 'freeze',
+    game: $<HTMLInputElement>('s-sneak').checked ? 'sneak' : 'freeze',
     words: $<HTMLInputElement>('s-words').value, tab: talking() ? 'talk' : 'move',
   };
   for (const [id, [key, unit]] of Object.entries(FIELDS)) {
@@ -59,11 +48,8 @@ function settings() {
 // The boxes show what the next round will really use: a bad value is fixed where the grown-up typed it.
 function showSettings(s: Settings) {
   for (const [id, [key, unit]] of Object.entries(FIELDS)) $<HTMLInputElement>(`s-${id}`).value = rulers[id].value = String(s[key] / unit);
-  $<HTMLInputElement>('s-switch').checked = s.input === 'switch';
-  $<HTMLInputElement>('s-body').checked = s.input !== 'switch';
-  // Only the settings the chosen game uses are shown; the hidden ones keep their values.
-  const unused = { freeze: ['doIt'], sneak: ['greenMin', 'greenMax', 'doIt'], says: ['greenMin', 'greenMax', 'settle', 'look', 'winCm', 'steps'] }[s.game];
-  for (const id of Object.keys(FIELDS)) $(`s-${id}`).closest<HTMLElement>('.field')!.hidden = unused.includes(id) || (id === 'steps' && s.input !== 'switch');
+  // Say It to Sneak has a fixed Green (store.ts roundSettings), so its Green boxes are hidden; they keep their values.
+  for (const id of ['greenMin', 'greenMax']) $(`s-${id}`).closest<HTMLElement>('.field')!.hidden = s.game === 'sneak';
   // Only Say It to Sneak asks for practice words.
   $('s-words').closest<HTMLElement>('.words')!.hidden = $('t-words').parentElement!.hidden = s.game !== 'sneak';
   $<HTMLInputElement>(`s-${s.game}`).checked = true;
@@ -78,7 +64,6 @@ function settingChanged(s = settings()) {
   if (remote) send({ settings: s });
   showSettings(s);
   save('bean-settings', s);
-  drawTrack();
   if (shown === 'idle') show('idle');
 }
 for (const [id, [key, unit]] of Object.entries(FIELDS)) {
@@ -103,13 +88,13 @@ for (const [id, [key, unit]] of Object.entries(FIELDS)) {
   ruler.addEventListener('input', () => ((input.value = ruler.value), changed()));
   input.addEventListener('change', () => settingChanged());
 }
-for (const id of ['s-body', 's-switch', 's-freeze', 's-sneak', 's-says', 's-words']) $(id).addEventListener('change', () => settingChanged());
+for (const id of ['s-freeze', 's-sneak', 's-words']) $(id).addEventListener('change', () => settingChanged());
 showSettings(fixSettings(load('bean-settings', {})));
 if (matchMedia('(min-width: 860px)').matches) $<HTMLDetailsElement>('settings').open = true;
 
 // ---------- progress ----------
 // caught is counted but never shown (spec, section 10). words = every try, heard = the tries the microphone caught itself.
-const ZERO = { rounds: 0, wins: 0, freezes: 0, words: 0, heard: 0, caught: 0 };
+const ZERO = { rounds: 0, wins: 0, words: 0, heard: 0, caught: 0 };
 let totals = load('bean-progress', ZERO);
 function drawTotals() {
   for (const dd of document.querySelectorAll('#totals dd')) dd.textContent = String(totals[dd.id.slice(2) as keyof typeof ZERO]);
@@ -151,77 +136,6 @@ let shown = 'idle';
 let chain: Promise<unknown> = Promise.resolve();
 const queued = <T>(job: () => T) => (chain = chain.then(job).catch((e) => void console.error(e)));
 
-// ---------- switch input ----------
-let wonAt = 0;
-let saysOn = false; // a Robot Says round is being played
-let pressed = false;
-let steps: Steps | null = null; // the kid's piece on the track, while a round is played from a switch
-// During a round the round's own way of moving counts; the setting only applies to the next round.
-const switchOn = () => !!steps || (!saysOn && !talking() && ['idle', 'win'].includes(game.phase) && $<HTMLInputElement>('s-switch').checked);
-const SWITCH_HINT: Record<string, string> = {
-  idle: 'Press the switch to start.', green: 'Bean is not looking. Press to step closer!',
-  caught: 'Your piece is back at the start. Press the switch to go again.',
-};
-function drawCells(at: number, count: number, text: string) {
-  $('track-cells').replaceChildren(
-    ...Array.from({ length: count }, (_, i) => Object.assign(document.createElement('span'), { className: i < at ? 'on' : '' })),
-  );
-  $('track-text').textContent = text;
-}
-function drawTrack() {
-  if (saysOn) return; // Robot Says counts its commands on the track
-  const on = switchOn();
-  $('track').hidden = $('step').hidden = !on;
-  $('readout').hidden = on || talking(); // Talk has no distance to show
-  const at = steps ? steps.at : 0;
-  const count = steps ? steps.total : Number($<HTMLInputElement>('s-steps').value);
-  drawCells(at, count, `Step ${at} of ${count}`);
-}
-function press() {
-  if (remote) return send({ click: 'step' });
-  const now = performance.now();
-  // The switch starts the round itself: from idle, and once the win has been up for 2 seconds.
-  if (shown === 'idle' || (shown === 'win' && now - wonAt >= 2000)) return start();
-  if (!steps) return;
-  if (saysOn) {
-    pressed = true; // Robot Says only asks: was the switch pressed during this command?
-    return;
-  }
-  const what = steps.press(game.phase, game.checking(now));
-  if (what === 'caught') game.caught(now);
-  if (what === 'ready') game.ready(now);
-  if (what === 'win') {
-    game.win();
-    wonAt = now;
-  }
-  if (!what) return;
-  drawTrack();
-  // The tick may already have shown this phase; it never shows a win it did not decide.
-  queued(async () => {
-    if (game.phase !== shown && game.phase !== 'idle') await enter(game.phase);
-  });
-}
-// The switch is Space, Enter or the Step button. In switch mode those keys start and step instead of pressing Start;
-// they still work as usual in a form field and on the other buttons, so Stop stays reachable by keyboard.
-// For 2 seconds after a win they do nothing (press), so a kid still pressing does not skip the win by starting again.
-const isSwitchKey = (e: KeyboardEvent) =>
-  switchOn() && (e.key === ' ' || e.key === 'Enter') && !(e.target as Element).closest('input, select, textarea, summary, button:not(#start, #step)');
-addEventListener('keydown', (e) => {
-  if (!isSwitchKey(e)) return;
-  e.preventDefault();
-  if (!e.repeat) press(); // a held key is one press, also the one that started the round
-});
-addEventListener('keyup', (e) => {
-  if (e.key !== ' ' && e.key !== 'Enter') return;
-  if (isSwitchKey(e)) e.preventDefault(); // Space clicks a focused button on key up
-  steps?.release();
-});
-$('step').addEventListener('click', (e) => {
-  if (e.detail === 0) return; // keyboard click: the key handlers above already counted it
-  press();
-  steps?.release();
-});
-
 const chosenGame = () => document.querySelector<HTMLInputElement>('[name="s-game"]:checked')!.labels![0].textContent!.trim();
 let restartUntil = 0; // Restart was pressed once: a second press before this time restarts
 const startLabel = () =>
@@ -234,13 +148,13 @@ const tabWarn = (tab: string, label = '') => {
 };
 const TALK_GLYPH = $('tab-talk').querySelector('path')!.getAttribute('d')!; // the speech bubble on the Talk tab
 const idleStatus = () => (talking() ? 'Talk with Bean' : `Let’s play ${chosenGame()}`);
-function show(phase: string, hint = talking() ? 'Coming soon: Bean takes turns talking with your kid.' : (switchOn() && SWITCH_HINT[phase]) || SCREEN[phase].hint, status = phase === 'idle' ? idleStatus() : (SCREEN[phase].status ?? '')) {
+function show(phase: string, hint = talking() ? 'Coming soon: Bean takes turns talking with your kid.' : SCREEN[phase].hint, status = phase === 'idle' ? idleStatus() : (SCREEN[phase].status ?? '')) {
   shown = phase;
   document.body.dataset.phase = phase;
   $('status').textContent = status;
   $('hint').textContent = hint;
   // shortcut: Talk with Bean is not built yet, the speech area fills it in and shows Start and Stop again.
-  $('controls').hidden = talking();
+  $('controls').hidden = $('readout').hidden = talking(); // Talk has no distance to show
   $('glyph-path').setAttribute('d', phase === 'idle' && talking() ? TALK_GLYPH : SCREEN[phase].glyph);
   if (phase === 'idle' || phase === 'win') {
     restartUntil = tabUntil = 0;
@@ -248,11 +162,9 @@ function show(phase: string, hint = talking() ? 'Coming soon: Bean takes turns t
     tabWarn('talk');
   }
   startLabel();
-  $('step').textContent = phase === 'idle' ? 'Start' : phase === 'win' ? 'Play again' : 'Step';
   $('ready').hidden = phase !== 'caught';
   $('goodtry').hidden = phase !== 'word'; // on screen whenever the app waits for the word
-  $('yes').hidden = $('no').hidden = phase !== 'wave';
-  $('parent').hidden = !['caught', 'word', 'wave'].includes(phase);
+  $('parent').hidden = !['caught', 'word'].includes(phase);
   keepAwake();
 }
 
@@ -269,71 +181,6 @@ function keepAwake() {
   }
 }
 document.addEventListener('visibilitychange', keepAwake);
-
-// ---------- Robot Says ----------
-const SHOW_MS = 1800; // how long the result stays up
-// The bar along the bottom of the stage shrinks while the kid has time to do the command.
-function drain(ms: number) {
-  $('timer').hidden = false;
-  $('timer').animate([{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }], { duration: ms, fill: 'forwards' });
-}
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-let saysRun = 0; // Stop and Restart end the running round by changing this
-let answer: (parent: boolean | null) => void = () => {};
-$('yes').addEventListener('click', () => answer(true));
-$('no').addEventListener('click', () => answer(false));
-
-async function playSays() {
-  const mine = ++saysRun;
-  const alive = () => mine === saysRun;
-  const commands = makeCommands();
-  const outcomes: Outcome[] = [];
-  saysOn = true;
-  $('track').hidden = false;
-  $('readout').hidden = true;
-  for (const [i, { kind, real }] of commands.entries()) {
-    const line = real ? `Robot says: ${COMMANDS[kind].toLowerCase()}` : COMMANDS[kind];
-    const hint = kind !== 'wave' && steps ? 'Press the switch for a step. Do not press for freeze.' : undefined;
-    show(kind === 'wave' ? 'wave' : 'says', hint, line);
-    drawCells(i, commands.length, `Command ${i + 1} of ${commands.length}. Score ${total(outcomes)}.`);
-    queued(() => robot.setLight(0, 0, 255));
-    // The buttons are up while Bean is still talking: a press then counts too.
-    const parent = new Promise<boolean | null>((resolve) => (answer = resolve));
-    await say(line);
-    if (!alive()) return;
-    const s = settings(); // read per command: a grown-up may give more time in the middle of the round
-    let seen: Seen;
-    if (kind === 'wave') {
-      seen = { parent: await parent };
-    } else if (steps) {
-      pressed = false;
-      drain(s.doMs);
-      await wait(s.doMs);
-      seen = { pressed };
-    } else {
-      const startCm = await queued(() => robot.distanceCm());
-      drain(s.doMs);
-      await wait(s.doMs);
-      seen = { startCm, endCm: await queued(() => robot.distanceCm()), leewayCm: s.leewayCm };
-    }
-    if (!alive()) return;
-    $('timer').hidden = true; // only this round's own timer: Stop hides it otherwise
-    const result = outcome(real, did(kind, seen));
-    outcomes.push(result);
-    show(result, result === 'point' && !real ? 'Bean did not say “Robot says”. Good listening!' : undefined);
-    drawCells(i + 1, commands.length, `Command ${i + 1} of ${commands.length}. Score ${total(outcomes)}.`);
-    queued(() => robot.setLight(...LIGHT[result]));
-    say(SCREEN[result].status!); // every outcome screen has a status
-    await wait(SHOW_MS);
-    if (!alive()) return;
-  }
-  bump('wins'); // finishing all eight commands is a win, whatever the score
-  const score = `${total(outcomes)} out of ${commands.length}`;
-  wonAt = performance.now(); // a kid still pressing the switch does not skip the score
-  show('win', 'Press Play again for eight more.', `${score}!`);
-  queued(() => robot.setLight(...LIGHT.win));
-  say(`You scored ${score}!`);
-}
 
 // ---------- practice word ----------
 let round = roundSettings(fixSettings()); // the settings this round was started with
@@ -354,7 +201,6 @@ function askWord(lead: string) {
 
 async function enter(phase: string) {
   const held = shown === 'red' && (phase === 'green' || phase === 'word');
-  if (held) bump('freezes');
   if (phase === 'win') bump('wins');
   if (phase === 'caught') bump('caught');
   if (phase === 'word') askWord(held ? 'Great freezing! ' : shown === 'idle' ? 'Say your word to sneak closer! ' : '');
@@ -375,7 +221,7 @@ setInterval(() => {
   ticking = true;
   queued(async () => {
     // The head points away during Green, so there is nothing to measure.
-    const cm = steps || game.phase === 'green' ? null : await robot.distanceCm();
+    const cm = game.phase === 'green' ? null : await robot.distanceCm();
     if (cm != null) $('reading').textContent = `${cm} cm`;
     const phase = game.tick(performance.now(), cm);
     if (phase !== shown && phase !== 'idle') await enter(phase);
@@ -384,12 +230,6 @@ setInterval(() => {
 
 async function stopRound(hint?: string) {
   game.stop();
-  steps = null;
-  saysRun++;
-  saysOn = false;
-  $('timer').hidden = true;
-  answer(null);
-  drawTrack();
   stopListening();
   silence();
   show('idle', hint);
@@ -405,26 +245,15 @@ function start() {
   queued(async () => {
     await stopRound(); // Start during a round ends it first
     const s = (round = roundSettings(settings()));
-    if (s.game === 'says') {
-      if (s.input === 'switch') steps = createSteps(1); // only so the switch keys and the Step button are live
-      drawTrack();
-      bump('rounds');
-      await robot.lookAtKid(); // Bean faces the kid the whole game
-      playSays(); // not awaited: Stop must be able to run while it plays
-      return;
-    }
-    // A switch round needs no distance: the piece on the track is the kid.
-    const startCm = s.input === 'switch' ? 0 : await robot.distanceCm();
-    if (s.input !== 'switch' && !startCm) {
+    const startCm = await robot.distanceCm();
+    if (!startCm) {
       show('idle', 'Bean cannot see you. Stand in the lane, facing Bean, and press Start again.');
       return;
     }
-    if (s.input === 'switch') steps = createSteps(s.steps);
-    else $('reading').textContent = `${startCm} cm`;
-    drawTrack();
+    $('reading').textContent = `${startCm} cm`;
     bump('rounds');
     game = createGame(s);
-    game.start(performance.now(), startCm ?? 0); // never null here: checked above
+    game.start(performance.now(), startCm);
     await enter(game.phase);
   });
 }
@@ -473,10 +302,10 @@ $('distance').addEventListener('input', () => {
 
 if (!('serial' in navigator)) {
   $('connect').hidden = true;
-  $('link').textContent = 'Playing with the pretend robot. The cable needs Chrome or Edge on a laptop; WiFi works in any browser.';
+  $('link').textContent = 'Playing with the pretend robot. The cable needs Chrome or Edge on a laptop.';
 }
 
-// The car is reached over the USB cable or over its own WiFi (the kit's camera board).
+// The car is reached over the USB cable.
 async function connectRobot(open: (onLost: () => void) => Promise<Robot>, check: string) {
   try {
     $('link').textContent = 'Connecting…';
@@ -492,24 +321,19 @@ async function connectRobot(open: (onLost: () => void) => Promise<Robot>, check:
   }
 }
 $('connect').addEventListener('click', () => connectRobot(connectSerial, 'Check the cable'));
-$('connect-wifi').addEventListener('click', () =>
-  connectRobot(connectWifi, 'Check that the car is on and this laptop is on its ELEGOO WiFi'),
-);
 
-drawTrack();
 show('idle');
 
 // ---------- phone remote (spec, section 13) ----------
 // The laptop sends what its screen shows; the phone copies it and sends its presses back through scripts/serve.ts.
-const CLICKS = ['start', 'stop', 'ready', 'goodtry', 'yes', 'no', 'reset', 'tab-move', 'tab-talk'];
-const TEXTS = ['status', 'hint', 'reading', 'track-text', 'start', 'step', 'reset', 'warn-move', 'warn-talk', 'tab-note'];
-const HIDDEN = ['readout', 'track', 'timer', 'controls', 'step', 'parent', 'ready', 'goodtry', 'yes', 'no'];
+const CLICKS = ['start', 'stop', 'ready', 'goodtry', 'reset', 'tab-move', 'tab-talk'];
+const TEXTS = ['status', 'hint', 'reading', 'start', 'reset', 'warn-move', 'warn-talk', 'tab-note'];
+const HIDDEN = ['readout', 'controls', 'parent', 'ready', 'goodtry'];
 const snapshot = () => ({
   phase: document.body.dataset.phase,
   glyph: $('glyph-path').getAttribute('d')!,
   text: Object.fromEntries(TEXTS.map((id) => [id, $(id).textContent] as const)),
   hidden: Object.fromEntries(HIDDEN.map((id) => [id, $(id).hidden] as const)),
-  cells: [$('track-cells').querySelectorAll('.on').length, $('track-cells').children.length] as const,
   settings: settings(),
   totals,
 });
@@ -518,9 +342,7 @@ function mirror(s: ReturnType<typeof snapshot>) {
   if (!s.text) return; // the laptop tab has not sent anything yet
   document.body.dataset.phase = s.phase;
   $('glyph-path').setAttribute('d', s.glyph);
-  drawCells(...s.cells, s.text['track-text']);
   for (const [id, text] of Object.entries(s.text)) if ($(id).textContent !== text) $(id).textContent = text; // no repeat announcements
-  if (!s.hidden.timer && $('timer').hidden) drain(s.settings.doMs); // the laptop's bar started draining
   for (const [id, hidden] of Object.entries(s.hidden)) $(id).hidden = hidden;
   totals = s.totals;
   drawTotals();
@@ -530,9 +352,9 @@ function mirror(s: ReturnType<typeof snapshot>) {
 }
 
 if (remote) {
-  $('connect').hidden = $('connect-wifi').hidden = $('mock').hidden = true;
+  $('connect').hidden = $('mock').hidden = true;
   $('link').textContent = 'Connecting to the laptop…';
-  // Capture phase: these buttons only ask the laptop. The Step button already goes through press().
+  // Capture phase: these buttons only ask the laptop.
   addEventListener('click', (e) => {
     const id = (e.target as Element).closest('button')?.id;
     if (!id || !CLICKS.includes(id)) return;
@@ -560,10 +382,7 @@ if (remote) {
     // A phone press does what the same press on the laptop does, and only while that button is on screen.
     new EventSource('/relay/commands').onmessage = (e) => {
       const { click, settings: s } = JSON.parse(e.data);
-      if (click === 'step') {
-        press();
-        steps?.release();
-      } else if (CLICKS.includes(click) && !$(click).closest('[hidden]')) $(click).click();
+      if (CLICKS.includes(click) && !$(click).closest('[hidden]')) $(click).click();
       else if (s) settingChanged(fixSettings({ ...s, tab: settings().tab })); // tabs come as clicks, so a round is never left running on Talk
     };
   }).catch(() => {});
