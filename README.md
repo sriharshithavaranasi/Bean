@@ -54,8 +54,6 @@ npm start
 
 Open http://localhost:8000 in Chrome or Edge on the laptop.
 
-Optional, for **AI chat** in Talk with Bean: make a file named `.env` in the repo folder with one line, `GEMINI_API_KEY=` followed by the team's Gemini key (ask a teammate for it privately), then start the app again. Git ignores `.env`: never put the key in any other file, because the repo is public. Without it, Talk with Bean uses its scripts.
-
 ### 5. Connect and play
 
 1. Connect the car one of two ways:
