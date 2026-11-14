@@ -39,19 +39,3 @@ export function poseDrift(frames) {
 // wiggle: how far the body may drift before it counts as moving, as a share of torso length.
 export const poseMoved = (frames, { wiggle }) => poseDrift(frames) > wiggle;
 
-// How big the body looks: shoulders to hips as a share of the picture height, or null when the torso is not seen.
-// It grows as the kid comes closer to the camera, and it needs no feet in the picture.
-export function poseSize(frame) {
-  if (!torsoSeen(frame)) return null;
-  const mid = (a, b) => ({ x: (frame[a].x + frame[b].x) / 2, y: (frame[a].y + frame[b].y) / 2 });
-  const s = mid(11, 12);
-  const h = mid(23, 24);
-  return Math.hypot(s.x - h.x, s.y - h.y);
-}
-
-// reach: the size at which the kid is close enough to touch Bean (tuned on app/watch.html).
-// True when the median size of the last 3 frames with a body is at least reach, so one glitched frame is not a win.
-export function poseReached(frames, { reach }) {
-  const sizes = frames.map(poseSize).filter((v) => v != null).slice(-3);
-  return sizes.length === 3 && median(sizes) >= reach;
-}

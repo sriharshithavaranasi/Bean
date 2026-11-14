@@ -227,9 +227,7 @@ Proposed by the speech area. It changes section 2 ("Out of scope: the camera"), 
 
 **When the camera loses the kid.** No body found is not "still": that round falls back to the distance sensor (section 5), so stepping out of the picture never escapes being caught. Practice on the tuning page, like a game round, starts only once the kid is in the picture.
 
-**Win by size.** The kid comes toward the camera, so their shoulders-to-hips size grows in the picture (`poseSize`). During Red, the kid wins when the median size of the last three frames is at least the win size (`poseReached`): close enough to touch Bean. One big glitched frame is not a win. The distance sensor still wins too (under 12 cm during Red), whichever comes first.
-
-**What stays the same.** The distance sensor still records the start distance. Green, Red, Caught and Win, their timing and their signals are unchanged.
+**What stays the same.** The distance sensor still detects the win (under 12 cm during Red) and still records the start distance. Green, Red, Caught and Win, their timing and their signals are unchanged.
 
 **Settings (added to section 9).**
 
@@ -237,7 +235,6 @@ Proposed by the speech area. It changes section 2 ("Out of scope: the camera"), 
 | --- | --- |
 | Bean watches with | The distance sensor, or the webcam (shown when a camera is found) |
 | Camera | Default camera, or a named one |
-| Webcam win size | Shoulders to hips as a share of the picture height. 0.45 until tuned: stand where a kid can touch Bean, read "Your size now" on `app/watch.html`, set it just under |
 | Webcam wiggle room | 0.15 of torso length, from 0.05 to 0.6. Tuned on `app/watch.html` with the Logitech: standing still drifted 0.00 to 0.11, real moves 0.20 to 1.49 |
 
 **Privacy.** Frames are processed in the browser on the laptop and are never recorded, stored or sent. The model and its files are in `app/vendor/mediapipe/`, so it needs no internet. The camera turns off when the round stops. The pitch says so.

@@ -1,13 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { poseMoved, poseReached, poseSize } from './pose-moved.js';
+import { poseMoved } from './pose-moved.js';
 
 // A standing body in MediaPipe's 33-point layout, in image coordinates (0 to 1).
 // Torso: shoulders at y 0.3, hips at y 0.6, so the torso is 0.3 tall.
-function body({ dx = 0, dy = 0, leftFoot = 0, wrist = 0, seen = 1, legs = true, scale = 1 } = {}) {
+function body({ dx = 0, dy = 0, leftFoot = 0, wrist = 0, seen = 1, legs = true } = {}) {
   const p = Array.from({ length: 33 }, () => ({ x: 0.5 + dx, y: 0.5 + dy, visibility: seen }));
-  // scale > 1 is the kid closer to the camera: everything spreads out from the middle of the picture
-  const at = (i, x, y) => (p[i] = { x: 0.5 + (x - 0.5) * scale + dx, y: 0.5 + (y - 0.5) * scale + dy, visibility: seen });
+  const at = (i, x, y) => (p[i] = { x: x + dx, y: y + dy, visibility: seen });
   at(11, 0.45, 0.3); at(12, 0.55, 0.3); // shoulders
   at(23, 0.47, 0.6); at(24, 0.53, 0.6); // hips
   at(25, 0.47 + leftFoot / 2, 0.75); at(26, 0.53, 0.75); // knees
@@ -74,23 +73,3 @@ test('feet out of the picture is fine: shoulders and hips are enough', () => {
   assert.equal(poseMoved(step, opts), true);
 });
 
-test('poseSize is shoulders to hips as a share of the picture height', () => {
-  assert.equal(poseSize(body()).toFixed(2), '0.30');
-  assert.equal(poseSize(body({ scale: 2 })).toFixed(2), '0.60');
-  assert.equal(poseSize(body({ seen: 0.1 })), null);
-  assert.equal(poseSize(null), null);
-});
-
-test('reaching Bean: the body is big enough in the last frames', () => {
-  const far = Array.from({ length: 8 }, () => body());
-  const near = [...far.slice(0, 5), ...Array.from({ length: 3 }, () => body({ scale: 2 }))];
-  assert.equal(poseReached(far, { reach: 0.5 }), false);
-  assert.equal(poseReached(near, { reach: 0.5 }), true);
-});
-
-test('one big glitched frame is not a win, and nobody seen is not a win', () => {
-  const frames = Array.from({ length: 8 }, () => body());
-  frames[7] = body({ scale: 2 });
-  assert.equal(poseReached(frames, { reach: 0.5 }), false);
-  assert.equal(poseReached([null, null, null, null], { reach: 0.5 }), false);
-});
