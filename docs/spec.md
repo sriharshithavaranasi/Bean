@@ -223,11 +223,13 @@ Proposed by the speech area. It changes section 2 ("Out of scope: the camera"), 
 
 **Why.** The distance sensor only sees movement toward the robot, straight ahead, in a narrow cone (section 5). A webcam sees a kid step sideways, shuffle a foot or sneak at the edge of the lane, so Freeze Watcher catches what a kid actually sees as cheating.
 
-**How it decides.** A USB webcam (the team's Logitech) stands about 1 to 1.5 m behind the car, raised (on the laptop or a stand) and angled down the lane, so the kid stays whole in the picture from the start line to the car. Not on the car: as the kid comes close, a camera on the car sees only their legs and loses them (on the first tuning run, a body filling 120 to 260% of the picture height was lost in about half the rounds). The kid should fill about 50 to 80% of the picture height. MediaPipe Pose Landmarker (lite model) finds 33 body points in each frame on the laptop. During Red, after the time to freeze, about 10 frames a second are kept. `poseDrift` in `app/game/pose-moved.js` compares the shoulders, hips, knees and ankles with where they were in the first three frames, as a share of the kid's torso length, so the same setting works near and far. The kid is caught when, in any three frames in a row, at least two of those points drifted more than the wiggle room. Hands and head never count: they move without meaning to, and some kids cannot hold them still. Fewer than six frames with a body, or no body found, is not caught, as in section 5.
+**How it decides.** A USB webcam (the team's Logitech) stands about 1 to 1.5 m behind the car, raised (on the laptop or a stand) and angled down the lane, so the kid's shoulders and hips stay in the picture from the start line to the car. Feet may be out of the picture: knees and ankles count only when they are seen. Not on the car: as the kid comes close, a camera on the car sees only their legs and loses them (on the first tuning run, a body filling 120 to 260% of the picture height was lost in about half the rounds). MediaPipe Pose Landmarker (lite model) finds 33 body points in each frame on the laptop. During Red, after the time to freeze, about 10 frames a second are kept. `poseDrift` in `app/game/pose-moved.js` compares the shoulders, hips, knees and ankles with where they were in the first three frames, as a share of the kid's torso length, so the same setting works near and far. The kid is caught when, in any three frames in a row, at least two of those points drifted more than the wiggle room. Hands and head never count: they move without meaning to, and some kids cannot hold them still. Fewer than six frames with a body, or no body found, is not caught, as in section 5.
 
-**When the camera loses the kid.** No body found is not "still": that round falls back to the distance sensor (section 5), so stepping out of the picture never escapes being caught. The tuning page says "Step back" or "Step into the picture" out loud when the body is too big or missing.
+**When the camera loses the kid.** No body found is not "still": that round falls back to the distance sensor (section 5), so stepping out of the picture never escapes being caught. Practice on the tuning page, like a game round, starts only once the kid is in the picture.
 
-**What stays the same.** The distance sensor still detects the win (under 12 cm during Red) and still records the start distance. Green, Red, Caught and Win, their timing and their signals are unchanged.
+**Win by size.** The kid comes toward the camera, so their shoulders-to-hips size grows in the picture (`poseSize`). During Red, the kid wins when the median size of the last three frames is at least the win size (`poseReached`): close enough to touch Bean. One big glitched frame is not a win. The distance sensor still wins too (under 12 cm during Red), whichever comes first.
+
+**What stays the same.** The distance sensor still records the start distance. Green, Red, Caught and Win, their timing and their signals are unchanged.
 
 **Settings (added to section 9).**
 
@@ -235,6 +237,7 @@ Proposed by the speech area. It changes section 2 ("Out of scope: the camera"), 
 | --- | --- |
 | Bean watches with | The distance sensor, or the webcam (shown when a camera is found) |
 | Camera | Default camera, or a named one |
+| Webcam win size | Shoulders to hips as a share of the picture height. 0.45 until tuned: stand where a kid can touch Bean, read "Your size now" on `app/watch.html`, set it just under |
 | Webcam wiggle room | 0.15 of torso length, from 0.05 to 0.6. Tuned on `app/watch.html` with the Logitech: standing still drifted 0.00 to 0.11, real moves 0.20 to 1.49 |
 
 **Privacy.** Frames are processed in the browser on the laptop and are never recorded, stored or sent. The model and its files are in `app/vendor/mediapipe/`, so it needs no internet. The camera turns off when the round stops. The pitch says so.

@@ -34,7 +34,14 @@
         <input id="wiggle" type="range" min="0.05" max="0.6" step="0.05" value="0.15">
         <output id="wiggle-out" for="wiggle">0.15</output>
       </div>
-      <p>Share of the kid's body height (shoulders to hips) a hip, knee or ankle may drift before Bean says it moved. Hands and head never count.</p>
+      <p>Share of the kid's torso (shoulders to hips) a shoulder, hip, knee or ankle may drift before Bean says it moved. Hands and head never count, and feet may be out of the picture.</p>
+      <div class="row">
+        <label for="reach">Win when this big</label>
+        <input id="reach" type="range" min="0.2" max="0.9" step="0.05" value="0.45">
+        <output id="reach-out" for="reach">0.45</output>
+        <span id="size">Your size now: –</span>
+      </div>
+      <p>Size is shoulders to hips as a share of the picture height. It grows as the kid comes closer. Stand where a kid can touch Bean, read "Your size now" and set the slider just under it.</p>
       <p>Practice runs by itself: a 5 second countdown to get into place, then Green and Red lights until you press Stop. Bean says each result out loud.</p>
       <div class="row">
         <button id="try" class="primary" disabled>Start practice</button>
@@ -47,21 +54,21 @@
   </main>
   <script type="module">
     import { cameras, openCamera } from './camera.js';
-    import { poseDrift } from './game/pose-moved.js';
+    import { poseDrift, poseReached, poseSize } from './game/pose-moved.js';
 
     const $ = (id) => document.getElementById(id);
     const SETTLE_MS = 1000; // same as Freeze Watcher: time to freeze before Bean checks
     const CHECK_MS = 1500; // Bean stares 2.5 s, so it checks for the last 1.5 s
     const TRACKED = [11, 12, 23, 24, 25, 26, 27, 28];
     let cam = null;
-    // How tall the body looks: shoulders to ankles, as a share of the picture height. Over 1 means part of it is out of the picture.
-    const tallness = (b) => Math.max(b[27].y, b[28].y) - Math.min(b[11].y, b[12].y);
-    let liveSize = null; // the latest body's tallness, or null when no body is found
+    let liveSize = null; // the latest body's size (poseSize), or null when no torso is found
     let collecting = null; // frames of the current check, or null
 
     const note = (text) => $('log').append(Object.assign(document.createElement('li'), { textContent: text }));
     $('wiggle').oninput = () => ($('wiggle-out').value = Number($('wiggle').value).toFixed(2));
     $('wiggle').onchange = () => note(`Wiggle room set to ${$('wiggle-out').value}`);
+    $('reach').oninput = () => ($('reach-out').value = Number($('reach').value).toFixed(2));
+    $('reach').onchange = () => note(`Win size set to ${$('reach-out').value}`);
 
     async function fillCameras() {
       const pick = $('cam').value;
@@ -102,8 +109,9 @@
         ctx.arc(p.x * 640, p.y * 480, TRACKED.includes(i) ? 7 : 4, 0, 7);
         ctx.fill();
       }
-      liveSize = body ? tallness(body) : null;
-      const now = !body ? 'No body found. Step into the picture.' : liveSize > 0.9 ? 'Too close: step back until your head and feet are both in the picture.' : 'Body found: green dots are the points Bean watches.';
+      liveSize = poseSize(body);
+      $('size').textContent = `Your size now: ${liveSize == null ? '–' : liveSize.toFixed(2)}`;
+      const now = liveSize == null ? 'No body found yet.' : 'Body found: green dots are the points Bean watches.';
       if (now !== lastSeen) $('seen').textContent = lastSeen = now;
       setTimeout(() => requestAnimationFrame(loop), 100); // about 10 frames a second, like the distance sensor
     }
@@ -126,14 +134,12 @@
         say(n === 5 ? 'Get into place. 5' : String(n));
         await wait(1000);
       }
-      const placeTip = () => (liveSize == null ? 'I cannot see you. Step into the picture.' : liveSize > 0.9 ? 'Step back. I need to see your feet.' : null);
+      if (running && liveSize == null) $('result').textContent = 'Waiting until Bean can see you…';
+      while (running && liveSize == null) await wait(200); // start only once the kid is in the picture
       for (let round = 1; running; round++) {
         document.body.dataset.phase = 'green';
         say('Green light!');
-        await wait(1500);
-        const tip = placeTip();
-        if (tip) say(tip);
-        await wait(1500);
+        await wait(3000);
         if (!running) break;
         document.body.dataset.phase = 'red';
         say('Red light!');
@@ -145,9 +151,11 @@
         const drift = poseDrift(frames);
         const wiggle = Number($('wiggle').value);
         const seen = frames.filter(Boolean).length;
-        const tall = frames.filter(Boolean).map(tallness);
-        const size = tall.length ? `${Math.round((tall.reduce((a, b) => a + b, 0) / tall.length) * 100)}% of the picture tall` : 'no body';
-        const verdict = seen < 6 ? 'Could not see you' : drift > wiggle ? 'I saw you move' : 'So still';
+        const reach = Number($('reach').value);
+        const sizes = frames.map(poseSize).filter((v) => v != null);
+        const size = sizes.length ? `size ${Math.max(...sizes).toFixed(2)} (win at ${reach.toFixed(2)})` : 'no body';
+        const won = poseReached(frames, { reach });
+        const verdict = won ? 'You reached Bean! You win' : seen < 6 ? 'Could not see you' : drift > wiggle ? 'I saw you move' : 'So still';
         say(verdict);
         $('log').append(Object.assign(document.createElement('li'), {
           textContent: `${verdict}: drift ${drift.toFixed(2)}, wiggle room ${wiggle.toFixed(2)}, ${seen} of ${frames.length} frames with a body, ${size}, ${$('cam').selectedOptions[0].text}`,
