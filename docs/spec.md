@@ -225,7 +225,7 @@ Good try ends the kid's turn at any time, as in section 7. Stop ends the game an
 
 **Bean's rules (system instruction).** Bean is a friendly robot helping a young child practise talking. One or two short sentences, simple words, always ending with an easy question or invitation to talk. Topics: animals, colours, food, games, feelings, the game they are playing. Never asks for personal information beyond the first name the grown-up typed. Never talks about scary, unsafe or grown-up topics; steers back to the game instead. Never says it is a person.
 
-**Layout: Move and Talk tabs.** Talk with Bean is a different activity from Red Light, Green Light, so the page gets two tabs at the top. Each tab shows only its own games, settings and progress, so no counter is shown that means nothing for the game being played.
+**Layout: Move and Talk tabs.** Talk with Bean is a different activity from Red Light, Green Light, so the page gets two tabs at the top, labelled "Play with Bean" (Move) and "Talk to Bean" (Talk). Each tab shows only its own games, settings and progress, so no counter is shown that means nothing for the game being played.
 
 | | Move tab | Talk tab |
 | --- | --- | --- |
