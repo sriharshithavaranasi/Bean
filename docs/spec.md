@@ -216,3 +216,27 @@ The example talks to the car in short text lines instead of the stock JSON. This
 | `D <cm>` | from car | Distance, streamed without being asked |
 | `B` or `T` | from car | Button pressed or robot tapped: the kid wins |
 | `READY` | from car | Boot finished |
+
+## 16. Webcam watcher (P1, proposed)
+
+Proposed by the speech area. It changes section 2 ("Out of scope: the camera"), so the team agrees before it reaches the game.
+
+**Why.** The distance sensor only sees movement toward the robot, straight ahead, in a narrow cone (section 5). A webcam sees a kid step sideways, shuffle a foot or sneak at the edge of the lane, so Freeze Watcher catches what a kid actually sees as cheating.
+
+**How it decides.** A USB webcam (the team's Logitech) mounted on the car's body, never the head, faces the lane. MediaPipe Pose Landmarker (lite model) finds 33 body points in each frame on the laptop. During Red, after the time to freeze, about 10 frames a second are kept. `poseDrift` in `app/game/pose-moved.js` compares the shoulders, hips, knees and ankles with where they were in the first three frames, as a share of the kid's torso length, so the same setting works near and far. The kid is caught when, in any three frames in a row, at least two of those points drifted more than the wiggle room. Hands and head never count: they move without meaning to, and some kids cannot hold them still. Fewer than six frames with a body, or no body found, is not caught, as in section 5.
+
+**What stays the same.** The distance sensor still detects the win (under 12 cm during Red) and still records the start distance. Green, Red, Caught and Win, their timing and their signals are unchanged.
+
+**Settings (added to section 9).**
+
+| Setting | Choices or default |
+| --- | --- |
+| Bean watches with | The distance sensor, or the webcam (shown when a camera is found) |
+| Camera | Default camera, or a named one |
+| Webcam wiggle room | 0.2 of torso length, from 0.05 to 0.6 (replace with the value tuned on `app/watch.html`) |
+
+**Privacy.** Frames are processed in the browser on the laptop and are never recorded, stored or sent. The model and its files are in `app/vendor/mediapipe/`, so it needs no internet. The camera turns off when the round stops. The pitch says so.
+
+**Tuning.** `app/watch.html` opens the camera, draws the watched points and runs one Red light check with a wiggle room slider, printing the drift it measured. Use it on the real lane, with the real light, before the demo.
+
+**Code.** `app/camera.js` (opens the camera, loads the model), `app/game/pose-moved.js` and its tests, `app/watch.html`. Hooking it into Freeze Watcher (`app/game/freeze-watcher.js`, `app/main.js`) is a comms request to their owner.
