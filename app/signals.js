@@ -36,9 +36,15 @@ export function stopMusic() {
   clearInterval(musicTimer);
 }
 
-function say(text) {
+// Resolves when the voice is done, or after 5 seconds: some browsers never report the end.
+export function say(text) {
   speechSynthesis.cancel();
-  speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+  const words = new SpeechSynthesisUtterance(text);
+  return new Promise((resolve) => {
+    words.onend = words.onerror = resolve;
+    setTimeout(resolve, 5000);
+    speechSynthesis.speak(words);
+  });
 }
 
 // Stop pressed: nothing may keep playing or talking.

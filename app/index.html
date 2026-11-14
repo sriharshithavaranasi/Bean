@@ -32,7 +32,7 @@
 
       <section id="parent" aria-label="Grown-up buttons" hidden>
         <button id="ready" class="primary">Kid is back at start</button>
-        <button id="goodtry" hidden disabled>Good try</button>
+        <button id="goodtry" class="primary" hidden>Good try</button>
         <button id="yes" hidden disabled>They did it</button>
         <button id="no" hidden disabled>Not yet</button>
       </section>
@@ -46,7 +46,7 @@
           <div><dt>Rounds</dt><dd id="t-rounds">0</dd></div>
           <div><dt>Wins</dt><dd id="t-wins">0</dd></div>
           <div><dt>Good freezes</dt><dd id="t-freezes">0</dd></div>
-          <div hidden><dt>Word tries</dt><dd id="t-words">0</dd></div>
+          <div><dt>Word tries</dt><dd id="t-words">0</dd></div>
         </dl>
       </section>
     </div>
@@ -67,9 +67,9 @@
 
       <details id="settings" class="card">
         <summary>Grown-up settings</summary>
-        <fieldset class="choice" hidden><legend>Game</legend>
-          <label><input type="radio" name="s-game" checked> Freeze Watcher</label>
-          <label><input type="radio" name="s-game" disabled> Say It to Sneak <small>soon</small></label>
+        <fieldset class="choice"><legend>Game</legend>
+          <label><input id="s-freeze" type="radio" name="s-game" checked> Freeze Watcher</label>
+          <label><input id="s-sneak" type="radio" name="s-game"> Say It to Sneak</label>
           <label><input type="radio" name="s-game" disabled> Robot Says <small>soon</small></label>
         </fieldset>
         <fieldset class="choice"><legend>How the kid moves</legend>
@@ -90,6 +90,10 @@
           <span class="num"><span class="val"><input id="s-leewayCm" type="number" inputmode="numeric"><span class="unit" aria-hidden="true">cm</span></span></span></div>
         <div class="field"><label for="s-winCm">Win when closer than <span class="vh">(cm)</span></label>
           <span class="num"><span class="val"><input id="s-winCm" type="number" inputmode="numeric"><span class="unit" aria-hidden="true">cm</span></span></span></div>
+        <label class="toggle"><input id="s-wordGate" type="checkbox"> Say a practice word before each green light</label>
+        <div class="words"><label for="s-words">Practice words</label>
+          <input id="s-words" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="s-words-help">
+          <p id="s-words-help">Put a comma between words.</p></div>
       </details>
     </div>
   </main>

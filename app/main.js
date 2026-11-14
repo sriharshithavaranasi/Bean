@@ -2,20 +2,22 @@ import { createGame } from './game/freeze-watcher.js';
 import { createSteps } from './game/steps.js';
 import { makeMockRobot } from './robot-mock.js';
 import { connectSerial } from './robot-serial.js';
-import { playCue, praise, silence, unlockAudio } from './signals.js';
-import { fixSettings, LIMITS, load, save } from './store.js';
+import { playCue, praise, say, silence, unlockAudio } from './signals.js';
+import { canHear, listenFor, stopListening } from './speech.js';
+import { fixSettings, LIMITS, load, roundSettings, save } from './store.js';
 
 const $ = (id) => document.getElementById(id);
 
-// Glyphs are a second cue beside colour: face = ready, arrow = go, bars = freeze, eye = seen, star = win.
+// Glyphs are a second cue beside colour: face = ready, arrow = go, bars = freeze, eye = seen, speech bubble = say the word, star = win.
 const SCREEN = {
   idle: { status: 'Bean is ready', hint: 'Stand on the start line, then press Start.', glyph: 'M8 7a2 2 0 100 4 2 2 0 000-4zm8 0a2 2 0 100 4 2 2 0 000-4zM7 14h10a5 5 0 01-10 0z' },
   green: { status: 'Green light!', hint: 'Bean is not looking. Sneak closer!', glyph: 'M12 4l7 8h-4v8H9v-8H5z' },
   red: { status: 'Red light!', hint: 'Bean is looking. Freeze!', glyph: 'M7 5h4v14H7zM13 5h4v14h-4z' },
   caught: { status: 'I saw you!', hint: 'Go back to the start line.', glyph: 'M12 5C6 5 2 12 2 12s4 7 10 7 10-7 10-7-4-7-10-7zm0 11a4 4 0 110-8 4 4 0 010 8z' },
+  word: { status: 'Say your word', hint: 'Say it out loud, or press Good try.', glyph: 'M4 4h16v12h-9l-5 4v-4H4z' },
   win: { status: 'You got me!', hint: 'You reached Bean!', glyph: 'M12 2l3 7 7 .6-5.3 4.7 1.7 7.2L12 17.8 5.6 21.5l1.7-7.2L2 9.6 9 9z' },
 };
-const LIGHT = { green: [0, 255, 0], red: [255, 0, 0], caught: [255, 80, 0], win: [255, 255, 255] };
+const LIGHT = { green: [0, 255, 0], red: [255, 0, 0], caught: [255, 80, 0], word: [0, 0, 255], win: [255, 255, 255] };
 
 // ---------- grown-up settings ----------
 // field id -> [game setting, how many of the game's units one of the field's units is]
@@ -25,7 +27,10 @@ const FIELDS = {
 };
 const rulers = {};
 function settings() {
-  const raw = { input: $('s-switch').checked ? 'switch' : 'body' };
+  const raw = {
+    input: $('s-switch').checked ? 'switch' : 'body', game: $('s-sneak').checked ? 'sneak' : 'freeze',
+    wordGate: $('s-wordGate').checked, words: $('s-words').value,
+  };
   for (const [id, [key, unit]] of Object.entries(FIELDS)) {
     const v = $(`s-${id}`).value;
     raw[key] = v === '' ? null : Math.round(v * unit);
@@ -38,6 +43,10 @@ function showSettings(s) {
   $('s-switch').checked = s.input === 'switch';
   $('s-body').checked = s.input !== 'switch';
   $('s-steps').closest('.field').hidden = s.input !== 'switch';
+  $('s-sneak').checked = s.game === 'sneak';
+  $('s-freeze').checked = s.game !== 'sneak';
+  $('s-wordGate').checked = s.wordGate;
+  $('s-words').value = s.words.join(', ');
 }
 function settingChanged() {
   const s = settings();
@@ -68,12 +77,13 @@ for (const [id, [key, unit]] of Object.entries(FIELDS)) {
   ruler.addEventListener('input', () => ((input.value = ruler.value), changed()));
   input.addEventListener('change', settingChanged);
 }
-for (const id of ['s-body', 's-switch']) $(id).addEventListener('change', settingChanged);
+for (const id of ['s-body', 's-switch', 's-freeze', 's-sneak', 's-wordGate', 's-words']) $(id).addEventListener('change', settingChanged);
 showSettings(fixSettings(load('bean-settings', {})));
 if (matchMedia('(min-width: 860px)').matches) $('settings').open = true;
 
 // ---------- progress ----------
-const ZERO = { rounds: 0, wins: 0, freezes: 0, words: 0, caught: 0 }; // caught is counted but never shown (spec, section 10)
+// caught is counted but never shown (spec, section 10). words = every try, heard = the tries the microphone caught itself.
+const ZERO = { rounds: 0, wins: 0, freezes: 0, words: 0, heard: 0, caught: 0 };
 let totals = load('bean-progress', ZERO);
 function drawTotals() {
   for (const dd of document.querySelectorAll('#totals dd')) dd.textContent = totals[dd.id.slice(2)];
@@ -169,24 +179,45 @@ $('step').addEventListener('click', (e) => {
   steps?.release();
 });
 
-function show(phase, hint = (switchOn() && SWITCH_HINT[phase]) || SCREEN[phase].hint) {
+function show(phase, hint = (switchOn() && SWITCH_HINT[phase]) || SCREEN[phase].hint, status = SCREEN[phase].status) {
   shown = phase;
   document.body.dataset.phase = phase;
-  $('status').textContent = SCREEN[phase].status;
+  $('status').textContent = status;
   $('hint').textContent = hint;
   $('glyph-path').setAttribute('d', SCREEN[phase].glyph);
   $('start').textContent = phase === 'win' ? 'Play again' : phase === 'idle' ? 'Start' : 'Restart';
-  $('parent').hidden = phase !== 'caught'; // word-gate buttons inside stay hidden until their tickets
+  $('ready').hidden = phase !== 'caught';
+  $('goodtry').hidden = phase !== 'word'; // on screen whenever the app waits for the word
+  $('parent').hidden = phase !== 'caught' && phase !== 'word';
+}
+
+// ---------- practice word ----------
+let round = {}; // the settings this round was started with
+let toldNoMic = false;
+function askWord(lead) {
+  const word = round.words[Math.floor(Math.random() * round.words.length)];
+  // Without speech recognition only the button is used: say so once.
+  const hint = canHear ? undefined : toldNoMic ? 'Press Good try when they say it.' : 'This browser cannot listen for words. Press Good try when they say it.';
+  toldNoMic = true;
+  show('word', hint, `Say “${word}”`);
+  listenFor([word], $('goodtry'), say(`${lead}Say ${word}`)).then((how) => {
+    if (!how) return; // the round was stopped
+    bump('words');
+    if (how === 'heard') bump('heard');
+    game.accept(performance.now());
+  });
 }
 
 async function enter(phase) {
-  if (shown === 'red' && phase === 'green') {
-    praise();
-    bump('freezes');
-  }
+  const held = shown === 'red' && (phase === 'green' || phase === 'word');
+  if (held) bump('freezes');
   if (phase === 'win') bump('wins');
   if (phase === 'caught') bump('caught');
-  show(phase);
+  if (phase === 'word') askWord(held ? 'Great freezing! ' : shown === 'idle' ? 'Say your word to sneak closer! ' : '');
+  else {
+    if (held) praise();
+    show(phase);
+  }
   playCue(phase);
   // Head first, then light: the firmware clears the LED on any other command.
   if (phase === 'green') await robot.lookAway();
@@ -211,6 +242,7 @@ async function stopRound(hint) {
   game.stop();
   steps = null;
   drawTrack();
+  stopListening();
   silence();
   show('idle', hint);
   await robot.lookAtKid();
@@ -223,7 +255,7 @@ $('start').addEventListener('click', () => {
   unlockAudio();
   queued(async () => {
     await stopRound(); // Start during a round ends it first
-    const s = settings();
+    const s = (round = roundSettings(settings()));
     // A switch round needs no distance: the piece on the track is the kid.
     const startCm = s.input === 'switch' ? 0 : await robot.distanceCm();
     if (s.input !== 'switch' && !startCm) {
@@ -236,7 +268,7 @@ $('start').addEventListener('click', () => {
     bump('rounds');
     game = createGame(s);
     game.start(performance.now(), startCm);
-    await enter('green');
+    await enter(game.phase);
   });
 });
 

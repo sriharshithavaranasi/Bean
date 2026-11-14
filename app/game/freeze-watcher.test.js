@@ -102,3 +102,37 @@ test('stop ends the round from Green, Red and Caught', () => {
     assert.equal(g.tick(99000, 5), 'idle');
   }
 });
+
+test('word gate: after a Red held still, Green waits for the word', () => {
+  const g = createGame({ gate: 'held' }, () => 0);
+  g.start(0, 180);
+  assert.equal(g.phase, 'green'); // the first Green is free
+  g.tick(3000, null);
+  assert.equal(run(g, 3100, 5500, () => 120), 'word');
+  assert.equal(g.tick(60000, 120), 'word'); // waits as long as it takes
+  g.accept(60000);
+  assert.equal(g.phase, 'green');
+  assert.equal(g.tick(62900, null), 'green');
+  assert.equal(g.tick(63000, null), 'red');
+});
+
+test('word gate off: accept does nothing and the game plays as before', () => {
+  const g = newGame();
+  g.start(0, 180);
+  g.tick(3000, null);
+  assert.equal(run(g, 3100, 5500, () => 120), 'green');
+  g.accept(5600);
+  assert.equal(g.phase, 'green');
+});
+
+test('gate "every" (Say It to Sneak): a word before every Green, also at the start and after caught', () => {
+  const g = createGame({ gate: 'every' }, () => 0);
+  g.start(0, 180);
+  assert.equal(g.phase, 'word');
+  g.accept(0);
+  g.tick(3000, null); // red
+  run(g, 3100, 5500, (t) => 120 - (t - 3100) / 50); // walks: caught
+  assert.equal(g.phase, 'caught');
+  g.ready(6000);
+  assert.equal(g.phase, 'word');
+});

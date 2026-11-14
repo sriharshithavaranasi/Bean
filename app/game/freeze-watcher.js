@@ -10,9 +10,10 @@ export const DEFAULTS = {
   laneCm: 200,
   caughtMs: 8000, // the round never gets stuck waiting for the kid to go back
   steps: 10, // switch presses to win
+  gate: 'off', // practice word before Green: 'off', 'held' (after a Red held still) or 'every' (every Green)
 };
 
-// Phases: idle, green, red, caught, win. Time and random are passed in so tests control them.
+// Phases: idle, green, red, caught, word (waiting for the practice word), win. Time and random are passed in so tests control them.
 export function createGame(settings = DEFAULTS, random = Math.random) {
   const s = { ...DEFAULTS, ...settings };
   const game = { phase: 'idle', startCm: 0, until: 0, redStart: 0, readings: [] };
@@ -22,9 +23,15 @@ export function createGame(settings = DEFAULTS, random = Math.random) {
     game.until = now + s.greenMinMs + random() * (s.greenMaxMs - s.greenMinMs);
   };
 
+  // The next Green light, or the wait for a practice word that earns it.
+  const next = (now, held) => {
+    if (s.gate === 'every' || (held && s.gate === 'held')) game.phase = 'word';
+    else green(now);
+  };
+
   game.start = (now, startCm) => {
     game.startCm = startCm;
-    green(now);
+    next(now);
   };
 
   // Call about every 100 ms with the latest distance, or null when there is none.
@@ -39,11 +46,11 @@ export function createGame(settings = DEFAULTS, random = Math.random) {
         if (cm != null) game.readings.push(cm);
         if (now - game.redStart >= s.lookMs) {
           if (moved(game.readings, s)) game.caught(now);
-          else green(now);
+          else next(now, true);
         }
       }
     } else if (game.phase === 'caught' && ((cm != null && cm >= game.startCm - s.leewayCm) || now >= game.until)) {
-      green(now);
+      next(now);
     }
     return game.phase;
   };
@@ -65,7 +72,12 @@ export function createGame(settings = DEFAULTS, random = Math.random) {
 
   // Parent or kid says they are back at the start line.
   game.ready = (now) => {
-    if (game.phase === 'caught') green(now);
+    if (game.phase === 'caught') next(now);
+  };
+
+  // The practice word was heard, or a grown-up pressed Good try.
+  game.accept = (now) => {
+    if (game.phase === 'word') green(now);
   };
 
   return game;

@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { fixSettings, load } from './store.js';
+import { fixSettings, load, roundSettings } from './store.js';
 import { DEFAULTS } from './game/freeze-watcher.js';
 
-const spec = { greenMinMs: 3000, greenMaxMs: 7000, settleMs: 1000, lookMs: 2500, leewayCm: 6, winCm: 12, steps: 10, input: 'body' };
+const spec = { greenMinMs: 3000, greenMaxMs: 7000, settleMs: 1000, lookMs: 2500, leewayCm: 6, winCm: 12, steps: 10, input: 'body', game: 'freeze', wordGate: false, words: ['rabbit', 'red', 'robot', 'run'] };
 
 test('how the kid moves is body unless switch is saved', () => {
   assert.equal(fixSettings({ input: 'switch' }).input, 'switch');
@@ -33,4 +33,24 @@ test('a longest green below the shortest is raised to match', () => {
 test('empty, missing and non-numeric values become the default', () => {
   const s = fixSettings({ lookMs: '', leewayCm: null, winCm: 'lots', settleMs: NaN });
   for (const key of ['lookMs', 'leewayCm', 'winCm', 'settleMs']) assert.equal(s[key], DEFAULTS[key]);
+});
+
+test('practice words: a comma list is tidied, nothing saved gives the spec words', () => {
+  assert.deepEqual(fixSettings().words, ['rabbit', 'red', 'robot', 'run']);
+  assert.deepEqual(fixSettings({ words: ' Ball ,, red car,  ' }).words, ['ball', 'red car']);
+  assert.deepEqual(fixSettings({ words: ['sun'] }).words, ['sun']);
+  assert.deepEqual(fixSettings({ words: '' }).words, []);
+  assert.equal(fixSettings().wordGate, false);
+  assert.equal(fixSettings({ game: 'sneak' }).game, 'sneak');
+  assert.equal(fixSettings({ game: 'chess' }).game, 'freeze');
+});
+
+test('round settings: the gate follows the setting, the game and the word list', () => {
+  const base = fixSettings();
+  assert.equal(roundSettings(base).gate, 'off');
+  assert.equal(roundSettings({ ...base, wordGate: true }).gate, 'held');
+  assert.equal(roundSettings({ ...base, wordGate: true, words: [] }).gate, 'off');
+  const sneak = roundSettings({ ...base, game: 'sneak' }); // gate setting is off
+  assert.deepEqual([sneak.gate, sneak.greenMinMs, sneak.greenMaxMs], ['every', 3000, 3000]);
+  assert.equal(roundSettings({ ...base, game: 'sneak', words: [] }).gate, 'off');
 });
