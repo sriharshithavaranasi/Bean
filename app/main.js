@@ -8,6 +8,12 @@ import { canHear, listenFor, stopListening } from './speech.js';
 import { fixSettings, LIMITS, load, roundSettings, save } from './store.js';
 
 const $ = (id) => document.getElementById(id);
+// A phone opens the laptop's address with ?code=: it is then only a remote for the game running on the laptop.
+const remote = new URLSearchParams(location.search).get('code');
+const send = (press) =>
+  fetch(`/relay/press?code=${encodeURIComponent(remote)}`, {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(press),
+  }).catch(() => {});
 
 // Glyphs are a second cue beside colour: face = ready, arrow = go, bars = freeze, eye = seen, speech bubble = say the word, star = win.
 const SCREEN = {
@@ -59,8 +65,8 @@ function showSettings(s) {
   $('s-wordGate').checked = s.wordGate;
   $('s-words').value = s.words.join(', ');
 }
-function settingChanged() {
-  const s = settings();
+function settingChanged(s = settings()) {
+  if (remote) send({ settings: s });
   showSettings(s);
   save('bean-settings', s);
   drawTrack();
@@ -86,9 +92,9 @@ for (const [id, [key, unit]] of Object.entries(FIELDS)) {
   num.prepend(stepper('−', 'Less', () => input.stepDown()));
   num.append(stepper('+', 'More', () => input.stepUp()), ruler);
   ruler.addEventListener('input', () => ((input.value = ruler.value), changed()));
-  input.addEventListener('change', settingChanged);
+  input.addEventListener('change', () => settingChanged());
 }
-for (const id of ['s-body', 's-switch', 's-freeze', 's-sneak', 's-says', 's-wordGate', 's-words']) $(id).addEventListener('change', settingChanged);
+for (const id of ['s-body', 's-switch', 's-freeze', 's-sneak', 's-says', 's-wordGate', 's-words']) $(id).addEventListener('change', () => settingChanged());
 showSettings(fixSettings(load('bean-settings', {})));
 if (matchMedia('(min-width: 860px)').matches) $('settings').open = true;
 
@@ -162,6 +168,7 @@ function drawTrack() {
   drawCells(at, count, `Step ${at} of ${count}`);
 }
 function press() {
+  if (remote) return send({ click: 'step' });
   const now = performance.now();
   // The switch starts the round itself: from idle, and once the win has been up for 2 seconds.
   if (shown === 'idle' || (shown === 'win' && now - wonAt >= 2000)) return start();
@@ -404,3 +411,73 @@ $('connect').addEventListener('click', async () => {
 
 drawTrack();
 show('idle');
+
+// ---------- phone remote (spec, section 13) ----------
+// The laptop sends what its screen shows; the phone copies it and sends its presses back through scripts/serve.mjs.
+const CLICKS = ['start', 'stop', 'ready', 'goodtry', 'yes', 'no', 'reset'];
+const TEXTS = ['status', 'hint', 'reading', 'track-text', 'start', 'reset'];
+const HIDDEN = ['readout', 'track', 'timer', 'step', 'parent', 'ready', 'goodtry', 'yes', 'no'];
+const snapshot = () => ({
+  phase: document.body.dataset.phase,
+  glyph: $('glyph-path').getAttribute('d'),
+  text: Object.fromEntries(TEXTS.map((id) => [id, $(id).textContent])),
+  hidden: Object.fromEntries(HIDDEN.map((id) => [id, $(id).hidden])),
+  cells: [$('track-cells').querySelectorAll('.on').length, $('track-cells').children.length],
+  settings: settings(),
+  totals,
+});
+let mirrored = '';
+function mirror(s) {
+  if (!s.text) return; // the laptop tab has not sent anything yet
+  document.body.dataset.phase = s.phase;
+  $('glyph-path').setAttribute('d', s.glyph);
+  drawCells(...s.cells, s.text['track-text']);
+  for (const [id, text] of Object.entries(s.text)) if ($(id).textContent !== text) $(id).textContent = text; // no repeat announcements
+  if (!s.hidden.timer && $('timer').hidden) drain(s.settings.doMs); // the laptop's bar started draining
+  for (const [id, hidden] of Object.entries(s.hidden)) $(id).hidden = hidden;
+  totals = s.totals;
+  drawTotals();
+  // Settings are copied only when the laptop's change, so a box being typed in on the phone is left alone.
+  if (JSON.stringify(s.settings) !== mirrored) showSettings(s.settings);
+  mirrored = JSON.stringify(s.settings);
+}
+
+if (remote) {
+  $('connect').hidden = $('mock').hidden = true;
+  $('link').textContent = 'Connecting to the laptop…';
+  // Capture phase: these buttons only ask the laptop. The Step button already goes through press().
+  addEventListener('click', (e) => {
+    const id = e.target.closest('button')?.id;
+    if (!CLICKS.includes(id)) return;
+    e.stopImmediatePropagation();
+    send({ click: id });
+  }, true);
+  const stage = new EventSource(`/relay/state?code=${encodeURIComponent(remote)}`);
+  stage.onopen = () => ($('link').textContent = 'Phone remote. Bean plays the sound and listens on the laptop.');
+  stage.onmessage = (e) => mirror(JSON.parse(e.data));
+  stage.onerror = () => ($('link').textContent = 'Cannot reach the laptop. Check that both are on the same WiFi and the code is right.');
+} else {
+  fetch('/relay/code').then((r) => r.ok && r.json()).then((relay) => {
+    if (!relay) return; // the server was started without --lan
+    $('phone').hidden = false;
+    $('phone').textContent = relay.urls.length
+      ? `Phone remote: on a phone on the same WiFi, open ${relay.urls.join(' or ')}`
+      : 'Phone remote: this laptop is not on a network yet.';
+    let last = '';
+    setInterval(() => {
+      const now = JSON.stringify(snapshot());
+      if (now === last) return;
+      last = now;
+      fetch('/relay/state', { method: 'POST', headers: { 'content-type': 'application/json' }, body: now }).catch(() => {});
+    }, 150);
+    // A phone press does what the same press on the laptop does, and only while that button is on screen.
+    new EventSource('/relay/commands').onmessage = (e) => {
+      const { click, settings: s } = JSON.parse(e.data);
+      if (click === 'step') {
+        press();
+        steps?.release();
+      } else if (CLICKS.includes(click) && !$(click).closest('[hidden]')) $(click).click();
+      else if (s) settingChanged(fixSettings(s));
+    };
+  }).catch(() => {});
+}

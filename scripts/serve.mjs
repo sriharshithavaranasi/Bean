@@ -1,14 +1,83 @@
 // Serves app/ on localhost. Web Serial and the microphone need localhost or HTTPS.
+// With --lan (or HOST set) it also listens on the local network and relays a phone remote to the laptop tab (spec, section 13).
+import { randomInt } from 'node:crypto';
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
+import { networkInterfaces } from 'node:os';
 import { extname, join, normalize, sep } from 'node:path';
 
 const root = join(import.meta.dirname, '..', 'app');
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2' };
 const port = process.env.PORT || 8000;
+const host = process.env.HOST || (process.argv.includes('--lan') ? '0.0.0.0' : '');
 
-createServer(async (req, res) => {
-  const path = normalize(join(root, decodeURIComponent(new URL(req.url, 'http://x').pathname)));
+// ---------- phone relay ----------
+// The laptop tab posts its stage here and hears the phone's presses; a phone must send the code shown on the laptop.
+const code = String(randomInt(0, 1e6)).padStart(6, '0');
+let wrong = 0; // after 20 wrong codes no phone may connect until the server restarts
+let stage = '{}';
+const phones = new Set(); // open event streams: the stage goes out to these
+const laptops = new Set(); // the phone's presses go out to these
+const send = (streams, data) => streams.forEach((res) => res.write(`data: ${data}\n\n`));
+function stream(req, res, set) {
+  res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store' }).flushHeaders(); // headers go out now, before any event
+  set.add(res);
+  req.on('close', () => set.delete(res));
+}
+const loopback = (req) =>
+  ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress) &&
+  /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(req.headers.host); // the Host check stops DNS rebinding
+const codeOk = (url) => {
+  if (wrong >= 20) return false;
+  if (url.searchParams.get('code') === code) return true;
+  wrong++;
+  return false;
+};
+async function body(req) {
+  // A JSON content type keeps other sites' pages from posting here without a CORS preflight, which is never answered.
+  if (!req.headers['content-type']?.startsWith('application/json')) return null;
+  let text = '';
+  for await (const chunk of req) if ((text += chunk).length > 8000) return null;
+  try {
+    JSON.parse(text);
+    return text;
+  } catch {
+    return null;
+  }
+}
+async function relay(req, res, url) {
+  const route = `${req.method} ${url.pathname}`;
+  if (route === 'GET /relay/code' && loopback(req)) {
+    const ips = Object.values(networkInterfaces()).flat().filter((a) => a.family === 'IPv4' && !a.internal);
+    return res.writeHead(200, { 'content-type': 'application/json' }).end(
+      JSON.stringify({ code, urls: ips.map((a) => `http://${a.address}:${server.address().port}/?code=${code}`) }),
+    );
+  }
+  if (route === 'GET /relay/commands' && loopback(req)) return stream(req, res, laptops);
+  if (route === 'POST /relay/state' && loopback(req)) {
+    const data = await body(req);
+    if (!data) return res.writeHead(400).end();
+    send(phones, (stage = data));
+    return res.writeHead(204).end();
+  }
+  if (!codeOk(url)) return res.writeHead(403).end();
+  if (route === 'GET /relay/state') {
+    stream(req, res, phones);
+    return res.write(`data: ${stage}\n\n`);
+  }
+  if (route === 'POST /relay/press') {
+    const data = await body(req);
+    if (!data) return res.writeHead(400).end();
+    send(laptops, data); // the laptop tab checks what the press may do
+    return res.writeHead(204).end();
+  }
+  res.writeHead(404).end();
+}
+
+const server = createServer(async (req, res) => {
+  const url = new URL(req.url, 'http://x');
+  if (url.pathname.startsWith('/relay/')) return host ? relay(req, res, url) : res.writeHead(404).end();
+  const path = normalize(join(root, decodeURIComponent(url.pathname)));
   if (!path.startsWith(root + sep)) return res.writeHead(403).end();
   try {
     const file = path.endsWith(sep) ? join(path, 'index.html') : path;
@@ -17,4 +86,7 @@ createServer(async (req, res) => {
   } catch {
     res.writeHead(404).end('not found');
   }
-}).listen(port, '127.0.0.1', () => console.log(`Bean: http://localhost:${port}`));
+}).listen(port, host || '127.0.0.1', () => {
+  console.log(`Bean: http://localhost:${server.address().port}`);
+  if (host) console.log(`Phone remote is on. The laptop tab shows the address and code ${code}.`);
+});

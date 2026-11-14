@@ -4,6 +4,6 @@
   "type": "module",
   "scripts": {
     "start": "node scripts/serve.mjs",
-    "test": "node --test \"app/**/*.test.js\""
+    "test": "node --test \"app/**/*.test.js\" \"scripts/*.test.js\""
   }
 }
