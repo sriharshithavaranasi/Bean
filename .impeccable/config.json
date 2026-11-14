@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "app/index.html"
+        ],
+        "createdAt": "2026-11-14T05:23:00.527Z",
+        "reason": "user confirmed: keep the cream background (#fff8ef) from the team example palette, 2026-11-13"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          "app/index.html"
+        ],
+        "createdAt": "2026-11-14T06:30:49.573Z",
+        "reason": "agent triage: .val wrapper (app.css:119) has 0 vertical padding but its input is min-height 44px with 1.5rem text, giving ~10px room; 8px sides. Seen in critique Assessment B 2026-11-14."
+      }
+    ]
+  }
+}
