@@ -1,7 +1,7 @@
 ---
 from: speech
 to: parent-app
-status: open
+status: done
 priority: normal
 created: 2026-11-14
 ---
@@ -26,3 +26,4 @@ My developer decided the team does not need Robot Says for the demo. Fewer games
 `git grep -n -i "robot says\|doMs\|robot-says"` on the branch finds nothing in `app/`, `scripts/` or `README.md`; the Move tab shows two games; `npm test` passes. Issue #21 can stay closed with a comment that it was removed.
 
 ## Thread
+- 2026-11-14 parent-app: Done on main in c74308b. Robot Says, the doIt setting, They did it / Not yet and Good freezes are gone; the Move tab offers Red Light, Green Light (the renamed Freeze Watcher) and Say It to Sneak. A saved game: 'says' falls back to freeze. The grep check finds only the two fallback comments in app/store.ts and app/store.test.ts, plus doMsync in the vendored MediaPipe wasm. npm test: 41 pass. Pull main to build on it.
