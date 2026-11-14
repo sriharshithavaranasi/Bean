@@ -231,7 +231,22 @@ function show(phase, hint = (switchOn() && SWITCH_HINT[phase]) || SCREEN[phase].
   $('goodtry').hidden = phase !== 'word'; // on screen whenever the app waits for the word
   $('yes').hidden = $('no').hidden = phase !== 'wave';
   $('parent').hidden = !['caught', 'word', 'wave'].includes(phase);
+  keepAwake();
 }
+
+// Nobody touches the laptop while the kid plays, so its screen stays on during a round.
+// The browser drops the lock when the tab is hidden; coming back asks again.
+let wake = null; // promise of the screen lock (null inside it if the browser refused)
+function keepAwake() {
+  if (shown === 'idle' || shown === 'win') {
+    wake?.then((lock) => lock?.release());
+    wake = null;
+  } else if (!wake && document.visibilityState === 'visible' && navigator.wakeLock) {
+    const ask = (wake = navigator.wakeLock.request('screen').catch(() => null));
+    ask.then((lock) => lock?.addEventListener('release', () => wake === ask && (wake = null)));
+  }
+}
+document.addEventListener('visibilitychange', keepAwake);
 
 // ---------- Robot Says ----------
 const SHOW_MS = 1800; // how long the result stays up
