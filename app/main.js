@@ -214,13 +214,19 @@ $('step').addEventListener('click', (e) => {
 });
 
 const chosenGame = () => document.querySelector('[name="s-game"]:checked').labels[0].textContent.trim();
+let restartUntil = 0; // Restart was pressed once: a second press before this time restarts
+const startLabel = () =>
+  ($('start').textContent =
+    shown === 'win' ? 'Play again' : shown === 'idle' ? 'Start' : performance.now() < restartUntil ? 'Press again to restart' : 'Restart');
 function show(phase, hint = (switchOn() && SWITCH_HINT[phase]) || SCREEN[phase].hint, status = phase === 'idle' ? `Let’s play ${chosenGame()}` : SCREEN[phase].status) {
   shown = phase;
   document.body.dataset.phase = phase;
   $('status').textContent = status;
   $('hint').textContent = hint;
   $('glyph-path').setAttribute('d', SCREEN[phase].glyph);
-  $('start').textContent = phase === 'win' ? 'Play again' : phase === 'idle' ? 'Start' : 'Restart';
+  if (phase === 'idle' || phase === 'win') restartUntil = 0;
+  startLabel();
+  $('step').textContent = phase === 'idle' ? 'Start' : phase === 'win' ? 'Play again' : 'Step';
   $('ready').hidden = phase !== 'caught';
   $('goodtry').hidden = phase !== 'word'; // on screen whenever the app waits for the word
   $('yes').hidden = $('no').hidden = phase !== 'wave';
@@ -240,7 +246,7 @@ let answer = () => {};
 $('yes').addEventListener('click', () => answer(true));
 $('no').addEventListener('click', () => answer(false));
 
-async function playSays(s) {
+async function playSays() {
   const mine = ++saysRun;
   const alive = () => mine === saysRun;
   const commands = makeCommands();
@@ -258,6 +264,7 @@ async function playSays(s) {
     const parent = new Promise((resolve) => (answer = resolve));
     await say(line);
     if (!alive()) return;
+    const s = settings(); // read per command: a grown-up may give more time in the middle of the round
     let seen;
     if (kind === 'wave') {
       seen = { parent: await parent };
@@ -283,6 +290,7 @@ async function playSays(s) {
     await wait(SHOW_MS);
     if (!alive()) return;
   }
+  bump('wins'); // finishing all eight commands is a win, whatever the score
   const score = `${total(outcomes)} out of ${commands.length}`;
   wonAt = performance.now(); // a kid still pressing the switch does not skip the score
   show('win', 'Press Play again for eight more.', `${score}!`);
@@ -364,7 +372,7 @@ function start() {
       drawTrack();
       bump('rounds');
       await robot.lookAtKid(); // Bean faces the kid the whole game
-      playSays(s); // not awaited: Stop must be able to run while it plays
+      playSays(); // not awaited: Stop must be able to run while it plays
       return;
     }
     // A switch round needs no distance: the piece on the track is the kid.
@@ -382,7 +390,13 @@ function start() {
     await enter(game.phase);
   });
 }
-$('start').addEventListener('click', start);
+// Restart throws the round away, so it asks first: a second press within 4 seconds restarts.
+$('start').addEventListener('click', () => {
+  if (shown === 'idle' || shown === 'win' || performance.now() < restartUntil) return start();
+  restartUntil = performance.now() + 4000;
+  startLabel();
+  setTimeout(startLabel, 4000);
+});
 
 $('ready').addEventListener('click', () => game.ready(performance.now()));
 
@@ -421,7 +435,7 @@ show('idle');
 // ---------- phone remote (spec, section 13) ----------
 // The laptop sends what its screen shows; the phone copies it and sends its presses back through scripts/serve.mjs.
 const CLICKS = ['start', 'stop', 'ready', 'goodtry', 'yes', 'no', 'reset'];
-const TEXTS = ['status', 'hint', 'reading', 'track-text', 'start', 'reset'];
+const TEXTS = ['status', 'hint', 'reading', 'track-text', 'start', 'step', 'reset'];
 const HIDDEN = ['readout', 'track', 'timer', 'step', 'parent', 'ready', 'goodtry', 'yes', 'no'];
 const snapshot = () => ({
   phase: document.body.dataset.phase,

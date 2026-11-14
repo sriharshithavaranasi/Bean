@@ -92,7 +92,7 @@ Games:
 
 - **Freeze Watcher (P0).** Section 5.
 - **Say It to Sneak (P1).** Freeze Watcher with the word gate always on and a fixed 3 second Green light. Every Green light is earned with a practice word.
-- **Robot Says (P1).** Eight commands, with a score out of 8. The robot faces the kid the whole time. Each command is spoken with or without "Robot says" (about 7 in 10 are real; "freeze" is always real).
+- **Robot Says (P1).** Eight commands, with a score out of 8. The robot faces the kid the whole time. Each command is spoken with or without "Robot says" (about 7 in 10 are real; "freeze" is always real). The time to do each command is read before every command, so a grown-up can change it during the game.
 
 | Command | Checked by |
 | --- | --- |
@@ -144,7 +144,7 @@ Lane length stays at 200 cm and is not shown to parents.
 
 ## 10. Progress (P1)
 
-Four totals on the main screen: Rounds, Wins, Good freezes, Word tries. Times caught is counted but not shown, so the screen stays encouraging. One Reset button that asks first. Totals are saved on the device.
+Four totals on the main screen: Rounds, Wins, Good freezes, Word tries. Times caught is counted but not shown, so the screen stays encouraging. Finishing all eight Robot Says commands counts as a win, whatever the score. One Reset button that asks first. Totals are saved on the device.
 
 ## 11. Code layout
 
@@ -178,7 +178,7 @@ The reference is the team's single-page example (`message.txt`, shared 2026-11-1
 One page, phone first, in this order:
 
 1. **Stage.** A big round light in the state colour, a status line ("Bean is ready", "Green light!", "Red light!", "I saw you!", "You got me!"), a hint line, the switch track when switch input is on, and the live distance.
-2. **Start and Stop.** Stop is always available. It ends the round, silences music and speech, stops listening, turns the robot to face the kid and sends the stop command.
+2. **Start and Stop.** Stop is always available. It ends the round, silences music and speech, stops listening, turns the robot to face the kid and sends the stop command. During a round Start becomes Restart, which asks first: a second press within 4 seconds restarts. In switch mode the big Step button reads Start at idle and Play again after a win.
 3. **Parent buttons.** Good try (word), Kid is back at start, They did it, Not yet. Each is shown only while the game is waiting for it.
 4. **Progress.** Section 10.
 5. **Robot.** Connect, link state, and the pretend-robot distance slider when no car is connected.
