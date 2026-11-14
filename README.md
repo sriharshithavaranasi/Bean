@@ -1,6 +1,6 @@
 # Bean
 
-Bean is a robot car that plays Red Light, Green Light with a kid. Bean is the watcher: it turns its head away for Green light, looks back for Red light, and catches anyone it sees moving closer. Kids can sneak by walking, crawling or rolling, or play from an adaptive switch. A parent or therapist runs the game from a laptop or a phone.
+Bean is a robot car that plays Red Light, Green Light with a kid. Bean is the watcher: it turns its head away for Green light, looks back for Red light, and catches anyone it sees moving closer. Kids can sneak by walking, crawling or rolling. A parent or therapist runs the game from a laptop or a phone.
 
 Bean is a play and practice tool that can support therapy. It is not a treatment.
 
@@ -11,9 +11,9 @@ The full design is in [docs/spec.md](docs/spec.md).
 ### What you need
 
 - The ELEGOO Smart Robot Car Kit V4.0, built, with charged batteries.
-- A laptop with Chrome or Edge, and [Node.js](https://nodejs.org) 22 or newer.
+- A laptop with Chrome or Edge, and [Node.js](https://nodejs.org) 22.18 or newer.
 - The USB cable from the kit.
-- Tape, and about 2 m of clear floor.
+- Tape, and about 1.5 m of clear floor (the lane is 1 m).
 - Optional: a phone on the same WiFi as the laptop, to run the game from across the room.
 
 No car yet? Skip to step 4. The app plays with a pretend robot: a slider stands in for the distance sensor.
@@ -34,7 +34,7 @@ Bean uses ELEGOO's own firmware, so there is no Arduino code to write. A new car
 
 1. Plug the car into the laptop with the USB cable and switch the car on.
 2. Put the car at one end of the floor, facing down the lane.
-3. Tape a straight lane about 2 m long in front of the car, with a start line at the far end.
+3. Tape a straight lane about 1 m long in front of the car, with a start line at the far end. The sensor reads a person reliably only to about 1 m. Make the lane only about as wide as the kid's shoulders, with the car at the middle: about 40 cm from the car, one shoe width off the middle is already out of sight.
 
 ### 3. Learn the limits
 
@@ -56,15 +56,13 @@ Open http://localhost:8000 in Chrome or Edge on the laptop.
 
 ### 5. Connect and play
 
-1. Connect the car one of two ways:
-   - **Cable:** press **Connect by cable**, then pick the car's port (unplug and replug the car to see which one it is). On Windows it shows as `USB-SERIAL CH340`; if no such port appears, install the CH340 driver (`CH341SER.EXE` from wch-ic.com) and replug. The car resets and takes about 2 seconds to wake up. Set the shield's switch (next to the USB port) to **upload** first: on **cam**, the camera board holds the line the cable uses and the car hears nothing.
-   - **WiFi** (kits with the camera): set the shield's switch to **cam**, switch the car on, join the laptop to the car's own WiFi (named `ELEGOO-` and a code, no password), then press **Connect over WiFi**. The car's WiFi has no internet, so the app cannot listen for practice words; press Good try instead.
-2. Open **Grown-up settings** to pick the game (Freeze Watcher, Say It to Sneak or Robot Says) and how the kid moves (their body, or a switch).
+1. Connect the car by cable: press **Connect by cable**, then pick the car's port (unplug and replug the car to see which one it is). On Windows it shows as `USB-SERIAL CH340`; if no such port appears, install the CH340 driver (`CH341SER.EXE` from wch-ic.com) and replug. The car resets and takes about 2 seconds to wake up. Set the shield's switch (next to the USB port) to **upload** first: on **cam**, the camera board holds the line the cable uses and the car hears nothing.
+2. Open **Grown-up settings** to pick the game (Red Light, Green Light or Say It to Sneak).
 3. The kid stands on the start line, facing Bean.
 4. Press **Start**. Turn the volume up: the music, voice and cues come from the laptop.
 5. Green light: Bean looks away and the kid sneaks closer. Red light: Bean looks back and the kid freezes. Moving during Red light sends the kid back to the start. Reaching Bean wins.
 
-If the car is lost (cable out, car off, WiFi dropped), the app says so and keeps playing with the pretend robot. Fix it and press the connect button again.
+If the car is lost (cable out, car off), the app says so and keeps playing with the pretend robot. Fix it and press the connect button again.
 
 ### 6. Optional: run it from a phone
 
@@ -80,19 +78,21 @@ The laptop stays next to the car and does the sound and listening. The phone bec
 3. Open http://localhost:8000 on the laptop and connect the car (step 5). That click also lets the laptop play sound. Keep that tab in front.
 4. The Robot card on the laptop shows an address with a 6-digit code. Open that address on the phone.
 
-The phone shows the same game screen and sends the button presses to the laptop. A phone without the code cannot control the game. Venue WiFi often blocks phones from reaching laptops: if the phone cannot connect, put both on a phone hotspot. When the car is on WiFi, join the phone to the car's WiFi too.
+The phone shows the same game screen and sends the button presses to the laptop. A phone without the code cannot control the game. Venue WiFi often blocks phones from reaching laptops: if the phone cannot connect, put both on a phone hotspot.
 
 ### Not yet checked on the real car
 
-The app is tested against the pretend robot. These still need the real car: the serial link and the LED and head order (#2, #6), the wiggle room before caught (#3) and the lane (#4). See the open issues.
+Checked on the car: the head and LED commands, distance readings over the cable, a full round in the app, the fallback when the cable comes out, the 15 cm wiggle room (#3), and the lane's length and width (#4). Still to check: catches over many real rounds (#11). See the open issues.
 
 ## Develop
 
 ```sh
+npm install        # only for the type check
 npm test
+npm run typecheck
 ```
 
-The app is plain HTML, CSS and JavaScript modules in `app/`, with no build step and no dependencies. Game logic is pure functions in `app/game/`, tested with `node --test`. `scripts/serve.mjs` serves the app and runs the phone relay.
+The app is plain HTML, CSS and TypeScript modules in `app/`, with no build step and no runtime dependencies. `scripts/serve.ts` strips the types as it serves each `.ts` file, so only erasable TypeScript is allowed (no enums, namespaces or parameter properties), and imports name the `.ts` file. Game logic is pure functions in `app/game/`, tested with `node --test`. `scripts/serve.ts` serves the app and runs the phone relay. `npm run typecheck` runs `tsc`; the `typescript` and `@types/node` dev dependencies are only for that.
 
 ## Working here with Claude Code
 

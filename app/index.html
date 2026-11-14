@@ -12,9 +12,9 @@
     <!-- Move and Talk tabs (spec, section 15): the stage, its buttons and the Robot card are on both. -->
     <div id="tabs" role="tablist" aria-label="Activity">
       <button id="tab-move" role="tab" aria-selected="true" aria-controls="panel-move">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 5.5a2 2 0 1 1 0-4 2 2 0 0 1 0 4ZM9.8 8.9 7 23h2.1l1.8-8 2.1 2v6h2v-7.5l-2.1-2 .6-3A7.3 7.3 0 0 0 19 13v-2a5 5 0 0 1-4.3-2.4l-1-1.6a2 2 0 0 0-2.6-.7L6 8.3V13h2V9.6l1.8-.7"/></svg><span class="label">Move</span><span class="warn" id="warn-move"></span></button>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 5.5a2 2 0 1 1 0-4 2 2 0 0 1 0 4ZM9.8 8.9 7 23h2.1l1.8-8 2.1 2v6h2v-7.5l-2.1-2 .6-3A7.3 7.3 0 0 0 19 13v-2a5 5 0 0 1-4.3-2.4l-1-1.6a2 2 0 0 0-2.6-.7L6 8.3V13h2V9.6l1.8-.7"/></svg><span class="label">Play with Bean</span><span class="warn" id="warn-move"></span></button>
       <button id="tab-talk" role="tab" aria-selected="false" aria-controls="panel-talk" tabindex="-1">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm3 6.5a1.5 1.5 0 1 0 0 .01Zm5 0a1.5 1.5 0 1 0 0 .01Zm5 0a1.5 1.5 0 1 0 0 .01Z"/></svg><span class="label">Talk</span><span class="warn" id="warn-talk"></span></button>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm3 6.5a1.5 1.5 0 1 0 0 .01Zm5 0a1.5 1.5 0 1 0 0 .01Zm5 0a1.5 1.5 0 1 0 0 .01Z"/></svg><span class="label">Talk to Bean</span><span class="warn" id="warn-talk"></span></button>
     </div>
 
     <div class="col">
@@ -25,14 +25,7 @@
         <h1 id="status" role="status" aria-live="assertive">Bean is ready</h1>
         <p id="hint" aria-live="polite"></p>
         <p id="readout">Distance: <output id="reading">none yet</output></p>
-        <div id="track" hidden>
-          <div id="track-cells" aria-hidden="true"></div>
-          <p id="track-text"></p>
-        </div>
-        <div id="timer" aria-hidden="true" hidden></div>
       </section>
-
-      <button id="step" class="primary" hidden>Step</button>
 
       <div id="controls">
         <button id="start" class="primary">Start</button>
@@ -42,8 +35,6 @@
       <section id="parent" aria-label="Grown-up buttons" hidden>
         <button id="ready" class="primary">Kid is back at start</button>
         <button id="goodtry" class="primary" hidden>Good try</button>
-        <button id="yes" class="primary" hidden>They did it</button>
-        <button id="no" hidden>Not yet</button>
       </section>
     </div>
 
@@ -58,7 +49,6 @@
         <dl id="totals">
           <div><dt>Rounds</dt><dd id="t-rounds">0</dd></div>
           <div><dt>Wins</dt><dd id="t-wins">0</dd></div>
-          <div><dt>Good freezes</dt><dd id="t-freezes">0</dd></div>
           <div><dt>Word tries</dt><dd id="t-words">0</dd></div>
         </dl>
       </section>
@@ -66,16 +56,9 @@
       <details id="settings" class="card">
         <summary>Grown-up settings</summary>
         <fieldset class="choice"><legend>Game</legend>
-          <label><input id="s-freeze" type="radio" name="s-game" checked> Freeze Watcher</label>
+          <label><input id="s-freeze" type="radio" name="s-game" checked> Red Light, Green Light</label>
           <label><input id="s-sneak" type="radio" name="s-game"> Say It to Sneak</label>
-          <label><input id="s-says" type="radio" name="s-game"> Robot Says</label>
         </fieldset>
-        <fieldset class="choice"><legend>How the kid moves</legend>
-          <label><input id="s-body" type="radio" name="s-input" checked> Moves their body</label>
-          <label><input id="s-switch" type="radio" name="s-input"> Presses a switch</label>
-        </fieldset>
-        <div class="field"><label for="s-steps">Switch presses to win</label>
-          <span class="num"><span class="val"><input id="s-steps" type="number" inputmode="numeric"><span class="unit" aria-hidden="true">steps</span></span></span></div>
         <div class="field"><label for="s-greenMin">Shortest green light <span class="vh">(seconds)</span></label>
           <span class="num"><span class="val"><input id="s-greenMin" type="number" inputmode="decimal" step="0.5"><span class="unit" aria-hidden="true">sec</span></span></span></div>
         <div class="field"><label for="s-greenMax">Longest green light <span class="vh">(seconds)</span></label>
@@ -84,8 +67,6 @@
           <span class="num"><span class="val"><input id="s-settle" type="number" inputmode="decimal" step="0.1"><span class="unit" aria-hidden="true">sec</span></span></span></div>
         <div class="field"><label for="s-look">How long Bean stares <span class="vh">(seconds)</span></label>
           <span class="num"><span class="val"><input id="s-look" type="number" inputmode="decimal" step="0.5"><span class="unit" aria-hidden="true">sec</span></span></span></div>
-        <div class="field"><label for="s-doIt">Time to do each command <span class="vh">(seconds)</span></label>
-          <span class="num"><span class="val"><input id="s-doIt" type="number" inputmode="decimal" step="0.5"><span class="unit" aria-hidden="true">sec</span></span></span></div>
         <div class="field"><label for="s-leewayCm">Wiggle room before caught <span class="vh">(cm)</span></label>
           <span class="num"><span class="val"><input id="s-leewayCm" type="number" inputmode="numeric"><span class="unit" aria-hidden="true">cm</span></span></span></div>
         <div class="field"><label for="s-winCm">Win when closer than <span class="vh">(cm)</span></label>
@@ -105,7 +86,6 @@
         <h2 id="robot-h">Robot</h2>
         <div class="row">
           <button id="connect">Connect by cable</button>
-          <button id="connect-wifi">Connect over WiFi</button>
           <p id="link" role="status">Playing with the pretend robot.</p>
         </div>
         <p id="phone" hidden></p>
@@ -119,6 +99,6 @@
     <!-- Read out when a tab press during a round only warns (the tab itself shows it). -->
     <p id="tab-note" class="vh" aria-live="assertive"></p>
   </main>
-  <script type="module" src="main.js"></script>
+  <script type="module" src="main.ts"></script>
 </body>
 </html>

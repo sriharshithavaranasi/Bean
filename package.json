@@ -3,7 +3,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node scripts/serve.mjs",
-    "test": "node --test \"app/**/*.test.js\" \"scripts/*.test.js\""
+    "start": "node scripts/serve.ts",
+    "test": "node --test \"app/**/*.test.ts\" \"scripts/*.test.ts\"",
+    "typecheck": "tsc"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "typescript": "7.0.2"
   }
 }

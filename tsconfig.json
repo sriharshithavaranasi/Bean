@@ -1,0 +1,17 @@
+{
+  // Type check only: the browser gets the .ts files with the types stripped by scripts/serve.ts, and Node runs them as they are.
+  "compilerOptions": {
+    "noEmit": true,
+    "target": "es2024",
+    "lib": ["es2024", "dom", "dom.iterable"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "strict": true,
+    "types": ["node"],
+    "skipLibCheck": true
+  },
+  "include": ["app/**/*.ts", "scripts/**/*.ts"]
+}

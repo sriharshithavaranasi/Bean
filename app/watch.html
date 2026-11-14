@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bean: webcam watcher check</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="app.css">
+  <style>
+    #view { position: relative; width: 100%; max-width: 640px; aspect-ratio: 4 / 3; background: var(--fg); border-radius: 8px; overflow: hidden; }
+    #view video, #view canvas { position: absolute; inset: 0; width: 100%; height: 100%; transform: scaleX(-1); } /* mirror, like a mirror */
+    .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    #result { font: 700 1.6rem/1.2 var(--font-display); min-height: 1.3em; }
+  </style>
+</head>
+<body data-phase="idle">
+  <main>
+    <section class="card">
+      <h1>Webcam watcher check</h1>
+      <p>Tunes the webcam before it watches Red Light, Green Light. Frames stay on this laptop: nothing is recorded or sent.</p>
+    </section>
+    <section class="card">
+      <div class="row">
+        <label for="cam">Camera</label>
+        <select id="cam"><option value="">Default camera</option></select>
+        <button id="on">Turn on camera</button>
+      </div>
+      <p id="seen" role="status">Camera is off.</p>
+      <div id="view"><video id="video" muted playsinline></video><canvas id="dots" width="640" height="480"></canvas></div>
+    </section>
+    <section class="card">
+      <div class="row">
+        <label for="wiggle">Wiggle room</label>
+        <input id="wiggle" type="range" min="0.05" max="0.6" step="0.05" value="0.15">
+        <output id="wiggle-out" for="wiggle">0.15</output>
+      </div>
+      <p>Share of the kid's torso (shoulders to hips) a shoulder, hip, knee or ankle may drift before Bean says it moved. Hands and head never count, and feet may be out of the picture.</p>
+      <p>Practice runs by itself: a 5 second countdown to get into place, then Green and Red lights until you press Stop. Bean says each result out loud.</p>
+      <div class="row">
+        <button id="try" class="primary" disabled>Start practice</button>
+        <button id="stop" disabled>Stop</button>
+        <button id="copy">Copy results</button>
+      </div>
+      <p id="result" role="status" aria-live="assertive"></p>
+      <ol id="log"></ol>
+    </section>
+  </main>
+  <script type="module" src="watch.ts"></script>
+</body>
+</html>
