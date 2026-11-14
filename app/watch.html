@@ -54,6 +54,9 @@
     const CHECK_MS = 1500; // Bean stares 2.5 s, so it checks for the last 1.5 s
     const TRACKED = [11, 12, 23, 24, 25, 26, 27, 28];
     let cam = null;
+    // How tall the body looks: shoulders to ankles, as a share of the picture height. Over 1 means part of it is out of the picture.
+    const tallness = (b) => Math.max(b[27].y, b[28].y) - Math.min(b[11].y, b[12].y);
+    let liveSize = null; // the latest body's tallness, or null when no body is found
     let collecting = null; // frames of the current check, or null
 
     const note = (text) => $('log').append(Object.assign(document.createElement('li'), { textContent: text }));
@@ -99,7 +102,8 @@
         ctx.arc(p.x * 640, p.y * 480, TRACKED.includes(i) ? 7 : 4, 0, 7);
         ctx.fill();
       }
-      const now = body ? 'Body found: green dots are the points Bean watches.' : 'No body found. Step back until shoulders to ankles are in the picture.';
+      liveSize = body ? tallness(body) : null;
+      const now = !body ? 'No body found. Step into the picture.' : liveSize > 0.9 ? 'Too close: step back until your head and feet are both in the picture.' : 'Body found: green dots are the points Bean watches.';
       if (now !== lastSeen) $('seen').textContent = lastSeen = now;
       setTimeout(() => requestAnimationFrame(loop), 100); // about 10 frames a second, like the distance sensor
     }
@@ -122,10 +126,14 @@
         say(n === 5 ? 'Get into place. 5' : String(n));
         await wait(1000);
       }
+      const placeTip = () => (liveSize == null ? 'I cannot see you. Step into the picture.' : liveSize > 0.9 ? 'Step back. I need to see your feet.' : null);
       for (let round = 1; running; round++) {
         document.body.dataset.phase = 'green';
         say('Green light!');
-        await wait(3000);
+        await wait(1500);
+        const tip = placeTip();
+        if (tip) say(tip);
+        await wait(1500);
         if (!running) break;
         document.body.dataset.phase = 'red';
         say('Red light!');
@@ -137,8 +145,7 @@
         const drift = poseDrift(frames);
         const wiggle = Number($('wiggle').value);
         const seen = frames.filter(Boolean).length;
-        // How tall the body looks: shoulders to ankles, as a share of the picture height. Small means far away.
-        const tall = frames.filter(Boolean).map((b) => Math.max(b[27].y, b[28].y) - Math.min(b[11].y, b[12].y));
+        const tall = frames.filter(Boolean).map(tallness);
         const size = tall.length ? `${Math.round((tall.reduce((a, b) => a + b, 0) / tall.length) * 100)}% of the picture tall` : 'no body';
         const verdict = seen < 6 ? 'Could not see you' : drift > wiggle ? 'I saw you move' : 'So still';
         say(verdict);
