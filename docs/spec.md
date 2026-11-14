@@ -251,7 +251,7 @@ Good try and They did it end the kid's turn at any time, as in section 7. Stop e
 | Settings | Section 9 rows for movement and the switch | Script, kid's first name, wait for an answer, AI chat, practice words |
 | Shared | Stage, Start, Stop, Good try, They did it, the Robot card | same |
 
-Tabs are a real tab list (`role="tablist"`, arrow keys move between tabs, the chosen tab is remembered on the device). Switching tab during a round stops the round first, as Start does. The phone remote copies the chosen tab.
+Tabs are a real tab list (`role="tablist"`, arrow keys move between tabs, the chosen tab is remembered on the device). Switching tab during a round asks first, as Restart does: the first press turns the pressed tab amber with "Press again to stop", and a second press within 4 seconds stops the round and switches. The kid's hint on the stage is never replaced by the warning. The phone remote copies the chosen tab.
 
 **Settings (added to section 9).**
 

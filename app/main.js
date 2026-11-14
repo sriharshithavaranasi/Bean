@@ -41,10 +41,11 @@ const FIELDS = {
   look: ['lookMs', 1000], leewayCm: ['leewayCm', 1], winCm: ['winCm', 1], steps: ['steps', 1], doIt: ['doMs', 1000],
 };
 const rulers = {};
+const talking = () => $('tab-talk').getAttribute('aria-selected') === 'true';
 function settings() {
   const raw = {
     input: $('s-switch').checked ? 'switch' : 'body', game: $('s-says').checked ? 'says' : $('s-sneak').checked ? 'sneak' : 'freeze',
-    words: $('s-words').value,
+    words: $('s-words').value, tab: talking() ? 'talk' : 'move',
   };
   for (const [id, [key, unit]] of Object.entries(FIELDS)) {
     const v = $(`s-${id}`).value;
@@ -64,6 +65,11 @@ function showSettings(s) {
   $('s-words').closest('.words').hidden = $('t-words').parentElement.hidden = s.game !== 'sneak';
   $(`s-${s.game}`).checked = true;
   $('s-words').value = s.words.join(', ');
+  for (const tab of ['move', 'talk']) {
+    $(`tab-${tab}`).setAttribute('aria-selected', s.tab === tab);
+    $(`tab-${tab}`).tabIndex = s.tab === tab ? 0 : -1;
+    $(`panel-${tab}`).hidden = s.tab !== tab;
+  }
 }
 function settingChanged(s = settings()) {
   if (remote) send({ settings: s });
@@ -148,7 +154,7 @@ let saysOn = false; // a Robot Says round is being played
 let pressed = false;
 let steps = null; // the kid's piece on the track, while a round is played from a switch
 // During a round the round's own way of moving counts; the setting only applies to the next round.
-const switchOn = () => !!steps || (!saysOn && ['idle', 'win'].includes(game.phase) && $('s-switch').checked);
+const switchOn = () => !!steps || (!saysOn && !talking() && ['idle', 'win'].includes(game.phase) && $('s-switch').checked);
 const SWITCH_HINT = {
   idle: 'Press the switch to start.', green: 'Bean is not looking. Press to step closer!',
   caught: 'Your piece is back at the start. Press the switch to go again.',
@@ -163,7 +169,7 @@ function drawTrack() {
   if (saysOn) return; // Robot Says counts its commands on the track
   const on = switchOn();
   $('track').hidden = $('step').hidden = !on;
-  $('readout').hidden = on;
+  $('readout').hidden = on || talking(); // Talk has no distance to show
   const at = steps ? steps.at : 0;
   const count = steps ? steps.total : Number($('s-steps').value);
   drawCells(at, count, `Step ${at} of ${count}`);
@@ -218,13 +224,26 @@ let restartUntil = 0; // Restart was pressed once: a second press before this ti
 const startLabel = () =>
   ($('start').textContent =
     shown === 'win' ? 'Play again' : shown === 'idle' ? 'Start' : performance.now() < restartUntil ? 'Press again to restart' : 'Restart');
-function show(phase, hint = (switchOn() && SWITCH_HINT[phase]) || SCREEN[phase].hint, status = phase === 'idle' ? `Let’s play ${chosenGame()}` : SCREEN[phase].status) {
+let tabUntil = 0; // a tab was pressed once during a round: a second press before this time stops the round and switches
+const tabWarn = (tab, label = '') => {
+  $(`warn-${tab}`).textContent = label && 'Press again to stop';
+  $('tab-note').textContent = label && `Press ${label} again to stop the round.`;
+};
+const TALK_GLYPH = $('tab-talk').querySelector('path').getAttribute('d'); // the speech bubble on the Talk tab
+const idleStatus = () => (talking() ? 'Talk with Bean' : `Let’s play ${chosenGame()}`);
+function show(phase, hint = talking() ? 'Coming soon: Bean takes turns talking with your kid.' : (switchOn() && SWITCH_HINT[phase]) || SCREEN[phase].hint, status = phase === 'idle' ? idleStatus() : SCREEN[phase].status) {
   shown = phase;
   document.body.dataset.phase = phase;
   $('status').textContent = status;
   $('hint').textContent = hint;
-  $('glyph-path').setAttribute('d', SCREEN[phase].glyph);
-  if (phase === 'idle' || phase === 'win') restartUntil = 0;
+  // shortcut: Talk with Bean is not built yet, the speech area fills it in and shows Start and Stop again.
+  $('controls').hidden = talking();
+  $('glyph-path').setAttribute('d', phase === 'idle' && talking() ? TALK_GLYPH : SCREEN[phase].glyph);
+  if (phase === 'idle' || phase === 'win') {
+    restartUntil = tabUntil = 0;
+    tabWarn('move');
+    tabWarn('talk');
+  }
   startLabel();
   $('step').textContent = phase === 'idle' ? 'Start' : phase === 'win' ? 'Play again' : 'Step';
   $('ready').hidden = phase !== 'caught';
@@ -378,6 +397,7 @@ async function stopRound(hint) {
 $('stop').addEventListener('click', () => queued(() => stopRound()));
 
 function start() {
+  if (talking()) return; // shortcut: Talk with Bean is not built yet, the speech area fills it in
   unlockAudio();
   queued(async () => {
     await stopRound(); // Start during a round ends it first
@@ -411,6 +431,35 @@ $('start').addEventListener('click', () => {
   restartUntil = performance.now() + 4000;
   startLabel();
   setTimeout(startLabel, 4000);
+});
+
+// Move and Talk tabs. Like Restart, a press during a round only warns: a second press within 4 seconds stops it and switches.
+for (const tab of ['move', 'talk']) {
+  $(`tab-${tab}`).addEventListener('click', () => {
+    if (tab === settings().tab) return;
+    if (shown !== 'idle' && shown !== 'win' && performance.now() >= tabUntil) {
+      tabUntil = performance.now() + 4000;
+      tabWarn(tab, $(`tab-${tab}`).querySelector('.label').textContent);
+      setTimeout(() => performance.now() >= tabUntil && tabWarn(tab), 4000);
+      return;
+    }
+    tabUntil = 0;
+    // Queued behind a Start that is still measuring, so that round is stopped too. A won round is cleared like a stopped one.
+    queued(async () => {
+      if (shown !== 'idle') await stopRound();
+      settingChanged(fixSettings({ ...settings(), tab }));
+      show('idle');
+    });
+  });
+}
+// Arrow keys, Home and End move between the tabs (ARIA tabs pattern). click() so a phone sends it to the laptop.
+$('tabs').addEventListener('keydown', (e) => {
+  const other = e.target.id === 'tab-talk' ? 'move' : 'talk';
+  const to = { ArrowLeft: other, ArrowRight: other, Home: 'move', End: 'talk' }[e.key];
+  if (!to) return;
+  e.preventDefault();
+  $(`tab-${to}`).focus();
+  $(`tab-${to}`).click();
 });
 
 $('ready').addEventListener('click', () => game.ready(performance.now()));
@@ -449,9 +498,9 @@ show('idle');
 
 // ---------- phone remote (spec, section 13) ----------
 // The laptop sends what its screen shows; the phone copies it and sends its presses back through scripts/serve.mjs.
-const CLICKS = ['start', 'stop', 'ready', 'goodtry', 'yes', 'no', 'reset'];
-const TEXTS = ['status', 'hint', 'reading', 'track-text', 'start', 'step', 'reset'];
-const HIDDEN = ['readout', 'track', 'timer', 'step', 'parent', 'ready', 'goodtry', 'yes', 'no'];
+const CLICKS = ['start', 'stop', 'ready', 'goodtry', 'yes', 'no', 'reset', 'tab-move', 'tab-talk'];
+const TEXTS = ['status', 'hint', 'reading', 'track-text', 'start', 'step', 'reset', 'warn-move', 'warn-talk', 'tab-note'];
+const HIDDEN = ['readout', 'track', 'timer', 'controls', 'step', 'parent', 'ready', 'goodtry', 'yes', 'no'];
 const snapshot = () => ({
   phase: document.body.dataset.phase,
   glyph: $('glyph-path').getAttribute('d'),
@@ -512,7 +561,7 @@ if (remote) {
         press();
         steps?.release();
       } else if (CLICKS.includes(click) && !$(click).closest('[hidden]')) $(click).click();
-      else if (s) settingChanged(fixSettings(s));
+      else if (s) settingChanged(fixSettings({ ...s, tab: settings().tab })); // tabs come as clicks, so a round is never left running on Talk
     };
   }).catch(() => {});
 }

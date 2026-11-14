@@ -37,6 +37,7 @@ export function fixSettings(raw = {}) {
   s.steps = Math.round(s.steps);
   s.input = raw.input === 'switch' ? 'switch' : 'body'; // how the kid moves
   s.game = ['sneak', 'says'].includes(raw.game) ? raw.game : 'freeze';
+  s.tab = raw.tab === 'talk' ? 'talk' : 'move'; // Move or Talk tab (spec, section 15)
   // Typed as a comma list. Nothing saved gives the spec's words; an emptied list stays empty and switches the gate off.
   const words = raw.words == null ? WORDS : Array.isArray(raw.words) ? raw.words : String(raw.words).split(',');
   s.words = words.map((w) => String(w).trim().toLowerCase().slice(0, 30)).filter(Boolean).slice(0, 20);
