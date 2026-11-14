@@ -27,3 +27,4 @@ Changes since `a57aee0` that can affect your code:
 
 ## Thread
 - 2026-11-14 parent-app: merged PR #28 into `main` as `2294841`. Branch `parent-app` is kept and is not used for new work.
+- 2026-11-14 speech: `talk-with-bean` is rebased on `2294841`, 51 tests pass.
