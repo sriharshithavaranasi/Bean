@@ -68,6 +68,7 @@ Set-up: tape a straight lane about 1 m long in front of the car (the sensor read
 | Red | Head at 90 (facing the kid), LED red | Music stops, screen shows FREEZE | A random time between the shortest and longest red light ends |
 | Caught | LED orange | "Caught" sound, voice "I saw you move! Game over." | Never: it ends the game, like a win. Play again starts a new one |
 | Win | LED rainbow or white | Win sound | Play again is pressed |
+| Ended | LED off, head faces the kid | "Is anybody there? I'll stop for now. Bye!" Screen: "Bean stopped" | Play again is pressed. Reached after 12 Red lights with no catch and no win: nobody is playing, the game was started by accident |
 
 Catching movement, during Red:
 
@@ -169,7 +170,7 @@ Starting palette from the example: cream background `#fff8ef`, ink `#2b2140`, go
 
 Behaviour taken from the example:
 
-- Bean's spoken lines (`app/signals.ts`): Red light "Red light! Hmm... I'm watchinggg", caught "You moved!!", win "You got me! You win!". After a Red light held still it teases ("Heyy... Did you just move?" or "You're sneaky!"), or says "You're almost here!" when that Red light's last good reading was under 30 cm. The screen text is unchanged.
+- Bean's spoken lines (`app/signals.ts`): Red light "Red light! Hmm... I'm watching you", caught "You moved!!", win "You got me! You win!". After a Red light held still it teases ("Heyy... Did you just move?" or "You're sneaky!"), or says "You're almost here!" when that Red light's last good reading was under 30 cm. The screen text is unchanged.
 - Caught ends the game: Bean says so, and Play again starts a new one.
 - Vibration: one short pulse on Green, two long pulses on Red, a pattern on a win.
 

@@ -25,9 +25,10 @@ const SCREEN: Record<string, { status?: string; hint: string; glyph: string }> =
   red: { status: 'Red light!', hint: 'Bean is looking. Freeze!', glyph: 'M7 5h4v14H7zM13 5h4v14h-4z' },
   caught: { status: 'I saw you!', hint: 'Game over. Press Play again to try again.', glyph: 'M12 5C6 5 2 12 2 12s4 7 10 7 10-7 10-7-4-7-10-7zm0 11a4 4 0 110-8 4 4 0 010 8z' },
   word: { status: 'Say your word', hint: 'Say it out loud, or press Good try.', glyph: 'M4 4h16v12h-9l-5 4v-4H4z' },
+  ended: { status: 'Bean stopped', hint: 'Nobody played for 12 rounds, so the game ended. Press Play again to start.', glyph: 'M7 5h10v14H7z' },
   win: { status: 'You got me!', hint: 'You reached Bean!', glyph: 'M12 2l3 7 7 .6-5.3 4.7 1.7 7.2L12 17.8 5.6 21.5l1.7-7.2L2 9.6 9 9z' },
 };
-const LIGHT: Record<string, [number, number, number]> = { green: [0, 255, 0], red: [255, 0, 0], caught: [255, 80, 0], win: [255, 255, 255] };
+const LIGHT: Record<string, [number, number, number]> = { green: [0, 255, 0], red: [255, 0, 0], caught: [255, 80, 0], ended: [0, 0, 0], win: [255, 255, 255] };
 
 // ---------- grown-up settings ----------
 // field id -> [game setting, how many of the game's units one of the field's units is]
@@ -162,10 +163,10 @@ let chain: Promise<unknown> = Promise.resolve();
 const queued = <T>(job: () => T) => (chain = chain.then(job).catch((e) => void console.error(e)));
 
 let restartUntil = 0; // Restart was pressed once: a second press before this time restarts
-const over = (phase: string) => phase === 'idle' || phase === 'win' || phase === 'caught'; // no round running
+const over = (phase: string) => ['idle', 'win', 'caught', 'ended'].includes(phase); // no round running
 const startLabel = () =>
   ($('start').textContent =
-    shown === 'win' || shown === 'caught' ? 'Play again' : shown === 'idle' ? 'Start' : performance.now() < restartUntil ? 'Press again to restart' : 'Restart');
+    shown === 'win' || shown === 'caught' || shown === 'ended' ? 'Play again' : shown === 'idle' ? 'Start' : performance.now() < restartUntil ? 'Press again to restart' : 'Restart');
 let tabUntil = 0; // a tab was pressed once during a round: a second press before this time stops the round and switches
 const tabWarn = (tab: string, label = '') => {
   $(`warn-${tab}`).textContent = label && 'Press again to stop';
@@ -209,7 +210,7 @@ async function enter(phase: string) {
   const held = shown === 'red' && phase === 'green';
   if (phase === 'win') bump('wins');
   if (phase === 'caught') bump('caught');
-  if (phase === 'win' || phase === 'caught') closeCam();
+  if (over(phase)) closeCam();
   if (phase === 'red') lastCm = null; // only this Red light's readings say how close the kid is
   if (held) praise(lastCm);
   show(phase);

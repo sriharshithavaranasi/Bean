@@ -91,8 +91,8 @@ button.primary { background: var(--accent); color: var(--on-accent); font-size: 
 #controls { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
 #parent { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 10px; }
 /* During a round Stop is the loud button. Sizes stay put so a second tap on Start cannot land on Stop. */
-body:not([data-phase="idle"], [data-phase="win"], [data-phase="caught"]) #start { background: var(--btn); }
-body:not([data-phase="idle"], [data-phase="win"], [data-phase="caught"]) #stop { background: var(--fg); color: #fff; }
+body:not([data-phase="idle"], [data-phase="win"], [data-phase="caught"], [data-phase="ended"]) #start { background: var(--btn); }
+body:not([data-phase="idle"], [data-phase="win"], [data-phase="caught"], [data-phase="ended"]) #stop { background: var(--fg); color: #fff; }
 
 /* Totals are stickers in the colour of what they count: rounds = start yellow, wins = win.
    Talk: talks = start yellow, turns taken = win, heard by the mic = go. */
@@ -185,3 +185,29 @@ body[data-phase="caught"] #light { animation: pop-caught .28s cubic-bezier(.16, 
 body[data-phase="win"] #light { animation: pop-win .28s cubic-bezier(.16, 1, .3, 1); }
 body[data-phase="word"] #light { animation: pop-word .28s cubic-bezier(.16, 1, .3, 1); }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+
+/* Play mode: while a round runs, the grown-up column steps aside and the stage takes the whole screen.
+   Driven by data-phase alone, so Stop, a catch, a win, "Bean stopped" and the phone remote all bring it back. */
+main { transition: grid-template-columns .5s cubic-bezier(.16, 1, .3, 1), column-gap .5s cubic-bezier(.16, 1, .3, 1); }
+main > .col:last-of-type {
+  overflow: clip; overflow-clip-margin: 8px; /* no sideways scroll while it shrinks; the card shadows still show */
+  transition: opacity .3s .15s, transform .5s cubic-bezier(.16, 1, .3, 1), visibility 0s, display .5s allow-discrete;
+}
+#light { transition: background-color .15s, width .5s cubic-bezier(.16, 1, .3, 1); }
+#stage { transition: background-color .15s, padding .5s cubic-bezier(.16, 1, .3, 1); }
+body:not([data-phase="idle"], [data-phase="win"], [data-phase="caught"], [data-phase="ended"]) {
+  & main > .col:last-of-type {
+    opacity: 0; transform: translateX(32px); visibility: hidden; /* hidden settings take no Tab stops and are not read out */
+    transition: opacity .25s, transform .5s cubic-bezier(.16, 1, .3, 1), visibility 0s .5s, display .5s allow-discrete;
+  }
+  & #light { width: clamp(180px, 72vw, 320px); }
+  @media (min-width: 860px) {
+    & main { grid-template-columns: 1fr 0fr; column-gap: 0; }
+    & #stage { padding: 36px 16px; }
+    & #light { width: min(420px, 42vh); } /* Start and Stop stay on screen */
+  }
+  @media (max-width: 859px) {
+    & main > .col:last-of-type { display: none; }
+  }
+}
+@starting-style { main > .col:last-of-type { opacity: 0; } }

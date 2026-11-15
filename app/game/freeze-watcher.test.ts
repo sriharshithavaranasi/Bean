@@ -132,3 +132,27 @@ test('each Red lasts a random time between the shortest and longest red light', 
   assert.equal(redLength(0.5), 4000);
   assert.equal(redLength(0.99), 6000); // rounds up to the next 100 ms tick
 });
+
+test('12 Red lights with no catch and no win end the game: nobody is playing', () => {
+  const g = newGame();
+  g.start(0, 180);
+  let t = 0;
+  let reds = 0;
+  let last = g.phase;
+  while (t < 200000 && g.phase !== 'ended') {
+    t += 100;
+    g.tick(t, 120, body()); // a still body, never close enough to win
+    if (g.phase === 'red' && last !== 'red') reds++;
+    last = g.phase;
+  }
+  assert.equal(g.phase, 'ended');
+  assert.equal(reds, 12);
+  assert.equal(g.tick(t + 100000, 5, body()), 'ended'); // stays ended: no Green, Red or win follows
+});
+
+test('the limit counts Red lights, so a catch or a win before it still ends the game as before', () => {
+  const g = createGame({ maxRedLights: 1 }, () => 0);
+  g.start(0, 180);
+  g.tick(3000, null);
+  assert.equal(run(g, 3100, 5500, () => 120, sidestep(4500)), 'caught');
+});

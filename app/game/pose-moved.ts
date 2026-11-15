@@ -6,7 +6,9 @@ const SEEN = 0.5;
 export type Landmark = { x: number; y: number; visibility?: number };
 export type Frame = Landmark[] | null; // null when nobody was found
 
-const seen = (p?: Landmark): p is Landmark => !!p && (p.visibility ?? 0) >= SEEN;
+const EDGE = 0.05; // points this close to the picture's edge are the model's guesses (a close kid's knees and feet), so they do not count
+const inside = (v: number) => v >= EDGE && v <= 1 - EDGE;
+const seen = (p?: Landmark): p is Landmark => !!p && (p.visibility ?? 0) >= SEEN && inside(p.x) && inside(p.y);
 
 // frames: one landmark array per camera frame (null when nobody was found).
 // Returns how far the body drifted, as a share of the kid's shoulder width, so it means the same whether

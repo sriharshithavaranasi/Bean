@@ -24,6 +24,11 @@
       "when": "Kid got closer than the win distance during Red",
       "says": "You got me! You win!",
       "source": "app/signals.ts playCue"
+    },
+    {
+      "when": "12 Red lights passed with no catch and no win: nobody is playing, so the game ends",
+      "says": "Is anybody there? I'll stop for now. Bye!",
+      "source": "app/signals.ts ENDED"
     }
   ],
   "tuningPage": [

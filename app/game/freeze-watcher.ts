@@ -1,6 +1,6 @@
 import { poseMoved, type Frame } from './pose-moved.ts';
 
-export type Phase = 'idle' | 'green' | 'red' | 'caught' | 'win';
+export type Phase = 'idle' | 'green' | 'red' | 'caught' | 'win' | 'ended';
 
 export const DEFAULTS = {
   greenMinMs: 3000,
@@ -9,6 +9,7 @@ export const DEFAULTS = {
   redMaxMs: 5000,
   settleMs: 1000, // head is still turning and the kid is still stopping
   winCm: 12,
+  maxRedLights: 12, // after this many Red lights with no catch and no win, nobody is playing: the game ends
   poseWigglePct: 20, // webcam wiggle room, in % of shoulder width; retune on watch.html (was 15 % of torso length)
 };
 export type GameSettings = typeof DEFAULTS;
@@ -18,6 +19,7 @@ export type Game = {
   startCm: number;
   until: number;
   redStart: number;
+  redLights: number; // Red lights finished this game
   frames: Frame[]; // webcam frames during this Red
   start(now: number, startCm: number): void;
   tick(now: number, cm: number | null, body?: Frame): Phase;
@@ -25,10 +27,10 @@ export type Game = {
   stop(): void;
 };
 
-// Phases: idle, green, red, then caught or win, which end the game. Time and random are passed in so tests control them.
+// Phases: idle, green, red, then caught, win or ended (nobody played), which end the game. Time and random are passed in so tests control them.
 export function createGame(settings: Partial<GameSettings> = DEFAULTS, random = Math.random) {
   const s = { ...DEFAULTS, ...settings };
-  const game = { phase: 'idle', startCm: 0, until: 0, redStart: 0, frames: [] } as unknown as Game; // the methods are added below
+  const game = { phase: 'idle', startCm: 0, until: 0, redStart: 0, redLights: 0, frames: [] } as unknown as Game; // the methods are added below
 
   // Only the webcam decides "moved": the distance sensor gave too many false catches.
   const kidMoved = () => poseMoved(game.frames, { wiggle: s.poseWigglePct / 100 });
@@ -58,6 +60,7 @@ export function createGame(settings: Partial<GameSettings> = DEFAULTS, random = 
         if (body !== undefined) game.frames.push(body);
         if (now >= game.until) {
           if (kidMoved()) game.caught();
+          else if (++game.redLights >= s.maxRedLights) game.phase = 'ended';
           else green(now);
         }
       }

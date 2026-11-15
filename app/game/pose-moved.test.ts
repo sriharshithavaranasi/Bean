@@ -83,3 +83,14 @@ test('feet out of the picture is fine', () => {
   assert.equal(poseMoved(step, opts), true);
 });
 
+
+test("points near the edge of the picture do not count: a close kid's guessed ankles jumping is not a catch", () => {
+  const close = (ankleY: number, dx = 0) => {
+    const f = body({ dx });
+    f[27] = { ...f[27], y: ankleY }; // the model guesses an ankle at the bottom edge
+    f[28] = { ...f[28], y: ankleY };
+    return f;
+  };
+  assert.equal(poseMoved([close(0.97), close(0.99), close(0.96)], opts), false); // edge guesses jump: ignored
+  assert.equal(poseMoved([close(0.97), close(0.99), close(0.97, 0.1)], opts), true); // a real sidestep still shows in the shoulders
+});
