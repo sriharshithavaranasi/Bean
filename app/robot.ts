@@ -13,6 +13,18 @@ export const HEAD_KID = 90;
 const TURN = 27; // degrees for a kid at the very edge to reach the middle: about 0.6 of the webcam's 45 degree view
 const NEAR = 0.12; // this close to the middle (as a share of the picture's width) the head stays put
 const [HEAD_MIN, HEAD_MAX] = [30, 150]; // short of the servo's ends, for the webcam's cable
+// Nobody in the picture: Bean looks for the kid, panning slowly from side to side. Returns the head's angle `seconds`
+// into a search that began with the head at `from`; `right` starts it toward the right, the side the kid left on.
+// A sine wave, so the head eases into each turn like a real one instead of stopping dead, and each sweep reaches a
+// little further or less far than the last, so it does not look like a machine. One sweep takes 12 seconds.
+const SWEEP_S = 12;
+export function headSearch(from: number, seconds: number, right: boolean) {
+  const reach = (s: number) => 47 + 5 * Math.sin(s / 9); // degrees to each side of the middle: 42 to 52, inside the limits
+  const start = Math.asin(Math.max(-1, Math.min(1, (from - HEAD_KID) / reach(0))));
+  const phase = (right ? Math.PI - start : start) + (Math.PI * seconds) / SWEEP_S;
+  return Math.round(HEAD_KID + reach(seconds) * Math.sin(phase));
+}
+
 export function headToward(angle: number, x: number) {
   const off = x - 0.5;
   if (Math.abs(off) < NEAR) return angle;

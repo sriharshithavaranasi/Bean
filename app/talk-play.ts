@@ -9,7 +9,7 @@
 import { openCamera } from './camera.ts';
 import { headSeen } from './game/pose-moved.ts';
 import type { Mode, ModeContext } from './mode.ts';
-import { HEAD_KID, headToward } from './robot.ts';
+import { HEAD_KID, headSearch, headToward } from './robot.ts';
 import { load } from './store.ts';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -292,12 +292,23 @@ export function createTalk(ctx: ModeContext): Mode {
     const cam = await openCamera($<HTMLVideoElement>('cam-video'), load('bean-settings', { cameraId: '' }).cameraId || undefined).catch(() => null);
     let angle = HEAD_KID;
     let unseen = 0; // looks in a row with no head in the picture
+    let lastX = 0.5; // where the kid's nose last was across the picture
+    let search: { from: number; began: number } | null = null; // Bean is looking for the kid
     while (cam && on()) {
       const body = cam.frame();
-      // After about 3 seconds with nobody in the picture, face the middle again, where the kid is most likely to come back.
-      const next = headSeen(body) ? ((unseen = 0), headToward(angle, body[0].x)) : ++unseen === 10 ? HEAD_KID : angle;
+      let next = angle;
+      if (headSeen(body)) {
+        unseen = 0;
+        search = null;
+        next = headToward(angle, (lastX = body[0].x));
+      } else if (++unseen >= 5) {
+        // Nobody for about 1.5 seconds (one missed look is not enough): pan slowly from side to side to find the kid,
+        // starting toward the side they left on.
+        search ??= { from: angle, began: performance.now() };
+        next = headSearch(search.from, (performance.now() - search.began) / 1000, lastX > 0.5);
+      }
       if (next !== angle) await ctx.queued(() => on() && ctx.robot().lookAt((angle = next)));
-      await new Promise((r) => setTimeout(r, 300));
+      await new Promise((r) => setTimeout(r, search ? 150 : 300)); // small, frequent steps while panning
     }
     cam?.close();
   }

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { headToward, makeLink, makeRobot, parseReplies } from './robot.ts';
+import { headSearch, headToward, makeLink, makeRobot, parseReplies } from './robot.ts';
 
 test('parses replies and keeps a partial one', () => {
   assert.deepEqual(parseReplies('{1_ok}{2_137}{3_1'), {
@@ -70,4 +70,32 @@ test('lookAt turns the head to an angle', async () => {
   const sent: object[] = [];
   await makeRobot(async (c) => (sent.push(c), 'ok')).lookAt(75);
   assert.deepEqual(sent, [{ N: 5, D1: 1, D2: 75 }]);
+});
+
+// Talk: nobody in the picture, so Bean looks for the kid. headSearch(from, seconds, right) is the head's angle
+// `seconds` into the search, which began with the head at `from`.
+test('the search starts where the head is, toward the side the kid left on', () => {
+  assert.equal(headSearch(90, 0, true), 90);
+  assert.equal(headSearch(70, 0, false), 70);
+  assert.ok(headSearch(90, 1, true) < 90); // right is a smaller angle
+  assert.ok(headSearch(90, 1, false) > 90);
+});
+
+test('the search pans slowly and evenly from side to side, never past the limits', () => {
+  const angles = Array.from({ length: 600 }, (_, i) => headSearch(90, i / 2, true)); // a look every half second for 5 minutes
+  assert.ok(Math.min(...angles) >= 30 && Math.max(...angles) <= 150);
+  assert.ok(Math.min(...angles) < 50 && Math.max(...angles) > 130, 'it reaches well to both sides');
+  const steps = angles.slice(1).map((a, i) => Math.abs(a - angles[i]));
+  assert.ok(Math.max(...steps) <= 8, `largest step ${Math.max(...steps)}`); // slow: no jump between two looks
+  // Rhythmic: it turns round about every 12 seconds, at alternate sides.
+  const ways = angles.slice(1).map((a, i) => Math.sign(a - angles[i])).filter(Boolean);
+  const turns = ways.filter((way, i) => i > 0 && way !== ways[i - 1]);
+  assert.ok(turns.length >= 22 && turns.length <= 28, `${turns.length} turns in 5 minutes`);
+});
+
+test('the search eases into each turn, like a head, instead of stopping dead', () => {
+  const at = (s: number) => headSearch(90, s, true);
+  const middle = Math.abs(at(12.5) - at(11.5)); // crossing the middle, half a sweep after the start
+  const end = Math.abs(at(6.5) - at(5.5)); // at the far right, a quarter of the way round
+  assert.ok(end < middle / 3, `${end} near the end, ${middle} in the middle`);
 });
