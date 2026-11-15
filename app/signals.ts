@@ -99,9 +99,14 @@ export function silence() {
   quiet();
 }
 
-const PRAISE = ['Great freezing!', 'So still!', 'I did not see a thing!'];
-const CUES = ['Red light!', 'I saw you! Go back.', 'You got me! You win!', ...PRAISE];
-export const praise = () => say(PRAISE[Math.floor(Math.random() * PRAISE.length)]);
+// Bean's Red Light, Green Light lines. After a Red light held still it teases, or says the kid is close (last reading under 30 cm).
+const RED = "Red light! Hmm... I'm watchinggg...";
+const CAUGHT = 'You moved!!';
+const WIN = 'You got me! You win!';
+const ALMOST = "You're almost here!";
+const TEASE = ['Heyy... Did you just move?', "You're sneaky!"];
+const CUES = [RED, CAUGHT, WIN, ALMOST, ...TEASE];
+export const praise = (cm: number | null) => say(cm != null && cm < 30 ? ALMOST : TEASE[Math.floor(Math.random() * TEASE.length)]);
 
 const buzz = (pattern: VibratePattern) => navigator.vibrate?.(pattern); // phones only
 const BUZZ: Record<string, VibratePattern> = { green: 80, red: [300, 100, 300], win: [100, 60, 100, 60, 300] };
@@ -113,13 +118,17 @@ export function playCue(phase: string) {
     startMusic();
   } else if (phase === 'red') {
     tone(220, 0, 0.4, 'square');
-    say('Red light!');
+    say(RED);
   } else if (phase === 'caught') {
     tone(196, 0, 0.25, 'sawtooth');
     tone(147, 0.25, 0.5, 'sawtooth');
+<<<<<<< Updated upstream
     say('I saw you move! Game over.');
+=======
+    say(CAUGHT);
+>>>>>>> Stashed changes
   } else if (phase === 'win') {
     [523, 659, 784, 1047].forEach((f, n) => tone(f, n * 0.15, 0.3));
-    say('You got me! You win!');
+    say(WIN);
   }
 }

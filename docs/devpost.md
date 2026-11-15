@@ -2,9 +2,12 @@
 
 Red Light, Green Light is one of the first games kids play together, and it is mostly a running game. Kids who use a wheelchair or a walker, crawl or roll, or tire quickly often end up watching it instead of playing.
 
-The same kids are left behind in school. In the US, **71% of students with disabilities** finish high school in four years, against **87% of all students** ([NCES, *Condition of Education*, 2021-22 school year](https://nces.ed.gov/programs/coe/indicator/coi/high-school-graduation-rates)).
+Lots of kids are sidelined from moving, from talking, or from both:
 
-Bean is built for two places: the family home and the special education classroom. It offers a game that counts every way of moving toward the robot and fits in a 1 m lane in a living room or a corner of a classroom. Siblings, parents and classmates play together: the sensor watches whoever is closest, and a catch sends the whole group back.
+- **Moving:** in the UK, only **26% of young disabled people** can always join in PE or school sport, against **38%** of their non-disabled peers ([*Play, Move, Belong*, Activity Alliance and partners, 2025](https://www.activityalliance.org.uk/news/10269-only-one-in-four-disabled-children-can-always-join-in-school-sports)).
+- **Talking:** in the US, **nearly 1 in 12 children** aged 3 to 17 had a voice, speech, language or swallowing disorder in the past year, and only **55%** of them got treatment ([NIDCD, 2012 National Health Interview Survey](https://www.nidcd.nih.gov/news/2015/about-1-12-children-has-disorder-related-voice-speech-language-or-swallowing)).
+
+Bean is a playful robot friend that gives sidelined kids a chance to move and talk, making physical games accessible while helping children practise speech as part of the fun. It is built for families and special education classrooms. It offers a game that counts every way of moving toward the robot and fits in a 1 m lane in a living room or a corner of a classroom. Siblings, parents and classmates play together: the sensor watches whoever is closest, and a catch sends the whole group back.
 
 The game itself doesn't need speed. It rewards stopping when you should and moving when you can. We wanted a version where the watcher is fair, patient and always willing to play: a small robot that turns its head, looks, and catches anyone it sees moving, whether they walk, crawl or roll.
 
@@ -12,11 +15,11 @@ Bean is a play and practice tool. It can support the practice a family or teache
 
 ## What it does
 
-Bean is a robot car that plays Red Light, Green Light with a kid or a small group. The kid starts at a taped line about 1 m away and sneaks toward Bean.
+Bean is a playful robot friend on wheels with two games: Red Light, Green Light to move, and Talk to Bean to talk. In Red Light, Green Light, a kid or a small group starts at a taped line about 1 m away and sneaks toward Bean.
 
 - **Green light:** Bean turns its head away, its light goes green and music plays.
-- **Red light:** Bean turns back, its light goes red and the music stops. If the kid moves closer, Bean catches them and they go back to the start.
-- **Win:** reach Bean while it is looking (closer than 12 cm) and Bean says "You got me!".
+- **Red light:** Bean turns back, its light goes red, the music stops and Bean says "Red light! Hmm... I'm watchinggg...". If the kid moves closer, Bean says "You moved!!" and they go back to the start. If they hold still, Bean teases "Heyy... Did you just move?" or "You're sneaky!", or "You're almost here!" when they are close.
+- **Win:** reach Bean while it is looking (closer than 12 cm) and Bean says "You got me! You win!".
 
 A parent or teacher runs the game from a laptop, or from a phone as a remote, so they can stay in the lane with the kids. They can:
 

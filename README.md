@@ -1,6 +1,6 @@
 # Bean
 
-Bean is a robot car for families and special education classrooms. Kids can play games or practise conversation with Bean.
+Bean is a playful robot friend that gives sidelined kids a chance to move & talk, making physical games accessible while helping children practice speech as part of the fun. It is built for families and special education classrooms.
 
 In Red Light, Green Light, Bean is the watcher: it turns its head away for Green light, looks back for Red light, and catches anyone it sees moving closer. Kids can sneak by walking, crawling or rolling, alone or as a group. On the **Talk to Bean** tab, Bean holds a short turn-taking conversation. A parent or teacher runs the game from a laptop or a phone.
 
