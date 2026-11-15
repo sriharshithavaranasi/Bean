@@ -30,9 +30,9 @@ Group play needs no extra work. The sensor sees the nearest person in the lane, 
 6. **Every screen works against a mock robot** (a distance slider), so app work never waits for the car.
 7. **Progress and settings live in `localStorage`.** Nothing leaves the device.
 
-## 4. Hardware facts (from `tutorial/`)
+## 4. Hardware facts (from the ELEGOO kit files)
 
-`tutorial/` holds the Elegoo Smart Robot Car V4.0 kit files, including the main UNO program for each shield and the ESP32 sketch.
+The Elegoo Smart Robot Car V4.0 kit files come from [ELEGOO's download page](https://www.elegoo.com/pages/download). They include the main UNO program for each shield and the ESP32 sketch.
 
 Serial: 9600 baud, one JSON object per command. `H` is an id that the reply echoes.
 

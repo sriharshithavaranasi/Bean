@@ -23,12 +23,13 @@ No car yet? Skip to step 4. The app plays with a pretend robot: a slider stands 
 Bean uses ELEGOO's own firmware, so there is no Arduino code to write. A new car usually already has it. Only flash it if the car was reprogrammed.
 
 1. Install the [Arduino IDE](https://www.arduino.cc/en/software).
-2. Copy the folders in `tutorial/ELEGOO Smart Robot Car Kit V4.0 2021.04.14/01 ReadMeFirst/CopyMeFirst/` into your Arduino `libraries` folder (`tutorial/05 How to add .zip Library.pdf` shows how).
-3. Find the shield on the car: it is printed on the board. Open the matching sketch in `tutorial/ELEGOO Smart Robot Car Kit V4.0 2021.04.14/02 Manual & Main Code & APP/02 Main Program   (Arduino UNO)/`:
+2. Download the Smart Robot Car Kit V4.0 files from [ELEGOO's download page](https://www.elegoo.com/pages/download) and unzip them.
+3. Copy the folders in `ELEGOO Smart Robot Car Kit V4.0 2021.04.14/01 ReadMeFirst/CopyMeFirst/` into your Arduino `libraries` folder (the kit's `05 How to add .zip Library.pdf` shows how).
+4. Open the sketch for your shield in `ELEGOO Smart Robot Car Kit V4.0 2021.04.14/02 Manual & Main Code & APP/02 Main Program   (Arduino UNO)/`. Bean's car has the TB6612 shield with the MPU6050 gyro; another car has its shield printed on the board:
    - TB6612 with MPU6050: `TB6612 & MPU6050/SmartRobotCarV4.0_V1_20230201/`
    - TB6612 with QMI8658C: `TB6612 & QMI8658C/SmartRobotCarV4.0_V2_20220322/`
    - DRV8835: `DRV8835/SmartRobotCarV4.0_V0_20210120/`
-4. Plug the car in, pick **Arduino Uno** and its port, and press Upload. If the upload fails, move the shield's upload switch to the upload position and try again.
+5. Plug the car in, pick **Arduino Uno** and its port, and press Upload. If the upload fails, move the shield's upload switch to the upload position and try again.
 
 ### 2. Plug in and tape the lane
 
