@@ -77,7 +77,7 @@ Catching movement, during Red:
 2. The webcam decides, as in section 16, after every frame: the catch lands when the kid moves, not when the Red light ends. The distance sensor no longer catches anyone: on the car it was inconsistent and gave many false catches.
 3. When the kid's head is out of the picture (too close, or nobody found), the pose is not trusted: a change in the picture itself is the catch, as in section 16.
 
-Win: during Red, after the time to freeze, every reading under the win distance (30 cm) for half a second. One close reading is not enough: the sensor gives stray echoes. A far reading, a 0 or a missing reading starts the half second again, and moving in during it is still caught.
+Win: during Red, after the time to freeze, every reading under the win distance (30 cm) for half a second. One close reading is not enough: the sensor gives stray echoes. A far reading, a 0 or a missing reading starts the half second again. The distance reading beats the webcam: while the latest real reading (not a missed echo) is under the win distance, nothing is caught, because a kid who has reached Bean is about to win; if the kid steps back out of it, the webcam judges again from that moment. A move while the reading is still far is caught as before.
 
 Limits to say out loud in the demo: the webcam must see the kid's head, shoulders and hips to forgive hands and heads; closer than that, any change in the picture counts as moving.
 

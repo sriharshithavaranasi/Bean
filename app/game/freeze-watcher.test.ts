@@ -153,10 +153,39 @@ test('a far reading, or none, starts the half second again', () => {
   }
 });
 
-test('moving in during Red is caught before the half second is up', () => {
+test('at Bean (the latest reading is under the win distance) a move is not caught: the win comes instead', () => {
   const g = redLight();
   assert.equal(g.tick(4000, 25, body()), 'red');
-  assert.equal(g.tick(4100, 25, body(0.1)), 'caught');
+  assert.equal(run(g, 4100, 4400, () => 25, sidestep(4100)), 'red'); // moving, but already at Bean
+  assert.equal(g.tick(4500, 25, body(0.1)), 'win');
+});
+
+test('at Bean, a change in the picture is not caught either', () => {
+  const g = redLight();
+  assert.equal(g.tick(4000, 25, null, grey()), 'red');
+  assert.equal(g.tick(4100, 25, null, grey(30)), 'red');
+});
+
+test('a missed echo at Bean (0 or no reading) does not let a move be caught', () => {
+  for (const missed of [0, null]) {
+    const g = redLight();
+    assert.equal(g.tick(4000, 25, body()), 'red');
+    assert.equal(g.tick(4100, missed, body(0.1)), 'red'); // the latest real reading is still 25
+  }
+});
+
+test('a move while far is still caught, even with Bean close by', () => {
+  const g = redLight();
+  assert.equal(g.tick(4000, 35, body()), 'red');
+  assert.equal(g.tick(4100, 35, body(0.1)), 'caught'); // 35 cm is not under the win distance
+});
+
+test('after stepping back out of the win distance the webcam judges again, from that moment', () => {
+  const g = redLight();
+  assert.equal(g.tick(4000, 25, body()), 'red');
+  assert.equal(g.tick(4100, 25, body(0.1)), 'red'); // moved while at Bean: forgiven
+  assert.equal(g.tick(4200, 60, body(0.1)), 'red'); // far again, standing where they now are: not caught for the earlier move
+  assert.equal(g.tick(4300, 60, body(0.2)), 'caught'); // a new move while far
 });
 
 test('a 0 reading (sensor saw nothing) does not win', () => {

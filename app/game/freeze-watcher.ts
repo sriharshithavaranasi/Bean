@@ -43,6 +43,7 @@ export function createGame(settings: Partial<GameSettings> = DEFAULTS, random = 
     poseMoved(game.frames, { wiggle: s.poseWigglePct / 100 }) || pictureDrift(game.frames, game.pictures) > s.pictureChangePct / 100;
 
   let nearSince: number | null = null; // when the unbroken run of readings under the win distance began, this Red
+  let atBean = false; // this Red's latest real reading (not a missed echo) was under the win distance
   const between = (now: number, min: number, max: number) => now + min + random() * (max - min);
   const green = (now: number) => {
     game.phase = 'green';
@@ -66,13 +67,20 @@ export function createGame(settings: Partial<GameSettings> = DEFAULTS, random = 
       game.frames = [];
       game.pictures = [];
       nearSince = null;
+      atBean = false;
     } else if (game.phase === 'red' && now - game.redStart >= s.settleMs) {
       // A far reading, a 0 (no echo) or no reading at all breaks the run, and it starts again.
       if (cm != null && cm > 0 && cm < s.winCm) nearSince ??= now;
       else nearSince = null;
+      if (cm != null && cm > 0) atBean = cm < s.winCm; // a missed echo (0 or none) keeps the last real reading
       if (nearSince != null && now - nearSince >= s.winHoldMs) game.phase = 'win';
       else {
-        if (body !== undefined) {
+        // A kid who has reached Bean is about to win, so the distance reading beats the webcam: while the latest
+        // reading is under the win distance nothing is caught, and the webcam starts afresh if the kid steps back.
+        if (atBean) {
+          game.frames = [];
+          game.pictures = [];
+        } else if (body !== undefined) {
           game.frames.push(headSeen(body) ? body : null);
           game.pictures.push(picture);
         }
