@@ -25,7 +25,6 @@ export const LIMITS = {
 export type Limited = keyof typeof LIMITS;
 
 export type Settings = Record<Limited, number> & {
-  tab: 'move' | 'talk';
   cameraId: string; // '' = the default camera
 };
 
@@ -39,7 +38,6 @@ export function fixSettings(raw: Record<string, unknown> = {}): Settings {
   }
   s.greenMaxMs = Math.max(s.greenMaxMs, s.greenMinMs);
   s.redMaxMs = Math.max(s.redMaxMs, s.redMinMs);
-  s.tab = raw.tab === 'talk' ? 'talk' : 'move'; // Move or Talk tab (spec, section 15)
   s.cameraId = typeof raw.cameraId === 'string' ? raw.cameraId.slice(0, 200) : '';
   return s;
 }

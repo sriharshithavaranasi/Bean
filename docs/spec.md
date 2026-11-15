@@ -132,12 +132,16 @@ app/
   index.html        play screen, settings, dashboard
   app.css           the one stylesheet: design tokens in :root, then layout and controls
   fonts/            Fredoka and Nunito (OFL), served locally so the demo works offline
-  main.ts           wires the page to the game, the robot and saved settings
+  main.ts           the shell: tabs, stage, Start / Stop / Restart, robot link, screen lock, phone remote
+  mode.ts           the contract between the shell and each activity (screen, start, stop, phone sync)
+  play.ts           Play with Bean: its settings, progress, webcam and Red Light, Green Light loop
+  talk-play.ts      Talk with Bean: its settings, progress and turn-by-turn talk
+  camera.ts         opens the webcam and the pose model
   robot.ts          robot interface: connect, lookAway, lookAtKid, distanceCm, setLight
   robot-serial.ts   Web Serial transport
   robot-mock.ts     slider-driven fake robot
-  game/             pure logic and tests (movement, freeze-watcher, pose-moved)
-  speech.ts         practice-word listener
+  game/             pure logic and tests (freeze-watcher, pose-moved, talk)
+  speech.ts         microphone listener for Talk with Bean
   signals.ts        screen, sound, vibration
   store.ts          settings and progress in localStorage
   browser.d.ts      types for Web Serial and speech recognition, which TypeScript's DOM types lack

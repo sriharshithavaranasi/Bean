@@ -1,6 +1,8 @@
 // Talk with Bean on the Talk tab (spec, section 15): its settings, progress and the turn-by-turn game.
-// main.ts starts it with playTalk and ends it with stopTalk.
+// The shell (main.ts) starts and stops it through createTalk, like Play with Bean (play.ts).
 import { KEEP_GOING, SCRIPTS, fixTalk, goodbye, nextLine, replyTo, turnsFor, type Said, type TalkSettings } from './game/talk.ts';
+import type { Mode, ModeContext } from './mode.ts';
+import { say } from './signals.ts';
 import { listenAny } from './speech.ts';
 import { load, save } from './store.ts';
 
@@ -197,4 +199,23 @@ export async function playTalk({ show, say, light, goodtry }: {
     show('win', 'Press Play again to talk some more.', bye);
     say(bye);
   }
+}
+
+// ---------- the mode ----------
+// Bean faces the kid the whole talk; the stage shows Talk's own words and glyphs.
+export function createTalk(ctx: ModeContext): Mode {
+  return {
+    screen: {
+      idle: { status: 'Talk with Bean', hint: 'Press Start, then take turns talking with Bean.', glyph: $('tab-talk').querySelector('path')!.getAttribute('d')! },
+      word: { hint: 'Your turn!', glyph: 'M4 4h16v12h-9l-5 4v-4H4z' }, // speech bubble
+      win: { hint: 'Press Play again to talk some more.', glyph: 'M12 2l3 7 7 .6-5.3 4.7 1.7 7.2L12 17.8 5.6 21.5l1.7-7.2L2 9.6 9 9z' }, // star
+    },
+    showsDistance: false,
+    async start() {
+      await ctx.robot().lookAtKid();
+      // not awaited: Stop must be able to run while it plays
+      playTalk({ show: ctx.show, say, light: (rgb) => void ctx.queued(() => ctx.robot().setLight(...rgb)), goodtry: $('goodtry') });
+    },
+    stop: stopTalk,
+  };
 }
