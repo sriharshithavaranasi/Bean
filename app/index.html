@@ -59,6 +59,15 @@
           <label><input id="s-freeze" type="radio" name="s-game" checked> Red Light, Green Light</label>
           <label><input id="s-sneak" type="radio" name="s-game"> Say It to Sneak</label>
         </fieldset>
+        <!-- Shown only when the laptop has a camera (spec, section 16). -->
+        <fieldset id="watch-row" class="choice" hidden><legend>Bean watches with</legend>
+          <label><input id="s-sensor" type="radio" name="s-watch" checked> The distance sensor</label>
+          <label><input id="s-camera" type="radio" name="s-watch"> The webcam</label>
+        </fieldset>
+        <div id="camera-row" class="words" hidden><label for="s-cameraId">Camera</label>
+          <select id="s-cameraId"><option value="">Default camera</option></select></div>
+        <div class="field"><label for="s-poseWigglePct">Webcam wiggle room <span class="vh">(percent of body)</span></label>
+          <span class="num"><span class="val"><input id="s-poseWigglePct" type="number" inputmode="numeric"><span class="unit" aria-hidden="true">%</span></span></span></div>
         <div class="field"><label for="s-greenMin">Shortest green light <span class="vh">(seconds)</span></label>
           <span class="num"><span class="val"><input id="s-greenMin" type="number" inputmode="decimal" step="0.5"><span class="unit" aria-hidden="true">sec</span></span></span></div>
         <div class="field"><label for="s-greenMax">Longest green light <span class="vh">(seconds)</span></label>
@@ -99,6 +108,8 @@
     <!-- Read out when a tab press during a round only warns (the tab itself shows it). -->
     <p id="tab-note" class="vh" aria-live="assertive"></p>
   </main>
+  <!-- The webcam's picture, for the pose model only: never shown, recorded or sent. -->
+  <video id="cam-video" class="vh" muted playsinline aria-hidden="true"></video>
   <script type="module" src="main.ts"></script>
 </body>
 </html>

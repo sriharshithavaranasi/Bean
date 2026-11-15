@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { fixSettings, load, roundSettings, type Settings } from './store.ts';
 import { DEFAULTS } from './game/freeze-watcher.ts';
 
-const spec = { greenMinMs: 3000, greenMaxMs: 7000, settleMs: 1000, lookMs: 2500, leewayCm: 15, winCm: 12, game: 'freeze', tab: 'move', words: ['rabbit', 'red', 'robot', 'run'] };
+const spec = { greenMinMs: 3000, greenMaxMs: 7000, settleMs: 1000, lookMs: 2500, leewayCm: 15, winCm: 12, game: 'freeze', tab: 'move', words: ['rabbit', 'red', 'robot', 'run'], poseWigglePct: 15, watch: 'sensor', cameraId: '' };
 
 test('nothing saved reads as the spec defaults', () => {
   assert.deepEqual(fixSettings(load('bean-settings', {})), spec);
@@ -51,4 +51,13 @@ test('round settings: only Say It to Sneak asks for words, and only with a word 
   const sneak = roundSettings({ ...base, game: 'sneak' });
   assert.deepEqual([sneak.gate, sneak.greenMinMs, sneak.greenMaxMs], ['every', 3000, 3000]);
   assert.equal(roundSettings({ ...base, game: 'sneak', words: [] }).gate, 'off');
+});
+
+test('webcam settings: the sensor unless the webcam was chosen, any camera id, wiggle room 5 to 60 %', () => {
+  assert.equal(fixSettings({ watch: 'camera' }).watch, 'camera');
+  assert.equal(fixSettings({ watch: 'telepathy' }).watch, 'sensor');
+  assert.equal(fixSettings({ cameraId: 'abc123' }).cameraId, 'abc123');
+  assert.equal(fixSettings({ cameraId: 42 }).cameraId, '');
+  assert.deepEqual([fixSettings({ poseWigglePct: 1 }).poseWigglePct, fixSettings({ poseWigglePct: 99 }).poseWigglePct], [5, 60]);
+  assert.equal(roundSettings(fixSettings({ watch: 'camera' })).watch, 'camera'); // the round plays with it
 });

@@ -123,3 +123,46 @@ test('gate "every" (Say It to Sneak): a word before every Green, also at the sta
   g.ready(6000);
   assert.equal(g.phase, 'word');
 });
+
+// ---------- webcam (spec, section 16) ----------
+// A standing body in MediaPipe's 33-point layout; dx moves it sideways. null = nobody in the picture.
+function body(dx = 0) {
+  const p = Array.from({ length: 33 }, () => ({ x: 0.5 + dx, y: 0.5, visibility: 1 }));
+  const at = (i: number, x: number, y: number) => (p[i] = { x: x + dx, y, visibility: 1 });
+  at(11, 0.45, 0.3); at(12, 0.55, 0.3); at(23, 0.47, 0.6); at(24, 0.53, 0.6); // shoulders, hips
+  at(25, 0.47, 0.75); at(26, 0.53, 0.75); at(27, 0.47, 0.9); at(28, 0.53, 0.9); // knees, ankles
+  return p;
+}
+// One Red light (3000 to 5500) with a distance and a webcam frame on every tick.
+function red(settings: Parameters<typeof createGame>[0], cmAt: (t: number) => number, bodyAt: (t: number) => ReturnType<typeof body> | null) {
+  const g = createGame(settings, () => 0);
+  g.start(0, 180);
+  g.tick(3000, null);
+  for (let t = 3100; t <= 5500; t += 100) g.tick(t, cmAt(t), bodyAt(t));
+  return g.phase;
+}
+const still = () => 120;
+const walking = (t: number) => 120 - (t - 3100) / 50;
+const sidestep = (t: number) => body(t < 4500 ? 0 : 0.1);
+
+test('webcam watches: stepping sideways is caught though the distance holds still', () => {
+  assert.equal(red({ watch: 'camera' }, still, sidestep), 'caught');
+});
+
+test('webcam watches: a still body is not caught, and the sensor does not overrule it', () => {
+  assert.equal(red({ watch: 'camera' }, walking, () => body()), 'green');
+});
+
+test('webcam watches but sees nobody: the distance sensor decides, so leaving the picture is still caught', () => {
+  assert.equal(red({ watch: 'camera' }, walking, () => null), 'caught');
+  assert.equal(red({ watch: 'camera' }, still, () => null), 'green');
+});
+
+test('sensor watches: webcam frames are ignored', () => {
+  assert.equal(red({}, still, sidestep), 'green');
+});
+
+test('webcam wiggle room is in percent of torso length', () => {
+  assert.equal(red({ watch: 'camera', poseWigglePct: 60 }, still, (t) => body(t < 4500 ? 0 : 0.1)), 'green'); // 0.1 / 0.3 = 33%
+  assert.equal(red({ watch: 'camera', poseWigglePct: 20 }, still, (t) => body(t < 4500 ? 0 : 0.1)), 'caught');
+});

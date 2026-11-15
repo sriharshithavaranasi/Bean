@@ -1,4 +1,6 @@
+import { cameras, openCamera } from './camera.ts';
 import { createGame } from './game/freeze-watcher.ts';
+import type { Frame } from './game/pose-moved.ts';
 import { makeMockRobot } from './robot-mock.ts';
 import { connectSerial } from './robot-serial.ts';
 import { playCue, praise, say, silence, unlockAudio } from './signals.ts';
@@ -31,14 +33,16 @@ const LIGHT: Record<string, [number, number, number]> = { green: [0, 255, 0], re
 // field id -> [game setting, how many of the game's units one of the field's units is]
 const FIELDS: Record<string, [Limited, number]> = {
   greenMin: ['greenMinMs', 1000], greenMax: ['greenMaxMs', 1000], settle: ['settleMs', 1000],
-  look: ['lookMs', 1000], leewayCm: ['leewayCm', 1], winCm: ['winCm', 1],
+  look: ['lookMs', 1000], leewayCm: ['leewayCm', 1], winCm: ['winCm', 1], poseWigglePct: ['poseWigglePct', 1],
 };
+let camerasFound = false; // the webcam rows show only when the laptop has a camera (spec, section 16)
 const rulers: Record<string, HTMLInputElement> = {};
 const talking = () => $('tab-talk').getAttribute('aria-selected') === 'true';
 function settings() {
   const raw: Record<string, unknown> = {
     game: $<HTMLInputElement>('s-sneak').checked ? 'sneak' : 'freeze',
     words: $<HTMLInputElement>('s-words').value, tab: talking() ? 'talk' : 'move',
+    watch: $<HTMLInputElement>('s-camera').checked ? 'camera' : 'sensor', cameraId: $<HTMLSelectElement>('s-cameraId').value,
   };
   for (const [id, [key, unit]] of Object.entries(FIELDS)) {
     const v = $<HTMLInputElement>(`s-${id}`).value;
@@ -55,6 +59,13 @@ function showSettings(s: Settings) {
   $('s-words').closest<HTMLElement>('.words')!.hidden = $('t-words').parentElement!.hidden = s.game !== 'sneak';
   $<HTMLInputElement>(`s-${s.game}`).checked = true;
   $<HTMLInputElement>('s-words').value = s.words.join(', ');
+  // Webcam: the choice shows when a camera is found; the camera and its wiggle room only while the webcam is chosen.
+  $<HTMLInputElement>(`s-${s.watch}`).checked = true;
+  const box = $<HTMLSelectElement>('s-cameraId');
+  if (![...box.options].some((o) => o.value === s.cameraId)) box.append(new Option('Saved camera', s.cameraId)); // before the list is read
+  box.value = s.cameraId;
+  $('watch-row').hidden = !camerasFound;
+  $('camera-row').hidden = $('s-poseWigglePct').closest<HTMLElement>('.field')!.hidden = !camerasFound || s.watch !== 'camera';
   for (const tab of ['move', 'talk']) {
     $(`tab-${tab}`).setAttribute('aria-selected', String(s.tab === tab));
     $(`tab-${tab}`).tabIndex = s.tab === tab ? 0 : -1;
@@ -89,8 +100,23 @@ for (const [id, [key, unit]] of Object.entries(FIELDS)) {
   ruler.addEventListener('input', () => ((input.value = ruler.value), changed()));
   input.addEventListener('change', () => settingChanged());
 }
-for (const id of ['s-freeze', 's-sneak', 's-words']) $(id).addEventListener('change', () => settingChanged());
+for (const id of ['s-freeze', 's-sneak', 's-words', 's-sensor', 's-camera', 's-cameraId']) $(id).addEventListener('change', () => settingChanged());
 showSettings(fixSettings(load('bean-settings', {})));
+
+// Lists the cameras so a grown-up can pick the Logitech. Names show once the browser has been allowed a camera.
+async function fillCameras() {
+  const list = await cameras().catch(() => []);
+  camerasFound = list.length > 0;
+  $<HTMLSelectElement>('s-cameraId').replaceChildren(
+    new Option('Default camera', ''),
+    ...list.filter((d) => d.deviceId).map((d, i) => new Option(d.label || `Camera ${i + 1}`, d.deviceId)),
+  );
+  showSettings(fixSettings(load('bean-settings', {})));
+}
+if (!remote && navigator.mediaDevices) {
+  fillCameras();
+  navigator.mediaDevices.addEventListener('devicechange', fillCameras);
+}
 if (matchMedia('(min-width: 860px)').matches) $<HTMLDetailsElement>('settings').open = true;
 
 // ---------- progress ----------
@@ -132,6 +158,12 @@ const mock = makeMockRobot(
 let robot: Robot = mock;
 let game = createGame();
 let shown = 'idle';
+// The webcam is on only during a webcam round: opened by Start, closed by Stop or a win.
+let cam: Awaited<ReturnType<typeof openCamera>> | null = null;
+const closeCam = () => {
+  cam?.close();
+  cam = null;
+};
 
 // Start, Stop and the game tick all talk to the robot: run them one after another.
 let chain: Promise<unknown> = Promise.resolve();
@@ -201,7 +233,10 @@ function askWord(lead: string) {
 
 async function enter(phase: string) {
   const held = shown === 'red' && (phase === 'green' || phase === 'word');
-  if (phase === 'win') bump('wins');
+  if (phase === 'win') {
+    bump('wins');
+    closeCam();
+  }
   if (phase === 'caught') bump('caught');
   if (phase === 'word') askWord(held ? 'Great freezing! ' : shown === 'idle' ? 'Say your word to sneak closer! ' : '');
   else {
@@ -223,7 +258,16 @@ setInterval(() => {
     // The head points away during Green, so there is nothing to measure.
     const cm = game.phase === 'green' ? null : await robot.distanceCm();
     if (cm != null) $('reading').textContent = `${cm} cm`;
-    const phase = game.tick(performance.now(), cm);
+    // During Red the webcam, when it watches, adds a frame: the kid's body, or null when nobody was found.
+    let body: Frame | undefined;
+    if (game.phase === 'red' && cam) {
+      try {
+        body = cam.frame();
+      } catch {
+        body = null;
+      }
+    }
+    const phase = game.tick(performance.now(), cm, body);
     if (phase !== shown && phase !== 'idle') await enter(phase);
   }).finally(() => (ticking = false));
 }, 100);
@@ -231,6 +275,7 @@ setInterval(() => {
 async function stopRound(hint?: string) {
   game.stop();
   stopTalk();
+  closeCam();
   stopListening();
   silence();
   show('idle', hint);
@@ -250,17 +295,29 @@ function start() {
       playTalk({ show, say, light: (rgb) => void queued(() => robot.setLight(...rgb)), goodtry: $('goodtry') });
       return;
     }
-    const s = (round = roundSettings(settings()));
+    round = roundSettings(settings());
     const startCm = await robot.distanceCm();
     if (!startCm) {
       show('idle', 'Bean cannot see you. Stand in the lane, facing Bean, and press Start again.');
       return;
     }
+    let noCam = false;
+    if (round.watch === 'camera') {
+      show('idle', 'Starting the webcam…');
+      try {
+        cam = await openCamera($<HTMLVideoElement>('cam-video'), round.cameraId || undefined);
+        fillCameras(); // the camera names show now that it is allowed
+      } catch {
+        round = { ...round, watch: 'sensor' }; // no camera, or not allowed: this round uses the sensor
+        noCam = true;
+      }
+    }
     $('reading').textContent = `${startCm} cm`;
     bump('rounds');
-    game = createGame(s);
+    game = createGame(round);
     game.start(performance.now(), startCm);
     await enter(game.phase);
+    if (noCam) $('hint').textContent = 'The webcam did not start, so Bean watches with the distance sensor this round.';
   });
 }
 // Restart throws the round away, so it asks first: a second press within 4 seconds restarts.

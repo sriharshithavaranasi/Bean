@@ -277,10 +277,10 @@ Proposed by the speech area. It changes section 2 ("Out of scope: the camera"), 
 | --- | --- |
 | Bean watches with | The distance sensor, or the webcam (shown when a camera is found) |
 | Camera | Default camera, or a named one |
-| Webcam wiggle room | 0.15 of torso length, from 0.05 to 0.6. Tuned on `app/watch.html` with the Logitech: standing still drifted 0.00 to 0.11, real moves 0.20 to 1.49 |
+| Webcam wiggle room (shown while the webcam is chosen) | 15% of torso length, from 5 to 60%. Tuned on `app/watch.html` with the Logitech: standing still drifted 0.00 to 0.11, real moves 0.20 to 1.49 |
 
 **Privacy.** Frames are processed in the browser on the laptop and are never recorded, stored or sent. The model and its files are in `app/vendor/mediapipe/`, so it needs no internet. The camera turns off when the round stops. The pitch says so.
 
 **Tuning.** `app/watch.html` opens the camera, draws the watched points and runs hands-free practice: a spoken 5 second countdown, then Green and Red lights until Stop, saying each result and listing the drift it measured, with a wiggle room slider. Use it on the real lane, with the real light, before the demo.
 
-**Code.** `app/camera.ts` (opens the camera, loads the model), `app/game/pose-moved.ts` and its tests, `app/watch.html`. Hooking it into Red Light, Green Light (`app/game/freeze-watcher.ts`, `app/main.ts`) is a comms request to their owner.
+**Code.** `app/camera.ts` (opens the camera, loads the model), `app/game/pose-moved.ts` and its tests, `app/watch.html`. In Red Light, Green Light and Say It to Sneak: `createGame` takes `watch` and `poseWigglePct`, and `tick(now, cm, body)` keeps the webcam frames of each Red; at the end of the look time `poseMoved` decides when at least 6 frames saw the torso (`bodyFrames`), otherwise `moved(readings)` does. `main.ts` opens the camera into a hidden `<video>` when a webcam round starts (a camera that will not open plays that round with the sensor, and says so), reads a frame each tick during Red, and closes it on Stop or a win. Settings are saved in `bean-settings` as `watch`, `cameraId` and `poseWigglePct`.

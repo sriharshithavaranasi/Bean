@@ -43,5 +43,8 @@ export function poseDrift(frames: Frame[]) {
   return worst;
 }
 
+// How many frames saw the kid's torso. Under 6, poseDrift cannot judge, so the game falls back to the distance sensor.
+export const bodyFrames = (frames: Frame[]) => frames.filter(torsoSeen).length;
+
 // wiggle: how far the body may drift before it counts as moving, as a share of torso length.
 export const poseMoved = (frames: Frame[], { wiggle }: { wiggle: number }) => poseDrift(frames) > wiggle;
