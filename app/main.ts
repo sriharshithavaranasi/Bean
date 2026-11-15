@@ -6,7 +6,6 @@ import { createPlay } from './play.ts';
 import { makeMockRobot } from './robot-mock.ts';
 import { connectSerial } from './robot-serial.ts';
 import { silence, unlockAudio } from './signals.ts';
-import { stopListening } from './speech.ts';
 import { load, save } from './store.ts';
 import { createTalk } from './talk-play.ts';
 import type { Robot } from './robot.ts';
@@ -30,7 +29,7 @@ const queued = <T>(job: () => T) => (chain = chain.then(job).catch((e) => void c
 // ---------- modes ----------
 let shown = 'idle';
 const ctx: ModeContext = { show, shown: () => shown, queued, robot: () => robot };
-const modes: Record<'move' | 'talk', Mode> = { move: createPlay(ctx), talk: createTalk(ctx) };
+const modes: Record<'move' | 'talk', Mode> = { move: createPlay(ctx), talk: createTalk() };
 type Tab = keyof typeof modes;
 let tab: Tab = load('bean-tab', { tab: 'move' }).tab === 'talk' ? 'talk' : 'move';
 const mode = () => modes[tab];
@@ -61,8 +60,6 @@ function show(phase: string, hint?: string, status?: string) {
     tabWarn('talk');
   }
   startLabel();
-  $('goodtry').hidden = phase !== 'word'; // on screen whenever the app waits for the kid to speak
-  $('parent').hidden = phase !== 'word';
   keepAwake();
 }
 
@@ -83,7 +80,6 @@ document.addEventListener('visibilitychange', keepAwake);
 // ---------- Start, Stop, Restart ----------
 async function stopRound(hint?: string) {
   mode().stop();
-  stopListening();
   silence();
   show('idle', hint);
   await robot.lookAtKid();

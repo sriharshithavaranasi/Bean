@@ -135,16 +135,15 @@ app/
   main.ts           the shell: tabs, stage, Start / Stop / Restart, robot link, screen lock
   mode.ts           the contract between the shell and each activity (screen, start, stop)
   play.ts           Play with Bean: its settings, progress, webcam and Red Light, Green Light loop
-  talk-play.ts      Talk with Bean: its settings, progress and turn-by-turn talk
+  talk-play.ts      Talk with Bean: a mode with no game yet (its settings are in index.html)
   camera.ts         opens the webcam and the pose model
   robot.ts          robot interface: connect, lookAway, lookAtKid, distanceCm, setLight
   robot-serial.ts   Web Serial transport
   robot-mock.ts     slider-driven fake robot
-  game/             pure logic and tests (freeze-watcher, pose-moved, talk)
-  speech.ts         microphone listener for Talk with Bean
+  game/             pure logic and tests (freeze-watcher, pose-moved)
   signals.ts        screen, sound, vibration
   store.ts          settings and progress in localStorage
-  browser.d.ts      types for Web Serial and speech recognition, which TypeScript's DOM types lack
+  browser.d.ts      types for Web Serial, which TypeScript's DOM types lack
 firmware/           P2 only
 ```
 
@@ -197,64 +196,19 @@ The example talks to the car in short text lines instead of the stock JSON. This
 | `B` or `T` | from car | Button pressed or robot tapped: the kid wins |
 | `READY` | from car | Boot finished |
 
-## 15. Talk with Bean (P1, proposed)
+## 15. Talk with Bean (P1, not built)
 
-Proposed by the speech area. It changes the scope in section 2 in two places, so the team agrees before it is built: the local server gains one endpoint, and the kid's words leave the laptop when AI chat is on.
-
-**Goal.** Back-and-forth conversation practice. Bean says something, waits for the kid's turn, answers what they said, and invites the next turn. It practises greetings, answering questions, asking for things and taking turns.
-
-**Two modes, one game.**
-
-- **Scripted (default, offline).** Short scripts written in `app/game/talk.ts`: Hello (greetings and names), Questions (favourite colour, animal, food), Asking (asking Bean for a turn, a song, a dance). Any answer the microphone catches moves the script on. Bean echoes a word it heard when it can ("Blue! I love blue.").
-- **AI chat (off by default).** A grown-up turns it on. Bean's replies come from Gemini through the local server (below). If there is no key, no internet, or no reply within 3 s, Bean says the next scripted line, so the game never stalls.
-
-**One turn.**
-
-| Step | Bean | Screen | Car |
-| --- | --- | --- | --- |
-| Bean talks | Says its line through the speaker | Bean's line as text | Head faces the kid, small wiggle |
-| Kid's turn | Listens (microphone opens after Bean stops talking) | "Your turn!" | LED blue |
-| No answer after the wait time | Models an answer ("You can say: hi Bean!"), then listens again | "Your turn!" | LED blue |
-| Thinking (AI chat only) | Silent, up to 3 s | "Bean is thinking" | LED yellow |
-
-Good try ends the kid's turn at any time, as in section 7. Stop ends the game and silences Bean at once. A game is 6 turns, then Bean says goodbye.
-
-**AI chat, server side.** `POST /talk` on `scripts/serve.ts`, laptop only (same `loopback` and JSON body checks as `/voice`). The body is the last few turns as text. The server adds the system instruction and the key from the `GEMINI_API_KEY` environment variable and calls a fast Flash-Lite model. The key never reaches the browser and is never written to a file in the repo. Without the variable, `/talk` answers 503 and the game stays scripted.
-
-**Bean's voice (ElevenLabs).** Every line Bean says, in both games, goes through `say` in `app/signals.ts`. It asks `POST /voice` (`scripts/voice.ts`, laptop only, same checks as `/talk`) for the line as MP3 in voice `PKtsQbgKDa44YlyHnywy` (override with `ELEVENLABS_VOICE_ID`) on `eleven_flash_v2_5` (override with `ELEVENLABS_MODEL`), with the key from `ELEVENLABS_API_KEY`. Each line is fetched once per page load and kept; the game's fixed cues are fetched when Start unlocks sound, so "Red light!" is on time. With no key, no internet or no answer in 1.5 s, the browser's voice says the line and `/voice` rests for a minute. The lines sent include the kid's first name and AI chat replies. The webcam practice page (`app/watch.ts`) keeps the browser's voice.
-
-**Bean's rules (system instruction).** Bean is a friendly robot helping a young child practise talking. One or two short sentences, simple words, always ending with an easy question or invitation to talk. Topics: animals, colours, food, games, feelings, the game they are playing. Never asks for personal information beyond the first name the grown-up typed. Never talks about scary, unsafe or grown-up topics; steers back to the game instead. Never says it is a person.
-
-**Layout: Move and Talk tabs.** Talk with Bean is a different activity from Red Light, Green Light, so the page gets two tabs at the top, labelled "Play with Bean" (Move) and "Talk to Bean" (Talk). Each tab shows only its own games, settings and progress, so no counter is shown that means nothing for the game being played.
-
-| | Move tab | Talk tab |
-| --- | --- | --- |
-| Games | Red Light, Green Light | Talk with Bean |
-| Progress | Games played, Wins | Turns taken, Turns heard by the microphone |
-| Settings | Section 9 rows for movement | Script, kid's first name, wait for an answer, AI chat, practice words |
-| Shared | Stage, Start, Stop, Good try, the Robot card | same |
-
-Tabs are a real tab list (`role="tablist"`, arrow keys move between tabs, the chosen tab is remembered on the device). Switching tab during a round asks first, as Restart does: the first press turns the pressed tab amber with "Press again to stop", and a second press within 4 seconds stops the round and switches. The kid's hint on the stage is never replaced by the warning.
-
-**Settings (added to section 9).**
+The Talk tab holds Talk with Bean. Its game was removed on 2026-11-15; only its grown-up settings are on the page, and nothing uses them yet:
 
 | Setting | Choices or default |
 | --- | --- |
-| Game | adds Talk with Bean |
-| Script | Hello, Questions, Asking |
-| Kid's first name | empty (Bean says "friend") |
-| Wait for an answer | 6 s, from 3 to 20 s |
-| AI chat (sends what the kid says to Google) | off |
+| Kid's first name | empty |
+| Speaking style | Natural (default), Witty, Boring |
+| AI chat | Fixed text: "AI chat powered by Gemini" (not a switch) |
 
-**Privacy.** Speech-to-text in Chrome already sends audio to Google. With AI chat on, the kid's words also go to Gemini. The setting says so in its label, it is off by default, and the pitch says so. Nothing is stored apart from the turn count in progress.
+Start on the Talk tab does nothing yet. The tabs, their warning on a mid-round switch and the saved tab (`bean-tab`) are unchanged.
 
-**Progress (section 10).** Adds turns taken and turns the microphone heard by itself.
-
-**Code.** `app/game/talk.ts` (pure: the three scripts, Bean's replies and `fixTalk` for saved settings, with tests), `listenAny` in `app/speech.ts` (any answer, Good try or silence, with tests on a fake microphone), and `app/talk-play.ts` (the Talk tab's settings, progress and turn loop). `main.ts` starts it from Start on the Talk tab and ends it from `stopRound`. Settings are saved as `bean-talk`, progress as `bean-talk-progress` (Talks, Turns taken, Heard by the mic).
-
-**Built so far.** Both modes. AI chat: `scripts/talk.ts` answers `POST /talk` (routed in `scripts/serve.ts`, laptop only), with tests on a fake Gemini. Model `gemini-3.5-flash-lite` (override with `GEMINI_MODEL`), Bean's rules as the system instruction, safety settings at "block low and above", the key only in a request header, and replies cleaned for speaking (no markdown or emoji, stopping at the first question, at most 200 characters). In the game the chosen script opens the talk; after each answer the light turns yellow ("Bean is thinking") and Gemini writes the next line from the last 8 turns. With no key, no internet or no reply in 3 s (`nextLine` in `app/game/talk.ts`), Bean answers from its script and asks the next scripted question, and the settings say why under the AI chat switch. The last turn ends with a scripted reply and goodbye.
-
-**Hardware.** Any microphone the laptop sees works: the Logitech webcam's microphone mounted on the car's body, facing the lane, is the plan. Keep the speaker away from the microphone so Bean does not hear itself.
+**Bean's voice (ElevenLabs).** Every line Bean says goes through `say` in `app/signals.ts`. It asks `POST /voice` (`scripts/voice.ts`, laptop only) for the line as MP3 in voice `PKtsQbgKDa44YlyHnywy` (override with `ELEVENLABS_VOICE_ID`) on `eleven_flash_v2_5` (override with `ELEVENLABS_MODEL`), with the key from `ELEVENLABS_API_KEY`. Each line is fetched once per page load and kept; the game's fixed cues are fetched when Start unlocks sound, so "Red light!" is on time. With no key, no internet or no answer in 1.5 s, the browser's voice says the line and `/voice` rests for a minute. The lines sent include the kid's first name and AI chat replies. The webcam practice page (`app/watch.ts`) keeps the browser's voice.
 
 ## 16. Webcam watcher (P1, proposed)
 

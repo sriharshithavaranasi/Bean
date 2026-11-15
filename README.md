@@ -59,7 +59,6 @@ Open http://localhost:8000 in Chrome or Edge on the laptop.
 Optional keys go in a `.env` file in the repo folder (git ignores it), set before `npm start`. Copy `.env.example` to `.env` and fill it in:
 
 - `ELEVENLABS_API_KEY=...` gives Bean its own ElevenLabs voice. Each line is saved in `.voice-cache/` the first time, so it is fetched only once. Without the key, Bean uses the browser's voice for lines not saved yet.
-- `GEMINI_API_KEY=...` turns on AI chat in Talk to Bean. Without it, Talk to Bean uses its scripts.
 
 ### 5. Connect and play
 

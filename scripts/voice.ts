@@ -1,10 +1,10 @@
 // POST /voice: Bean's lines spoken in the ElevenLabs voice. The laptop tab sends one line as text; this adds the key
-// from ELEVENLABS_API_KEY and returns the line as MP3. The key stays on the laptop, as with /talk.
-// talk.ts loads the .env file (ELEVENLABS_API_KEY=...) before the first request. Without a key /voice answers 503
+// from ELEVENLABS_API_KEY and returns the line as MP3. The key stays on the laptop.
+// serve.ts loads the .env file (ELEVENLABS_API_KEY=...) at start. Without a key /voice answers 503
 // and the app uses the browser's own voice.
 // With dir set (serve.ts sets .voice-cache/), each line is saved as an MP3 the first time, so a repeated line
 // ("Red light!") never calls ElevenLabs again and plays even without a key.
-// shortcut: every line is kept, AI chat replies too, and nothing is ever deleted; prune when the folder grows large.
+// shortcut: every line is kept and nothing is ever deleted; prune when the folder grows large.
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';

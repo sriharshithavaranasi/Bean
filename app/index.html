@@ -50,9 +50,6 @@
         <button id="stop">Stop</button>
       </div>
 
-      <section id="parent" aria-label="Grown-up buttons" hidden>
-        <button id="goodtry" class="primary" hidden>Good try</button>
-      </section>
     </div>
 
     <div class="col">
@@ -92,8 +89,20 @@
       </div>
 
       <div id="panel-talk" role="tabpanel" aria-labelledby="tab-talk" hidden>
-        <!-- The speech area fills this with Talk with Bean: its game, settings and progress. -->
-        <section id="talk" aria-label="Talk with Bean"></section>
+        <!-- Talk with Bean: its grown-up settings. Not used by anything yet (talk-play.ts). -->
+        <section id="talk" aria-label="Talk with Bean">
+          <details id="talk-settings" class="card" open>
+            <summary>Grown-up settings</summary>
+            <div class="words"><label for="t-name">Kid's first name</label>
+              <input id="t-name" type="text" autocomplete="off" spellcheck="false" maxlength="20"></div>
+            <fieldset class="choice"><legend>Speaking style</legend>
+              <label><input type="radio" name="t-style" value="natural" checked> Natural</label>
+              <label><input type="radio" name="t-style" value="witty"> Witty</label>
+              <label><input type="radio" name="t-style" value="boring"> Boring</label>
+            </fieldset>
+            <p class="words">AI chat powered by Gemini</p>
+          </details>
+        </section>
       </div>
 
       <section id="robot" class="card" aria-labelledby="robot-h">

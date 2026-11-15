@@ -22,7 +22,6 @@ body[data-phase="green"] { --state: var(--go); --on-state: var(--on-go); }
 body[data-phase="red"] { --state: var(--stop); --on-state: var(--on-stop); }
 body[data-phase="caught"] { --state: var(--wait); --on-state: var(--on-wait); }
 body[data-phase="win"] { --state: var(--win); --on-state: var(--on-win); }
-body[data-phase="word"] { --state: var(--say); --on-state: #fff; }
 /* The whole stage card takes a strong tint of the state; full strength would fail text contrast on red. */
 body:not([data-phase="idle"]) { --state-soft: color-mix(in srgb, var(--state) 35%, #fff); }
 /* Talk with Bean waits in its own colour, the talking blue, not the Move idle grey. */
@@ -61,8 +60,8 @@ h2 { font: 700 1rem/1.3 var(--font-display); margin-bottom: 10px; }
 #tabs button:has(.warn:not(:empty)) { background: var(--wait); color: var(--on-wait); }
 #tabs svg { width: 22px; height: 22px; fill: currentColor; }
 #tabs :focus-visible { outline-offset: -5px; } /* inside: the bar clips anything outside it */
-/* Until the speech area fills it, the Talk panel takes no room (and no grid gap); the pretend distance means nothing there. */
-#panel-talk:has(> #talk:empty), body:has(#tab-talk[aria-selected="true"]) #mock { display: none; }
+/* The pretend distance means nothing on the Talk tab. */
+body:has(#tab-talk[aria-selected="true"]) #mock { display: none; }
 
 #stage { position: relative; overflow: hidden; text-align: center; display: grid; justify-items: center; gap: 6px; background: var(--state-soft); transition: background-color .15s; }
 #light {
@@ -89,26 +88,23 @@ button.primary { background: var(--accent); color: var(--on-accent); font-size: 
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
 
 #controls { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
-#parent { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 10px; }
 /* During a round Stop is the loud button. Sizes stay put so a second tap on Start cannot land on Stop. */
 body:not([data-phase="idle"], [data-phase="win"], [data-phase="caught"], [data-phase="ended"]) #start { background: var(--btn); }
 body:not([data-phase="idle"], [data-phase="win"], [data-phase="caught"], [data-phase="ended"]) #stop { background: var(--fg); color: #fff; }
 
-/* Totals are stickers in the colour of what they count: games played = start yellow, wins = win.
-   Talk: talks = start yellow, turns taken = win, heard by the mic = go. */
+/* Totals are stickers in the colour of what they count: games played = start yellow, wins = win. */
 /* 3.5rem: three across on a 320 px phone at normal text; two across when the text is made large. */
-#totals, #talk-totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(3.5rem, 1fr)); gap: 8px; text-align: center; }
-#totals div, #talk-totals div {
+#totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(3.5rem, 1fr)); gap: 8px; text-align: center; }
+#totals div {
   display: flex; flex-direction: column-reverse; justify-content: center; padding: 8px 4px; min-height: 84px;
   border: var(--bw) solid var(--line); border-radius: var(--radius-btn); background: color-mix(in srgb, var(--c) 35%, #fff);
 }
-#totals div:nth-child(1), #talk-totals div:nth-child(1) { --c: var(--accent); }
-#totals div:nth-child(2), #talk-totals div:nth-child(2) { --c: var(--win); }
-#talk-totals div:nth-child(3) { --c: var(--go); }
-#totals dt, #talk-totals dt { font-size: .8125rem; font-weight: 700; line-height: 1.25; }
-#totals dd, #talk-totals dd { font: 700 2.25rem/1.1 var(--font-display); }
+#totals div:nth-child(1) { --c: var(--accent); }
+#totals div:nth-child(2) { --c: var(--win); }
+#totals dt { font-size: .8125rem; font-weight: 700; line-height: 1.25; }
+#totals dd { font: 700 2.25rem/1.1 var(--font-display); }
 .head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
-/* Talk with Bean's progress and settings cards, spaced like the Play column's. */
+/* Talk with Bean's cards, spaced like the Play column's. */
 #talk { display: grid; gap: var(--gap); }
 
 /* Play with Bean's games list. While it shows on the Play tab (play.ts sets data-view), the game screen waits below it. */
@@ -177,8 +173,6 @@ input[type="range"]::-moz-range-thumb { box-sizing: border-box; width: 30px; hei
 .words label { font-weight: 700; }
 .words input { font: 700 1.0625rem/1.2 var(--font-body); min-height: 48px; width: 100%; padding: 8px 12px; color: var(--fg); background: var(--surface); border: var(--bw) solid var(--line); border-radius: var(--radius-btn); }
 .words p { font-size: .875rem; color: var(--muted); }
-.words .check { display: flex; align-items: center; gap: 12px; min-height: 44px; cursor: pointer; }
-.words .check input { width: 28px; height: 28px; min-height: 0; padding: 0; flex: none; }
 
 /* Choice setting: radio buttons drawn as chips. */
 .choice { border: 0; margin: 0; padding: 12px 0; border-top: 1px solid var(--rule); min-width: 0; display: flex; flex-wrap: wrap; gap: 10px 8px; }
@@ -200,12 +194,10 @@ input[type="range"]::-moz-range-thumb { box-sizing: border-box; width: 30px; hei
 @keyframes pop-red { from { transform: scale(.85); } }
 @keyframes pop-caught { from { transform: scale(.85); } }
 @keyframes pop-win { from { transform: scale(.85); } }
-@keyframes pop-word { from { transform: scale(.85); } }
 body[data-phase="green"] #light { animation: pop-green .28s cubic-bezier(.16, 1, .3, 1); }
 body[data-phase="red"] #light { animation: pop-red .28s cubic-bezier(.16, 1, .3, 1); }
 body[data-phase="caught"] #light { animation: pop-caught .28s cubic-bezier(.16, 1, .3, 1); }
 body[data-phase="win"] #light { animation: pop-win .28s cubic-bezier(.16, 1, .3, 1); }
-body[data-phase="word"] #light { animation: pop-word .28s cubic-bezier(.16, 1, .3, 1); }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
 
 /* Play mode: while a round runs, the grown-up column steps aside and the stage takes the whole screen.
