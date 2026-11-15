@@ -1,8 +1,10 @@
 #!/bin/sh
 # Head servo check over the USB cable, without the app: middle, left, middle, right, middle.
 # Each "{n_ok}" reply means the car accepted the command. Close or reload any Bean tab connected by cable first.
-# Usage (Git Bash; COM3 is /dev/ttyS2): sh scripts/servo-test.sh [/dev/ttyS2]
-port=${1:-/dev/ttyS2}
+# Usage (Git Bash; COMn is /dev/ttyS(n-1)): sh scripts/servo-test.sh [/dev/ttyS3]
+# With no argument it uses the first serial port Git Bash lists (only plugged-in ones show up).
+set -- "$@" /dev/ttyS*
+port=$1
 
 exec 3<>"$port" || { echo "Could not open $port. Is a Bean tab connected by cable? Reload it first."; exit 1; }
 stty 9600 cs8 -cstopb -parenb -echo -icanon -icrnl -onlcr -ixon min 0 time 1 <&3

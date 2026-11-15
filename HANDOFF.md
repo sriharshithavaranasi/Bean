@@ -14,7 +14,7 @@ sh scripts/servo-test.sh   # car check over USB, no app: head middle, left, midd
 
 - Chrome or Edge on a laptop. Node 22.18+ (TypeScript is stripped on serve; no build step).
 - **Keys** go in `.env` at the repo root (git-ignored; `.env.example` lists them). Each line needs its name: `GEMINI_API_KEY=...`, `ELEVENLABS_API_KEY=...`. The server loads `.env` at start, so restart it after editing.
-- **The car:** press **Connect by cable** and pick *USB-SERIAL CH340 (COM3)*. Every page reload drops the cable and falls back to the pretend robot. The servo test and the app cannot hold the port at the same time.
+- **The car:** press **Connect by cable** and pick *USB-SERIAL CH340 (COMn)* (COM4 on this laptop). Every page reload drops the cable and falls back to the pretend robot. The servo test and the app cannot hold the port at the same time.
 - **Restart the server after any change in `scripts/`** (it loads routes once). Changes in `app/` only need a page reload (Ctrl+Shift+R).
 
 ## What the app does
@@ -71,7 +71,6 @@ Two tabs, each its own mode behind one shell (`app/mode.ts` is the contract).
 - **Holding M while switching windows** leaves the mic muted until M is pressed again or the session ends.
 - **The ephemeral token is not locked** to Bean's model and settings (`shortcut:` comment in `scripts/live.ts`); fine while served on localhost only.
 - **`docs/quips.json`** is out of date (Play's lines changed: "You moved!!", teases, "You're almost here!") and nothing reads it.
-- **`scripts/servo-test.sh` line endings:** Git warns it will turn LF into CRLF on checkout here, which breaks `sh`. Add `*.sh text eol=lf` to `.gitattributes`.
 - **Tests were not run after the later changes** in this session (only `npm run typecheck`). Run `npm test` before relying on them.
 - **The dev server, when started from Claude Code, gets killed when memory runs low.** Start it in your own terminal for long sessions.
 
@@ -80,7 +79,7 @@ Two tabs, each its own mode behind one shell (`app/mode.ts` is the contract).
 - **Duplicate ids:** Play's progress uses `t-<name>` ids (`t-games`, `t-wins`); Talk's settings also use `t-`. A clash (`t-games`) once made Bean think mini games were off. Check with:
   `grep -oE 'id="[^"]+"' app/index.html | sort | uniq -d`
 - **Gemini models:** `gemini-3.8-flash` was overloaded (503, no reply in 45 s) on 2026-11-15. Listing a model with the key does not mean it is usable: test a real call.
-- **COM3 busy:** if the servo test cannot open the port, a Bean tab is connected by cable. Reload it.
+- **Port busy:** if the servo test cannot open the port, a Bean tab is connected by cable. Reload it.
 - **Commits:** everyone works on `main` (AGENTS.md); requests to other areas go through the `comms` branch in `.comms/`.
 
 ## Open on comms
