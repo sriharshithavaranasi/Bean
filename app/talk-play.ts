@@ -82,6 +82,7 @@ function toPcm64(samples: Float32Array) {
 type Live = {
   ws: WebSocket; out: AudioContext; level: AnalyserNode; mic?: MediaStream; inCtx?: AudioContext;
   playing: AudioBufferSourceNode[]; nextAt: number; ending: boolean;
+  greeted: boolean; // Bean's hello has played: only then does the mic's sound go to Google
 };
 
 export function createTalk(ctx: ModeContext): Mode {
@@ -199,6 +200,9 @@ export function createTalk(ctx: ModeContext): Mode {
     let parts: Float32Array[] = [];
     let count = 0;
     node.port.onmessage = ({ data }: MessageEvent<Float32Array>) => {
+      // Anyone talking near the mic while Bean starts its hello made Google drop the hello and answer them instead
+      // (4 of 4 test sessions with speech in the mic; none with silence, hiss or a buzz). So the hello plays first.
+      if (!me.greeted) return;
       parts.push(data);
       count += data.length;
       if (count < MIC_RATE / 10 || me.ws.readyState !== WebSocket.OPEN) return; // about 0.1 s per message
@@ -222,7 +226,7 @@ export function createTalk(ctx: ModeContext): Mode {
     const level = out.createAnalyser();
     level.fftSize = 512;
     level.connect(out.destination);
-    const me: Live = { ws: new WebSocket(`${LIVE_URL}?access_token=${encodeURIComponent(token)}`), out, level, playing: [], nextAt: 0, ending: false };
+    const me: Live = { ws: new WebSocket(`${LIVE_URL}?access_token=${encodeURIComponent(token)}`), out, level, playing: [], nextAt: 0, ending: false, greeted: false };
     live = me;
     follow(me);
     let newTurn = true; // the kid's next words replace what is shown
@@ -254,6 +258,7 @@ export function createTalk(ctx: ModeContext): Mode {
       if (m.setupComplete) {
         me.ws.send(JSON.stringify({ realtimeInput: { text: `Say hello to ${name} and ask what they would like to talk about.` } }));
         startMic(me).catch(() => note('Bean cannot hear. Allow the microphone, then press Start again.'));
+        setTimeout(() => (me.greeted = true), 15_000); // in case the hello never comes
         return;
       }
       // Bean says a game started or ended: show it, and answer at once so Bean carries on talking.
@@ -272,6 +277,7 @@ export function createTalk(ctx: ModeContext): Mode {
       }
       for (const p of sc.modelTurn?.parts ?? []) if (p.inlineData?.data) (newTurn = true), clearTimeout(quiet), play(me, p.inlineData.data);
       if (sc.turnComplete) {
+        if (!me.greeted) setTimeout(() => (me.greeted = true), Math.max(0, me.nextAt - me.out.currentTime) * 1000); // once the hello has played
         newTurn = true;
         waitForKid();
         if (me.ending) setTimeout(() => live === me && endLive(), (me.nextAt - me.out.currentTime) * 1000 + 300); // after the goodbye plays
