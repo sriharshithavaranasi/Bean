@@ -1,8 +1,9 @@
 import { poseMoved, type Frame } from './pose-moved.ts';
 
-export type Phase = 'idle' | 'green' | 'red' | 'caught' | 'win' | 'ended';
+export type Phase = 'idle' | 'countdown' | 'green' | 'red' | 'caught' | 'win' | 'ended';
 
 export const DEFAULTS = {
+  countdownMs: 3000, // "3, 2, 1" before the first Green
   greenMinMs: 3000,
   greenMaxMs: 7000,
   redMinMs: 2500, // each Red lasts a random time between these, so the kid cannot count it
@@ -27,7 +28,7 @@ export type Game = {
   stop(): void;
 };
 
-// Phases: idle, green, red, then caught, win or ended (nobody played), which end the game. Time and random are passed in so tests control them.
+// Phases: idle, countdown, green, red, then caught, win or ended (nobody played), which end the game. Time and random are passed in so tests control them.
 export function createGame(settings: Partial<GameSettings> = DEFAULTS, random = Math.random) {
   const s = { ...DEFAULTS, ...settings };
   const game = { phase: 'idle', startCm: 0, until: 0, redStart: 0, redLights: 0, frames: [] } as unknown as Game; // the methods are added below
@@ -43,12 +44,14 @@ export function createGame(settings: Partial<GameSettings> = DEFAULTS, random = 
 
   game.start = (now, startCm) => {
     game.startCm = startCm;
-    green(now);
+    game.phase = 'countdown';
+    game.until = now + s.countdownMs;
   };
 
   // Call about every 100 ms with the latest distance (for the win), or null when there is none,
   // and during Red the latest webcam frame (null when nobody was found).
   game.tick = (now, cm, body) => {
+    if (game.phase === 'countdown' && now >= game.until) green(game.until); // timed from the end of the count, not from a late tick
     if (game.phase === 'green' && now >= game.until) {
       game.phase = 'red';
       game.redStart = now;
@@ -58,9 +61,10 @@ export function createGame(settings: Partial<GameSettings> = DEFAULTS, random = 
       if (cm != null && cm > 0 && cm < s.winCm) game.phase = 'win';
       else {
         if (body !== undefined) game.frames.push(body);
-        if (now >= game.until) {
-          if (kidMoved()) game.caught();
-          else if (++game.redLights >= s.maxRedLights) game.phase = 'ended';
+        // Checked on every tick, so the catch lands when the kid moves, not when the Red light ends (up to 4 s later).
+        if (kidMoved()) game.caught();
+        else if (now >= game.until) {
+          if (++game.redLights >= s.maxRedLights) game.phase = 'ended';
           else green(now);
         }
       }

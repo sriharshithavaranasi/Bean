@@ -18,6 +18,7 @@ body {
   --state: var(--idle); --on-state: var(--fg); --state-soft: var(--surface);
 }
 /* Colour is never the only cue: every phase also changes the status words and the glyph. */
+body[data-phase="countdown"] { --state: var(--accent); --on-state: var(--on-accent); }
 body[data-phase="green"] { --state: var(--go); --on-state: var(--on-go); }
 body[data-phase="red"] { --state: var(--stop); --on-state: var(--on-stop); }
 body[data-phase="caught"] { --state: var(--wait); --on-state: var(--on-wait); }

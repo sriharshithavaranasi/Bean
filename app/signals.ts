@@ -7,7 +7,8 @@ export function unlockAudio() {
   const first = !ctx;
   ctx ??= new AudioContext();
   ctx.resume();
-  if (first) CUES.forEach(clip); // fetch the game's cues now, so "Red light!" is not late the first time
+  // Fetch the game's cues now, so "Red light!" is not late the first time. One at a time: ElevenLabs refuses a burst of new lines.
+  if (first) CUES.reduce((before, text) => before.then(() => clip(text)), Promise.resolve<unknown>(null));
 }
 
 function tone(freq: number, startIn: number, length: number, type: OscillatorType = 'triangle', volume = 0.15) {
@@ -106,8 +107,16 @@ const WIN = 'You got me! You win!';
 const ENDED = "Is anybody there? I'll stop for now. Bye!"; // 12 Red lights and nobody played
 const ALMOST = "You're almost here!";
 const TEASE = ['Heyy... Did you just move?', "You're sneaky!"];
-const CUES = [RED, CAUGHT, WIN, ENDED, ALMOST, ...TEASE];
-export const praise = (cm: number | null) => say(cm != null && cm < 30 ? ALMOST : TEASE[Math.floor(Math.random() * TEASE.length)]);
+// Start: one hello while the webcam loads, then the count (each word under a second), then a go line on the first Green.
+const HELLO = ['Ooh, a new game! Sneak up on me... if you can!', "Red Light, Green Light! Bet you can't catch me!", 'Ready to play? Toes on the start line!', "Let's play! I've got my eyes on you..."];
+const COUNT = ['One!', 'Two!', 'Three!'];
+const GO = ['Green light! Go, go, go!', 'Green light! Come and get me!', "Green light! Tiptoe time!"];
+const CUES = [...HELLO, ...COUNT, ...GO, RED, CAUGHT, WIN, ENDED, ALMOST, ...TEASE]; // fetched in this order: the start's lines are needed first
+const pick = (lines: string[]) => lines[Math.floor(Math.random() * lines.length)];
+export const hello = () => say(pick(HELLO));
+export const count = (n: number) => say(COUNT[n - 1]); // 3, 2, 1
+export const go = () => say(pick(GO));
+export const praise = (cm: number | null) => say(cm != null && cm < 30 ? ALMOST : pick(TEASE));
 
 const buzz = (pattern: VibratePattern) => navigator.vibrate?.(pattern); // phones only
 const BUZZ: Record<string, VibratePattern> = { green: 80, red: [300, 100, 300], win: [100, 60, 100, 60, 300] };

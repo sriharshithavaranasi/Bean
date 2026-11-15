@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { createGame, DEFAULTS, type Game } from './freeze-watcher.ts';
 import type { Frame } from './pose-moved.ts';
 
-// random() = 0, so every Green lasts exactly greenMinMs (3000).
-const newGame = () => createGame({}, () => 0);
+// random() = 0, so every Green lasts exactly greenMinMs (3000). No countdown, so the first Green starts at 0.
+const newGame = () => createGame({ countdownMs: 0 }, () => 0);
 
 // A standing body in MediaPipe's 33-point layout; dx moves it sideways. Torso 0.3 tall.
 function body(dx = 0): Frame {
@@ -24,7 +24,7 @@ function run(game: Game, from: number, to: number, cmAt: (t: number) => number |
 }
 // One Red light (3000 to 5500): caught or back to green.
 function red(bodyAt: (t: number) => Frame, settings = {}, cmAt: (t: number) => number | null = () => 120) {
-  const g = createGame(settings, () => 0);
+  const g = createGame({ countdownMs: 0, ...settings }, () => 0);
   g.start(0, 180);
   g.tick(3000, null);
   return run(g, 3100, 5500, cmAt, bodyAt);
@@ -46,8 +46,33 @@ test('full round: held still, then a win', () => {
   assert.equal(run(g, 8600, 9500, () => 6), 'win');
 });
 
+test('the game starts with a 3 second countdown, then the first Green', () => {
+  const g = createGame({}, () => 0);
+  g.start(0, 180);
+  assert.equal(g.phase, 'countdown');
+  assert.equal(run(g, 0, 2900, () => null), 'countdown');
+  assert.equal(g.tick(3050, null), 'green'); // a late tick: Green still runs from 3000
+  assert.equal(g.tick(5900, null), 'green');
+  assert.equal(g.tick(6000, null), 'red');
+});
+
+test('stop during the countdown ends the round', () => {
+  const g = createGame({}, () => 0);
+  g.start(0, 180);
+  g.stop();
+  assert.equal(g.tick(5000, null), 'idle');
+});
+
 test('stepping sideways on Red is caught', () => {
   assert.equal(red(sidestep(4500)), 'caught');
+});
+
+test('a move on Red is caught on the tick that sees it, not when the Red light ends', () => {
+  const g = newGame();
+  g.start(0, 180);
+  g.tick(3000, null); // Red from 3000 to 5500
+  assert.equal(run(g, 3100, 4400, () => 120), 'red');
+  assert.equal(g.tick(4500, 120, body(0.1)), 'caught');
 });
 
 test('a still body is not caught, whatever the distance sensor reads', () => {
@@ -82,7 +107,7 @@ test('defaults match the spec, section 9', () => {
   );
 });
 
-// Green, then a Red where the kid steps sideways: caught at 5500.
+// Green, then a Red where the kid steps sideways: caught at 4500.
 function caughtGame() {
   const g = newGame();
   g.start(0, 180);
@@ -120,7 +145,7 @@ test('Green follows a held Red', () => {
 
 test('each Red lasts a random time between the shortest and longest red light', () => {
   const redLength = (r: number) => {
-    const g = createGame({ redMinMs: 2000, redMaxMs: 6000 }, () => r);
+    const g = createGame({ countdownMs: 0, redMinMs: 2000, redMaxMs: 6000 }, () => r);
     g.start(0, 180); // Green ends at greenMinMs + r * (greenMaxMs - greenMinMs)
     let t = 0;
     while (g.tick(t, null) !== 'red') t += 100;
@@ -151,7 +176,7 @@ test('12 Red lights with no catch and no win end the game: nobody is playing', (
 });
 
 test('the limit counts Red lights, so a catch or a win before it still ends the game as before', () => {
-  const g = createGame({ maxRedLights: 1 }, () => 0);
+  const g = createGame({ countdownMs: 0, maxRedLights: 1 }, () => 0);
   g.start(0, 180);
   g.tick(3000, null);
   assert.equal(run(g, 3100, 5500, () => 120, sidestep(4500)), 'caught');

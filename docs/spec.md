@@ -64,6 +64,7 @@ Set-up: tape a straight lane about 1 m long in front of the car (the sensor read
 
 | State | Robot | App | Leaves when |
 | --- | --- | --- | --- |
+| Countdown | Head at 90 (facing the kid) | Bean says a hello line while the webcam loads, then the screen and Bean count "3, 2, 1" | 3 seconds after the hello line ends; Bean says a go line on the first Green |
 | Green | Head at 180 (looking away), LED green | Music plays, screen shows GO | A random time between the min and max look-away settings |
 | Red | Head at 90 (facing the kid), LED red | Music stops, screen shows FREEZE | A random time between the shortest and longest red light ends |
 | Caught | LED orange | "Caught" sound, voice "I saw you move! Game over." | Never: it ends the game, like a win. Play again starts a new one |
@@ -73,7 +74,7 @@ Set-up: tape a straight lane about 1 m long in front of the car (the sensor read
 Catching movement, during Red:
 
 1. Ignore the "time to freeze" setting (1 s by default). The servo is settling and the kid is still stopping.
-2. The webcam decides, as in section 16. The distance sensor no longer catches anyone: on the car it was inconsistent and gave many false catches.
+2. The webcam decides, as in section 16, after every frame: the catch lands when the kid moves, not when the Red light ends. The distance sensor no longer catches anyone: on the car it was inconsistent and gave many false catches.
 3. With no frame that sees both of the kid's shoulders, the kid is not caught.
 
 Win: a reading under the win distance during Red.
@@ -173,7 +174,7 @@ Starting palette from the example: cream background `#fff8ef`, ink `#2b2140`, go
 
 Behaviour taken from the example:
 
-- Bean's spoken lines (`app/signals.ts`): Red light "Red light! Hmm... I'm watching you", caught "You moved!!", win "You got me! You win!". After a Red light held still it teases ("Heyy... Did you just move?" or "You're sneaky!"), or says "You're almost here!" when that Red light's last good reading was under 30 cm. The screen text is unchanged.
+- Bean's spoken lines (`app/signals.ts`): at Start one of four hello lines ("Ooh, a new game! Sneak up on me... if you can!"), then "Three!", "Two!", "One!" and one of three go lines ("Green light! Go, go, go!"). Red light "Red light! Hmm... I'm watching you", caught "You moved!!", win "You got me! You win!". After a Red light held still it teases ("Heyy... Did you just move?" or "You're sneaky!"), or says "You're almost here!" when that Red light's last good reading was under 30 cm. The screen text is unchanged.
 - Caught ends the game: Bean says so, and Play again starts a new one.
 - Vibration: one short pulse on Green, two long pulses on Red, a pattern on a win.
 
@@ -236,4 +237,4 @@ Proposed by the speech area. It changes section 2 ("Out of scope: the camera"), 
 
 **Tuning.** `app/watch.html` opens the camera, draws the watched points and runs hands-free practice: a spoken 5 second countdown, then Green and Red lights until Stop, saying each result and listing the drift it measured, with a wiggle room slider. Use it on the real lane, with the real light, before the demo.
 
-**Code.** `app/camera.ts` (opens the camera, loads the model), `app/game/pose-moved.ts` and its tests, `app/watch.html`. In Red Light, Green Light: `createGame` takes `poseWigglePct`, and `tick(now, cm, body)` keeps the webcam frames of each Red; at the end of the look time `poseMoved` decides. `main.ts` opens the camera into a hidden `<video>` when a round starts (a camera that will not open stops the Start, and says so), reads a frame each tick during Red, and closes it on Stop or the end of the game. Settings are saved in `bean-settings` as `cameraId` and `poseWigglePct`.
+**Code.** `app/camera.ts` (opens the camera, loads the model), `app/game/pose-moved.ts` and its tests, `app/watch.html`. In Red Light, Green Light: `createGame` takes `poseWigglePct`, and `tick(now, cm, body)` keeps the webcam frames of each Red; after each frame `poseMoved` decides, so a move is caught on the tick that sees it. `main.ts` opens the camera into a hidden `<video>` when a round starts (a camera that will not open stops the Start, and says so), reads a frame each tick during Red, and closes it on Stop or the end of the game. Settings are saved in `bean-settings` as `cameraId` and `poseWigglePct`.

@@ -4,14 +4,15 @@ import { cameras, openCamera } from './camera.ts';
 import { createGame } from './game/freeze-watcher.ts';
 import type { Frame } from './game/pose-moved.ts';
 import type { Mode, ModeContext, Screen } from './mode.ts';
-import { playCue, praise } from './signals.ts';
+import { count, go, hello, playCue, praise, silence } from './signals.ts';
 import { fixSettings, LIMITS, load, save, type Limited, type Settings } from './store.ts';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 
-// Glyphs are a second cue beside colour: face = ready, arrow = go, bars = freeze, eye = seen, square = stopped, star = win.
+// Glyphs are a second cue beside colour: face = ready (and the countdown, with its number as the status), arrow = go, bars = freeze, eye = seen, square = stopped, star = win.
 const SCREEN: Record<string, Screen> = {
   idle: { status: 'Let’s play Red Light, Green Light', hint: 'Stand on the start line, then press Start.', glyph: 'M8 7a2 2 0 100 4 2 2 0 000-4zm8 0a2 2 0 100 4 2 2 0 000-4zM7 14h10a5 5 0 01-10 0z' },
+  countdown: { status: 'Get ready!', hint: 'Toes on the start line. Bean is counting down!', glyph: 'M8 7a2 2 0 100 4 2 2 0 000-4zm8 0a2 2 0 100 4 2 2 0 000-4zM7 14h10a5 5 0 01-10 0z' },
   green: { status: 'Green light!', hint: 'Bean is not looking. Sneak closer!', glyph: 'M12 4l7 8h-4v8H9v-8H5z' },
   red: { status: 'Red light!', hint: 'Bean is looking. Freeze!', glyph: 'M7 5h4v14H7zM13 5h4v14h-4z' },
   caught: { status: 'I saw you!', hint: 'Game over. Press Play again to try again.', glyph: 'M12 5C6 5 2 12 2 12s4 7 10 7 10-7 10-7-4-7-10-7zm0 11a4 4 0 110-8 4 4 0 010 8z' },
@@ -153,6 +154,7 @@ export function createPlay(ctx: ModeContext): Mode {
     if (gameOver(phase)) closeCam();
     if (phase === 'red') lastCm = null; // only this Red light's readings say how close the kid is
     if (held) praise(lastCm);
+    if (ctx.shown() === 'countdown') go(); // the first Green
     ctx.show(phase);
     playCue(phase);
     // Head first, then light: the firmware clears the LED on any other command.
@@ -163,12 +165,13 @@ export function createPlay(ctx: ModeContext): Mode {
 
   let ticking = false;
   let lastCm: number | null = null; // the last good reading this Red light (0 and 150 mean no echo)
+  let counted = 0; // the countdown number on the stage
   setInterval(() => {
     if (ticking || gameOver(game.phase)) return;
     ticking = true;
     ctx.queued(async () => {
-      // The head points away during Green, so there is nothing to measure.
-      const cm = game.phase === 'green' ? null : await ctx.robot().distanceCm();
+      // Only Red needs the distance: the head points away during Green, and the countdown must not wait for the car.
+      const cm = game.phase === 'red' ? await ctx.robot().distanceCm() : null;
       if (cm != null) $('reading').textContent = `${cm} cm`;
       if (cm != null && cm > 0 && cm < 150) lastCm = cm;
       // During Red the webcam adds a frame: the kid's body, or null when nobody was found.
@@ -181,8 +184,15 @@ export function createPlay(ctx: ModeContext): Mode {
         }
         $('cam-status').textContent = body ? 'Webcam: sees you' : 'Webcam: cannot see you';
       }
-      const phase = game.tick(performance.now(), cm, body);
-      if (phase !== ctx.shown() && phase !== 'idle') await enter(phase);
+      const now = performance.now();
+      const phase = game.tick(now, cm, body);
+      if (phase === 'countdown') {
+        const n = Math.ceil((game.until - now) / 1000); // 3, 2, 1
+        if (n !== counted) {
+          ctx.show('countdown', undefined, String((counted = n)));
+          count(n);
+        }
+      } else if (phase !== ctx.shown() && phase !== 'idle') await enter(phase);
     }).finally(() => (ticking = false));
   }, 100);
 
@@ -194,9 +204,11 @@ export function createPlay(ctx: ModeContext): Mode {
       return;
     }
     ctx.show('idle', 'Starting the webcam…');
+    const said = hello(); // Bean says hello while the webcam and the body model load
     try {
       cam = await openCamera($<HTMLVideoElement>('cam-video'), round.cameraId || undefined);
     } catch {
+      silence();
       ctx.show('idle', 'Bean needs the webcam to watch. Plug it in, allow the camera, and press Start again.');
       return;
     }
@@ -204,9 +216,12 @@ export function createPlay(ctx: ModeContext): Mode {
     $('cam-status').hidden = false;
     fillCameras(); // the camera names show now that it is allowed
     $('reading').textContent = `${startCm} cm`;
-    game = createGame(round);
-    game.start(performance.now(), startCm);
-    await enter(game.phase);
+    const mine = (game = createGame(round));
+    counted = 0;
+    ctx.show('countdown');
+    // The count starts when the hello ends. Not awaited: Start runs in the robot queue, and Stop must not wait behind Bean's sentence.
+    // Stop closes the webcam and a new Start makes a new game, so a stopped round never starts counting.
+    said.then(() => game === mine && cam && game.start(performance.now(), startCm));
   }
 
   return {
