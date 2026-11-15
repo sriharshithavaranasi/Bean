@@ -2,7 +2,8 @@
 // Its grown-up settings, progress, webcam and game loop. The shell (main.ts) starts and stops it.
 import { cameras, openCamera } from './camera.ts';
 import { createGame } from './game/freeze-watcher.ts';
-import type { Frame } from './game/pose-moved.ts';
+import type { Picture } from './game/picture-moved.ts';
+import { headSeen, type Frame } from './game/pose-moved.ts';
 import type { Mode, ModeContext, Screen } from './mode.ts';
 import { count, go, hello, playCue, praise, silence } from './signals.ts';
 import { fixSettings, LIMITS, load, save, type Limited, type Settings } from './store.ts';
@@ -174,18 +175,20 @@ export function createPlay(ctx: ModeContext): Mode {
       const cm = game.phase === 'red' ? await ctx.robot().distanceCm() : null;
       if (cm != null) $('reading').textContent = `${cm} cm`;
       if (cm != null && cm > 0 && cm < 150) lastCm = cm;
-      // During Red the webcam adds a frame: the kid's body, or null when nobody was found.
+      // During Red the webcam adds a frame: the kid's body, or null when nobody was found, and the frame as a small picture.
       let body: Frame | undefined;
+      let picture: Picture | undefined;
       if (game.phase === 'red' && cam) {
         try {
           body = cam.frame();
+          picture = cam.picture();
         } catch {
           body = null;
         }
-        $('cam-status').textContent = body ? 'Webcam: sees you' : 'Webcam: cannot see you';
+        $('cam-status').textContent = headSeen(body) ? 'Webcam: sees you' : 'Webcam: cannot see your head, so it watches the whole picture';
       }
       const now = performance.now();
-      const phase = game.tick(now, cm, body);
+      const phase = game.tick(now, cm, body, picture);
       if (phase === 'countdown') {
         const n = Math.ceil((game.until - now) / 1000); // 3, 2, 1
         if (n !== counted) {

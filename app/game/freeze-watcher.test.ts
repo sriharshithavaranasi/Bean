@@ -75,6 +75,34 @@ test('a move on Red is caught on the tick that sees it, not when the Red light e
   assert.equal(g.tick(4500, 120, body(0.1)), 'caught');
 });
 
+// Too close: the head is out of the picture, so the pose is not trusted and the picture itself is watched.
+const headOut = (dx = 0): Frame => body(dx)!.map((p, i) => (i === 0 ? { ...p, y: -0.1 } : p));
+const grey = (lit = 0) => new Uint8Array(100).fill(100).fill(250, 0, lit); // a small picture with `lit` bright pixels
+
+test('head out of the picture: a made-up skeleton that jumps about does not catch a still kid', () => {
+  const g = newGame();
+  g.start(0, 180);
+  g.tick(3000, null);
+  for (let t = 3100; t < 5500; t += 100) assert.equal(g.tick(t, 120, headOut(t % 200 ? 0.3 : 0), grey()), 'red');
+  assert.equal(g.tick(5500, 120, headOut(), grey()), 'green');
+});
+
+test('head out of the picture: a change in the picture is caught on the tick that sees it', () => {
+  const g = newGame();
+  g.start(0, 180);
+  g.tick(3000, null);
+  for (let t = 3100; t < 4500; t += 100) assert.equal(g.tick(t, 120, t % 200 ? headOut() : null, grey()), 'red');
+  assert.equal(g.tick(4500, 120, null, grey(30)), 'caught'); // nobody found, and 30% of the picture changed
+});
+
+test('head in the picture: the pose decides, so waving hands that change the picture are not caught', () => {
+  const g = newGame();
+  g.start(0, 180);
+  g.tick(3000, null);
+  for (let t = 3100; t < 5500; t += 100) assert.equal(g.tick(t, 120, body(), grey(t % 200 ? 30 : 0)), 'red');
+  assert.equal(g.tick(5500, 120, body(), grey()), 'green');
+});
+
 test('a still body is not caught, whatever the distance sensor reads', () => {
   assert.equal(red(still, {}, (t) => 120 - (t - 3100) / 50), 'green'); // sensor says "walking"
   assert.equal(red(still, {}, (t) => (t % 200 ? 60 : 140)), 'green'); // sensor jumps around

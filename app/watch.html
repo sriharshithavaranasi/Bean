@@ -17,7 +17,7 @@
   <main>
     <section class="card">
       <h1>Webcam watcher check</h1>
-      <p>Tunes the webcam before it watches Red Light, Green Light. Frames stay on this laptop: nothing is sent, and the picture is never kept. Save frames writes the body points of the last practice to a file on this laptop.</p>
+      <p>Tunes the webcam before it watches Red Light, Green Light. Frames stay on this laptop: nothing is sent. Save frames writes the last practice to a file on this laptop: the body points and a tiny grey picture (64 by 48) of each frame.</p>
     </section>
     <section class="card">
       <div class="row">
@@ -34,7 +34,7 @@
         <input id="wiggle" type="range" min="0.05" max="0.6" step="0.05" value="0.2">
         <output id="wiggle-out" for="wiggle">0.20</output>
       </div>
-      <p>Share of the kid's shoulder width a shoulder, hip, knee or ankle may drift before Bean says it moved. Hands and head never count; hips and legs count only when they are in the picture.</p>
+      <p>Share of the kid's shoulder width a shoulder, hip, knee or ankle may drift before Bean says it moved. Hands and head never count; hips and legs count only when they are in the picture. When the head is out of the picture (too close), Bean watches the whole picture for change instead.</p>
       <p>Practice runs by itself: a 5 second countdown to get into place, then Green and Red lights until you press Stop. Bean says each result out loud.</p>
       <div class="row">
         <button id="try" class="primary" disabled>Start practice</button>

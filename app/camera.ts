@@ -1,5 +1,6 @@
 // Webcam pose watcher. Frames are processed on the laptop with MediaPipe; nothing is recorded or sent anywhere.
 import { FilesetResolver, PoseLandmarker } from './vendor/mediapipe/tasks-vision.js';
+import type { Picture } from './game/picture-moved.ts';
 import type { Frame } from './game/pose-moved.ts';
 
 const FILES = new URL('./vendor/mediapipe', import.meta.url).href;
@@ -11,6 +12,7 @@ export async function cameras() {
 }
 
 // Opens the camera into `video` and loads the pose model. frame() returns the body's 33 landmarks, or null.
+// picture() returns the frame as a small grey picture, for watching by picture change (game/picture-moved.ts).
 export async function openCamera(video: HTMLVideoElement, deviceId?: string) {
   const stream = await navigator.mediaDevices.getUserMedia({
     video: { deviceId: deviceId ? { exact: deviceId } : undefined, width: 640, height: 480 },
@@ -33,7 +35,14 @@ export async function openCamera(video: HTMLVideoElement, deviceId?: string) {
     pose = await PoseLandmarker.createFromOptions(vision, options('CPU')); // some laptops have no usable WebGL
   }
   let last = 0;
+  const [W, H] = [64, 48]; // small enough that camera noise averages out, big enough to see a step
+  const small = Object.assign(document.createElement('canvas'), { width: W, height: H }).getContext('2d', { willReadFrequently: true })!;
   return {
+    picture(): Picture {
+      small.drawImage(video, 0, 0, W, H);
+      const rgba = small.getImageData(0, 0, W, H).data;
+      return Uint8Array.from({ length: W * H }, (_, i) => (rgba[i * 4] + 2 * rgba[i * 4 + 1] + rgba[i * 4 + 2]) >> 2);
+    },
     frame(): Frame {
       const now = Math.max(performance.now(), last + 1); // the model needs timestamps that always go up
       last = now;

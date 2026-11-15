@@ -9,6 +9,9 @@ export type Frame = Landmark[] | null; // null when nobody was found
 const EDGE = 0.05; // points this close to the picture's edge are the model's guesses (a close kid's knees and feet), so they do not count
 const inside = (v: number) => v >= EDGE && v <= 1 - EDGE;
 const seen = (p?: Landmark): p is Landmark => !!p && (p.visibility ?? 0) >= SEEN && inside(p.x) && inside(p.y);
+// The pose is trusted only while the head (the nose) is in the picture. Closer than that the model finds nobody or guesses,
+// and the picture itself is watched instead (picture-moved.ts).
+export const headSeen = (f?: Frame): f is Landmark[] => !!f && seen(f[0]);
 
 // shortcut: every tracked point is compared one frame at a time, so a lean toward the camera (the shoulders spread)
 // or one glitchy frame can catch a still kid, mostly when the kid is close. Next steps if it is still too twitchy,

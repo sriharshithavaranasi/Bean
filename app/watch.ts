@@ -1,6 +1,8 @@
 // The webcam tuning page (watch.html): try Freeze Watcher's body check and set the wiggle room.
 import { cameras, openCamera } from './camera.ts';
-import { poseDrift, type Frame } from './game/pose-moved.ts';
+import { DEFAULTS } from './game/freeze-watcher.ts';
+import { pictureDrift, type Picture } from './game/picture-moved.ts';
+import { headSeen, poseDrift, type Frame } from './game/pose-moved.ts';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const wiggleBox = $<HTMLInputElement>('wiggle');
@@ -11,10 +13,10 @@ const SETTLE_MS = 1000; // same as Freeze Watcher: time to freeze before Bean ch
 const CHECK_MS = 1500; // Bean stares 2.5 s, so it checks for the last 1.5 s
 const TRACKED = [11, 12, 23, 24, 25, 26, 27, 28];
 let cam: Awaited<ReturnType<typeof openCamera>> | null = null;
-let liveBody: Frame = null; // the latest body, or null when none is found
-let collecting: Frame[] | null = null; // frames of the current check, or null
-// Every frame of the last practice, for Save frames: time, light, and each point as [x, y, visibility]. Body points only, never the picture.
-let recorded: { t: number; phase?: string; body: number[][] | null }[] = [];
+let collecting: Frame[] | null = null; // frames of the current check (the pose when the head is in the picture, else null), or null
+let shots: Picture[] = []; // the same frames as small grey pictures
+// Every frame of the last practice, for Save frames: time, light, each point as [x, y, visibility], and the small grey picture (base64).
+let recorded: { t: number; phase?: string; body: number[][] | null; pic: string }[] = [];
 
 const note = (text: string) => $('log').append(Object.assign(document.createElement('li'), { textContent: text }));
 wiggleBox.oninput = () => ($<HTMLOutputElement>('wiggle-out').value = Number(wiggleBox.value).toFixed(2));
@@ -50,8 +52,12 @@ let lastSeen = '';
 function loop() {
   if (!cam) return;
   const body = cam.frame();
-  collecting?.push(body);
-  if (running) recorded.push({ t: Math.round(performance.now()), phase: document.body.dataset.phase, body: body && body.map((p) => [p.x, p.y, p.visibility ?? 0].map((n) => Math.round(n * 1e4) / 1e4)) });
+  const picture = cam.picture();
+  if (collecting) {
+    collecting.push(headSeen(body) ? body : null);
+    shots.push(picture);
+  }
+  if (running) recorded.push({ t: Math.round(performance.now()), phase: document.body.dataset.phase, body: body && body.map((p) => [p.x, p.y, p.visibility ?? 0].map((n) => Math.round(n * 1e4) / 1e4)), pic: btoa(String.fromCharCode(...picture)) });
   ctx.clearRect(0, 0, 640, 480);
   for (const [i, p] of (body ?? []).entries()) {
     if ((p.visibility ?? 0) < 0.5) continue;
@@ -60,8 +66,7 @@ function loop() {
     ctx.arc(p.x * 640, p.y * 480, TRACKED.includes(i) ? 7 : 4, 0, 7);
     ctx.fill();
   }
-  liveBody = body;
-  const now = body ? 'Body found: green dots are the points Bean watches.' : 'No body found yet.';
+  const now = headSeen(body) ? 'Body found: green dots are the points Bean watches.' : 'No head in the picture: Bean watches the whole picture for change.';
   if (now !== lastSeen) $('seen').textContent = lastSeen = now;
   setTimeout(() => requestAnimationFrame(loop), 100); // about 10 frames a second, like the distance sensor
 }
@@ -74,7 +79,7 @@ const say = (text: string) => {
 };
 let running = false;
 stopButton.onclick = () => (running = false);
-// Saves the last practice's body points as bean-frames.json (the browser's Downloads folder), to replay a wrong catch off the lane.
+// Saves the last practice's body points and small grey pictures as bean-frames.json (the browser's Downloads folder), to replay a wrong catch off the lane.
 $('save').onclick = () => {
   const video = $<HTMLVideoElement>('video');
   const file = new Blob([JSON.stringify({ video: [video.videoWidth, video.videoHeight], camera: camBox.selectedOptions[0].text, wiggle: Number(wiggleBox.value), frames: recorded })]);
@@ -91,8 +96,6 @@ tryButton.onclick = async () => {
     say(n === 5 ? 'Get into place. 5' : String(n));
     await wait(1000);
   }
-  if (running && !liveBody) $('result').textContent = 'Waiting until Bean can see you…';
-  while (running && !liveBody) await wait(200); // start only once the kid is in the picture
   for (let round = 1; running; round++) {
     document.body.dataset.phase = 'green';
     say('Green light!');
@@ -102,16 +105,19 @@ tryButton.onclick = async () => {
     say('Red light!');
     await wait(SETTLE_MS);
     collecting = [];
+    shots = [];
     await wait(CHECK_MS);
     const frames: Frame[] = collecting;
     collecting = null;
     const drift = poseDrift(frames);
+    const change = pictureDrift(frames, shots);
+    const limit = DEFAULTS.pictureChangePct / 100;
     const wiggle = Number(wiggleBox.value);
     const seen = frames.filter(Boolean).length;
-    const verdict = drift === 0 && seen < 2 ? 'Could not see you' : drift > wiggle ? 'I saw you move' : 'So still';
+    const verdict = drift > wiggle || change > limit ? 'I saw you move' : 'So still';
     say(verdict);
     $('log').append(Object.assign(document.createElement('li'), {
-      textContent: `${verdict}: drift ${drift.toFixed(2)}, wiggle room ${wiggle.toFixed(2)}, ${seen} of ${frames.length} frames with a body, ${camBox.selectedOptions[0].text}`,
+      textContent: `${verdict}: drift ${drift.toFixed(2)}, wiggle room ${wiggle.toFixed(2)}, picture change ${change.toFixed(2)}, limit ${limit.toFixed(2)}, ${seen} of ${frames.length} frames with the head in the picture, ${camBox.selectedOptions[0].text}`,
     }));
     await wait(1500);
   }
