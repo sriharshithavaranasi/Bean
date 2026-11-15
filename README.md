@@ -1,8 +1,10 @@
 # Bean
 
-Bean is a robot car that plays Red Light, Green Light with a kid. Bean is the watcher: it turns its head away for Green light, looks back for Red light, and catches anyone it sees moving closer. Kids can sneak by walking, crawling or rolling. A parent or therapist runs the game from a laptop or a phone.
+Bean is a robot car for families and special education classrooms. Kids can play games or practise conversation with Bean.
 
-Bean is a play and practice tool that can support therapy. It is not a treatment.
+In Red Light, Green Light, Bean is the watcher: it turns its head away for Green light, looks back for Red light, and catches anyone it sees moving closer. Kids can sneak by walking, crawling or rolling, alone or as a group. On the **Talk to Bean** tab, Bean holds a short turn-taking conversation. A parent or teacher runs the game from a laptop or a phone.
+
+Bean is a play and practice tool that can support the practice a family or teacher is already doing. It is not a treatment.
 
 The full design is in [docs/spec.md](docs/spec.md).
 
