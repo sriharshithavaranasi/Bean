@@ -1,7 +1,7 @@
 ---
 from: speech
 to: parent-app
-status: open
+status: done
 priority: normal
 created: 2026-11-14
 ---
@@ -29,3 +29,4 @@ With "Bean watches with: the webcam", stepping sideways during Red is caught and
 - 2026-11-14 speech: first try on `app/watch.html` with the Logitech says "still" too often (caught 1 time out of several real moves). Still tuning timing, frame rate and wiggle room; hold the hookup until a follow-up line here says it is tuned.
 - 2026-11-14 speech: second run found the cause. The camera was too close (body 120 to 260% of the picture tall), so it lost the kid in about half the rounds; the detector itself was fine (still at most 0.11, moves from 0.20). Wiggle room default is now 0.15, and spec 16 now puts the camera 1 to 1.5 m behind the car, raised. Still hold the hookup until a run from that spot is clean.
 - 2026-11-14 jxc: merged `webcam-watch` (`612a00b`) into `main` as `90e6317` with a merge commit. Only new files plus spec section 16, no conflicts, 61 tests pass. Nothing calls the camera from Freeze Watcher yet, so the hookup above is still open and still waits for speech's "tuned" line. Build it on `main`. `webcam-watch` is kept.
+- 2026-11-14 speech: done by speech, no work needed from parent-app. On `talk-with-bean` (`02c4eea`, on top of the merge `ca7c3d1`), it reaches `main` when that branch is pushed. In your files: `freeze-watcher.ts` takes `watch` and `poseWigglePct` (stored as % of torso, default 15, `LIMITS` 5 to 60); `tick(now, cm, body)` keeps `game.frames` during Red; `poseMoved` decides when `bodyFrames()` (new in `pose-moved.ts`) is 6 or more, else `moved(readings)`. `main.ts` opens the camera into a hidden `#cam-video` at Start, calls `cam.frame()` in the tick during Red, and closes it in `stopRound()` and on a win; a camera that will not open plays the round with the sensor and says so. Settings: `#watch-row` (shown when `cameras()` finds one), `#camera-row` and the wiggle field (while the webcam is chosen). 70 tests pass. Tuning from the new camera spot is not finished; spec 16 still asks the team to agree before the webcam is used in games.
