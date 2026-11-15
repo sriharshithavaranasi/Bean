@@ -18,7 +18,7 @@ Bean is a play and practice tool. It can support the practice a family or teache
 Bean is a playful robot friend on wheels with two games: Red Light, Green Light to move, and Talk to Bean to talk. In Red Light, Green Light, a kid or a small group starts at a taped line about 1 m away and sneaks toward Bean.
 
 - **Green light:** Bean turns its head away, its light goes green and music plays.
-- **Red light:** Bean turns back, its light goes red, the music stops and Bean says "Red light! Hmm... I'm watchinggg...". If the kid moves closer, Bean says "You moved!!" and they go back to the start. If they hold still, Bean teases "Heyy... Did you just move?" or "You're sneaky!", or "You're almost here!" when they are close.
+- **Red light:** Bean turns back, its light goes red, the music stops and Bean says "Red light! Hmm... I'm watchinggg...". If the kid moves closer, Bean says "You moved!!" and the game is over. If they hold still, Bean teases "Heyy... Did you just move?" or "You're sneaky!", or "You're almost here!" when they are close.
 - **Win:** reach Bean while it is looking (closer than 12 cm) and Bean says "You got me! You win!".
 
 A parent or teacher runs the game from a laptop, or from a phone as a remote, so they can stay in the lane with the kids. They can:

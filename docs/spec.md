@@ -173,13 +173,8 @@ Starting palette from the example: cream background `#fff8ef`, ink `#2b2140`, go
 
 Behaviour taken from the example:
 
-<<<<<<< Updated upstream
-- After a Red light held still, the robot praises the kid ("Great freezing!", "So still!", "I did not see a thing!").
-- Caught ends the game: Bean says so, and Play again starts a new one.
-=======
 - Bean's spoken lines (`app/signals.ts`): Red light "Red light! Hmm... I'm watchinggg...", caught "You moved!!", win "You got me! You win!". After a Red light held still it teases ("Heyy... Did you just move?" or "You're sneaky!"), or says "You're almost here!" when that Red light's last good reading was under 30 cm. The screen text is unchanged.
-- Caught ends when Kid is back at start is pressed, when the distance is back at the start distance, or after 8 seconds.
->>>>>>> Stashed changes
+- Caught ends the game: Bean says so, and Play again starts a new one.
 - Vibration: one short pulse on Green, two long pulses on Red, a pattern on a win.
 
 Not taken from the example:

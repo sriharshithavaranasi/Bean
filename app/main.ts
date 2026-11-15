@@ -234,11 +234,8 @@ async function enter(phase: string) {
   const held = shown === 'red' && (phase === 'green' || phase === 'word');
   if (phase === 'win') bump('wins');
   if (phase === 'caught') bump('caught');
-<<<<<<< Updated upstream
   if (phase === 'win' || phase === 'caught') closeCam();
-=======
   if (phase === 'red') lastCm = null; // only this Red light's readings say how close the kid is
->>>>>>> Stashed changes
   if (phase === 'word') askWord(held ? 'Great freezing! ' : shown === 'idle' ? 'Say your word to sneak closer! ' : '');
   else {
     if (held) praise(lastCm);
@@ -260,12 +257,8 @@ setInterval(() => {
     // The head points away during Green, so there is nothing to measure.
     const cm = game.phase === 'green' ? null : await robot.distanceCm();
     if (cm != null) $('reading').textContent = `${cm} cm`;
-<<<<<<< Updated upstream
-    // During Red the webcam adds a frame: the kid's body, or null when nobody was found.
-=======
     if (cm != null && cm > 0 && cm < 150) lastCm = cm;
-    // During Red the webcam, when it watches, adds a frame: the kid's body, or null when nobody was found.
->>>>>>> Stashed changes
+    // During Red the webcam adds a frame: the kid's body, or null when nobody was found.
     let body: Frame | undefined;
     if (game.phase === 'red' && cam) {
       try {
