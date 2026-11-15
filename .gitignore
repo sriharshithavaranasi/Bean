@@ -1,5 +1,6 @@
 .comms/
 .impeccable/hook.cache.json
 .env
+.voice-cache/
 node_modules/
 tutorial/

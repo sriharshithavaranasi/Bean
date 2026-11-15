@@ -69,3 +69,19 @@ test('the server routes POST /voice to it, from the laptop only', async (t) => {
   assert.equal(res.status, 503); // no key in this test: the app uses the browser voice
   assert.equal((await fetch(`${base}/voice`)).status, 403); // only POST
 });
+
+test('with a cache folder each line calls ElevenLabs once, then plays from disk even without a key', async (t) => {
+  const { mkdtemp, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const dir = await mkdtemp(join(tmpdir(), 'bean-voice-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const { fake, calls } = elevenlabs();
+  assert.equal((await speak(line(), { key: 'k', fetch: fake, dir })).status, 200);
+  const again = await speak(line(), { key: '', fetch: fake, dir });
+  assert.equal(again.status, 200);
+  assert.deepEqual([...(again.body as Uint8Array)], [0xff, 0xf3]);
+  assert.equal(calls.length, 1);
+  assert.equal((await speak(line('You moved!!'), { key: 'k', fetch: fake, dir })).status, 200);
+  assert.equal(calls.length, 2);
+});
