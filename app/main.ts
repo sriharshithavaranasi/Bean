@@ -163,6 +163,7 @@ let cam: Awaited<ReturnType<typeof openCamera>> | null = null;
 const closeCam = () => {
   cam?.close();
   cam = null;
+  $('cam-status').hidden = true;
 };
 
 // Start, Stop and the game tick all talk to the robot: run them one after another.
@@ -266,6 +267,7 @@ setInterval(() => {
       } catch {
         body = null;
       }
+      $('cam-status').textContent = body ? 'Webcam: sees you' : 'Webcam: cannot see you';
     }
     const phase = game.tick(performance.now(), cm, body);
     if (phase !== shown && phase !== 'idle') await enter(phase);
@@ -306,6 +308,8 @@ function start() {
       show('idle', 'Starting the webcam…');
       try {
         cam = await openCamera($<HTMLVideoElement>('cam-video'), round.cameraId || undefined);
+        $('cam-status').textContent = 'Webcam: on';
+        $('cam-status').hidden = false;
         fillCameras(); // the camera names show now that it is allowed
       } catch {
         round = { ...round, watch: 'sensor' }; // no camera, or not allowed: this round uses the sensor
@@ -395,8 +399,8 @@ show('idle');
 // ---------- phone remote (spec, section 13) ----------
 // The laptop sends what its screen shows; the phone copies it and sends its presses back through scripts/serve.ts.
 const CLICKS = ['start', 'stop', 'ready', 'goodtry', 'reset', 'tab-move', 'tab-talk'];
-const TEXTS = ['status', 'hint', 'reading', 'start', 'reset', 'warn-move', 'warn-talk', 'tab-note'];
-const HIDDEN = ['readout', 'controls', 'parent', 'ready', 'goodtry'];
+const TEXTS = ['status', 'hint', 'reading', 'cam-status', 'start', 'reset', 'warn-move', 'warn-talk', 'tab-note'];
+const HIDDEN = ['readout', 'cam-status', 'controls', 'parent', 'ready', 'goodtry'];
 const snapshot = () => ({
   phase: document.body.dataset.phase,
   glyph: $('glyph-path').getAttribute('d')!,
