@@ -100,7 +100,7 @@ export function silence() {
   quiet();
 }
 
-// Bean's Red Light, Green Light lines. After a Red light held still it teases, or says the kid is close (last reading under 30 cm).
+// Bean's Red Light, Green Light lines. After a Red light held still it teases, or says the kid is close (last reading under 60 cm, twice the win distance).
 const RED = "Red light! Hmm... I'm watching you";
 const CAUGHT = 'You moved!!';
 const WIN = 'You got me! You win!';
@@ -116,7 +116,7 @@ const pick = (lines: string[]) => lines[Math.floor(Math.random() * lines.length)
 export const hello = () => say(pick(HELLO));
 export const count = (n: number) => say(COUNT[n - 1]); // 3, 2, 1
 export const go = () => say(pick(GO));
-export const praise = (cm: number | null) => say(cm != null && cm < 30 ? ALMOST : pick(TEASE));
+export const praise = (cm: number | null) => say(cm != null && cm < 60 ? ALMOST : pick(TEASE));
 
 const buzz = (pattern: VibratePattern) => navigator.vibrate?.(pattern); // phones only
 const BUZZ: Record<string, VibratePattern> = { green: 80, red: [300, 100, 300], win: [100, 60, 100, 60, 300] };

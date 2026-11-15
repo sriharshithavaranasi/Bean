@@ -41,9 +41,10 @@ test('full round: held still, then a win', () => {
   assert.equal(run(g, 3100, 5400, () => 120), 'red');
   assert.equal(g.tick(5500, 120, body()), 'green');
 
-  // Next Red at 8500, kid is touching the robot: win once the freeze time is over.
+  // Next Red at 8500, kid is touching the robot: win once the freeze time is over and the reading has held for half a second.
   assert.equal(g.tick(8500, null), 'red');
-  assert.equal(run(g, 8600, 9500, () => 6), 'win');
+  assert.equal(run(g, 8600, 9900, () => 6), 'red');
+  assert.equal(g.tick(10000, 6), 'win');
 });
 
 test('the game starts with a 3 second countdown, then the first Green', () => {
@@ -121,6 +122,43 @@ test('webcam wiggle room is in percent of shoulder width', () => {
   assert.equal(red(sidestep(4500, 0.03), { poseWigglePct: 20 }), 'caught');
 });
 
+// One Red light from 3000 to 5500; the time to freeze ends at 4000.
+function redLight() {
+  const g = newGame();
+  g.start(0, 180);
+  g.tick(3000, null);
+  return g;
+}
+
+test('one stray close reading is not a win', () => {
+  const g = redLight();
+  assert.equal(run(g, 3100, 4400, () => 120), 'red');
+  assert.equal(g.tick(4500, 6, body()), 'red'); // a stray echo
+  assert.equal(run(g, 4600, 5400, () => 120), 'red');
+});
+
+test('the win comes when every reading has been under the win distance for half a second', () => {
+  const g = redLight();
+  assert.equal(run(g, 3100, 4400, () => 25), 'red'); // under 30 cm, but the half second starts after the time to freeze
+  assert.equal(g.tick(4500, 25, body()), 'win');
+});
+
+test('a far reading, or none, starts the half second again', () => {
+  for (const gap of [120, 0, null]) {
+    const g = redLight();
+    assert.equal(run(g, 4000, 4300, () => 25), 'red');
+    assert.equal(g.tick(4400, gap, body()), 'red');
+    assert.equal(run(g, 4500, 4900, () => 25), 'red');
+    assert.equal(g.tick(5000, 25, body()), 'win');
+  }
+});
+
+test('moving in during Red is caught before the half second is up', () => {
+  const g = redLight();
+  assert.equal(g.tick(4000, 25, body()), 'red');
+  assert.equal(g.tick(4100, 25, body(0.1)), 'caught');
+});
+
 test('a 0 reading (sensor saw nothing) does not win', () => {
   const g = newGame();
   g.start(0, 180);
@@ -131,7 +169,7 @@ test('a 0 reading (sensor saw nothing) does not win', () => {
 test('defaults match the spec, section 9', () => {
   assert.deepEqual(
     { settleMs: DEFAULTS.settleMs, redMinMs: DEFAULTS.redMinMs, redMaxMs: DEFAULTS.redMaxMs, winCm: DEFAULTS.winCm, poseWigglePct: DEFAULTS.poseWigglePct },
-    { settleMs: 1000, redMinMs: 2500, redMaxMs: 5000, winCm: 12, poseWigglePct: 20 },
+    { settleMs: 1000, redMinMs: 2500, redMaxMs: 5000, winCm: 30, poseWigglePct: 20 },
   );
 });
 

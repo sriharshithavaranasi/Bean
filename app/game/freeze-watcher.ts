@@ -10,7 +10,8 @@ export const DEFAULTS = {
   redMinMs: 2500, // each Red lasts a random time between these, so the kid cannot count it
   redMaxMs: 5000,
   settleMs: 1000, // head is still turning and the kid is still stopping
-  winCm: 12,
+  winCm: 30,
+  winHoldMs: 500, // every reading must stay under the win distance this long: one stray echo from the sensor is not a win
   maxRedLights: 12, // after this many Red lights with no catch and no win, nobody is playing: the game ends
   poseWigglePct: 20, // webcam wiggle room, in % of shoulder width; retune on watch.html (was 15 % of torso length)
   pictureChangePct: 10, // head out of the picture: % of the picture that may change. shortcut: arbitrary, never measured (spec, section 16); tune it on watch.html if it catches wrongly
@@ -41,6 +42,7 @@ export function createGame(settings: Partial<GameSettings> = DEFAULTS, random = 
   const kidMoved = () =>
     poseMoved(game.frames, { wiggle: s.poseWigglePct / 100 }) || pictureDrift(game.frames, game.pictures) > s.pictureChangePct / 100;
 
+  let nearSince: number | null = null; // when the unbroken run of readings under the win distance began, this Red
   const between = (now: number, min: number, max: number) => now + min + random() * (max - min);
   const green = (now: number) => {
     game.phase = 'green';
@@ -63,8 +65,12 @@ export function createGame(settings: Partial<GameSettings> = DEFAULTS, random = 
       game.until = between(now, s.redMinMs, s.redMaxMs);
       game.frames = [];
       game.pictures = [];
+      nearSince = null;
     } else if (game.phase === 'red' && now - game.redStart >= s.settleMs) {
-      if (cm != null && cm > 0 && cm < s.winCm) game.phase = 'win';
+      // A far reading, a 0 (no echo) or no reading at all breaks the run, and it starts again.
+      if (cm != null && cm > 0 && cm < s.winCm) nearSince ??= now;
+      else nearSince = null;
+      if (nearSince != null && now - nearSince >= s.winHoldMs) game.phase = 'win';
       else {
         if (body !== undefined) {
           game.frames.push(headSeen(body) ? body : null);
