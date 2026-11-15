@@ -43,6 +43,13 @@
         <p id="hint" aria-live="polite"></p>
         <p id="readout">Distance: <output id="reading">none yet</output></p>
         <p id="cam-status" hidden></p>
+        <!-- Talk with Bean's chat (talk-play.ts): shown only during a talk session, in the light's place. -->
+        <div id="chat">
+          <ol id="chat-log" aria-live="polite" aria-label="Chat with Bean"></ol>
+          <form id="chat-form"><label class="vh" for="chat-input">Message to Bean</label>
+            <input id="chat-input" type="text" autocomplete="off" maxlength="300" placeholder="Type to Bean…">
+            <button class="primary" type="submit">Send</button></form>
+        </div>
       </section>
 
       <div id="controls">
@@ -71,7 +78,7 @@
         <summary>Grown-up settings</summary>
         <div id="camera-row" class="words" hidden><label for="s-cameraId">Camera</label>
           <select id="s-cameraId"><option value="">Default camera</option></select></div>
-        <div class="field"><label for="s-poseWigglePct">Webcam wiggle room <span class="vh">(percent of body)</span></label>
+        <div class="field"><label for="s-poseWigglePct">Webcam detection wiggle room <span class="vh">(percent of body)</span></label>
           <span class="num"><span class="val"><input id="s-poseWigglePct" type="number" inputmode="numeric"><span class="unit" aria-hidden="true">%</span></span></span></div>
         <div class="field"><label for="s-greenMin">Shortest green light <span class="vh">(seconds)</span></label>
           <span class="num"><span class="val"><input id="s-greenMin" type="number" inputmode="decimal" step="0.5"><span class="unit" aria-hidden="true">sec</span></span></span></div>
@@ -93,8 +100,9 @@
         <section id="talk" aria-label="Talk with Bean">
           <details id="talk-settings" class="card" open>
             <summary>Grown-up settings</summary>
-            <div class="words"><label for="t-name">Kid's first name</label>
-              <input id="t-name" type="text" autocomplete="off" spellcheck="false" maxlength="20"></div>
+            <div class="words"><label for="t-name">First name</label>
+              <input id="t-name" type="text" autocomplete="off" spellcheck="false" maxlength="20" aria-describedby="t-name-error">
+              <p id="t-name-error" class="error" role="alert" hidden>Enter a first name to start.</p></div>
             <fieldset class="choice"><legend>Speaking style</legend>
               <label><input type="radio" name="t-style" value="natural" checked> Natural</label>
               <label><input type="radio" name="t-style" value="witty"> Witty</label>
@@ -103,8 +111,8 @@
             <fieldset class="choice"><legend>Fun</legend>
               <label><input id="t-madlibs" type="checkbox"> <span aria-hidden="true">🤪</span> Play Mad Libs</label>
             </fieldset>
-            <div class="slider"><label for="t-time">Play time limit <output id="t-time-out" for="t-time">15 min</output></label>
-              <input id="t-time" type="range" min="5" max="60" step="5" value="15" aria-describedby="t-time-help">
+            <div class="slider"><label for="t-time">Play time limit <output id="t-time-out" for="t-time">5 min</output></label>
+              <input id="t-time" type="range" min="1" max="10" step="1" value="5" aria-describedby="t-time-help">
               <p id="t-time-help">A short session keeps it fun and stops kids playing too long.</p></div>
             <p class="powered">Powered by <strong class="gemini">Gemini</strong></p>
           </details>

@@ -29,7 +29,7 @@ const queued = <T>(job: () => T) => (chain = chain.then(job).catch((e) => void c
 // ---------- modes ----------
 let shown = 'idle';
 const ctx: ModeContext = { show, shown: () => shown, queued, robot: () => robot };
-const modes: Record<'move' | 'talk', Mode> = { move: createPlay(ctx), talk: createTalk() };
+const modes: Record<'move' | 'talk', Mode> = { move: createPlay(ctx), talk: createTalk(ctx) };
 type Tab = keyof typeof modes;
 let tab: Tab = load('bean-tab', { tab: 'move' }).tab === 'talk' ? 'talk' : 'move';
 const mode = () => modes[tab];

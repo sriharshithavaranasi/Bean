@@ -4,7 +4,7 @@
 :root {
   --font-display: "Fredoka", ui-rounded, system-ui, sans-serif; --font-body: "Nunito", system-ui, sans-serif;
   --bg: #fff8ef; --surface: #fff; --panel: #f3edff; --fg: #2b2140; --muted: #5d5475; --line: #2b2140; --rule: #e0d6ea;
-  --btn: #fff; --accent: #ffc83d; --on-accent: #2b2140; --focus: #1a3fd6;
+  --btn: #fff; --accent: #ffc83d; --on-accent: #2b2140; --focus: #1a3fd6; --error: #b42318; /* error text: --stop is too light for small text */
   --idle: #d9d3e3; --go: #2fbf71; --stop: #e5484d; --wait: #f5a524; --win: #8e4ec6; --say: #3e63dd;
   --on-go: #10241a; --on-stop: #fff; --on-wait: #2b1a00; --on-win: #fff;
   --radius: 20px; --radius-btn: 14px; --bw: 2px; --gap: 12px;
@@ -22,6 +22,7 @@ body[data-phase="green"] { --state: var(--go); --on-state: var(--on-go); }
 body[data-phase="red"] { --state: var(--stop); --on-state: var(--on-stop); }
 body[data-phase="caught"] { --state: var(--wait); --on-state: var(--on-wait); }
 body[data-phase="win"] { --state: var(--win); --on-state: var(--on-win); }
+body[data-phase="talk"] { --state: var(--say); --on-state: #fff; } /* a Talk with Bean session */
 /* The whole stage card takes a strong tint of the state; full strength would fail text contrast on red. */
 body:not([data-phase="idle"]) { --state-soft: color-mix(in srgb, var(--state) 35%, #fff); }
 /* Talk with Bean waits in its own colour, the talking blue, not the Move idle grey. */
@@ -109,6 +110,24 @@ body:not([data-phase="idle"], [data-phase="win"], [data-phase="caught"], [data-p
 .slider { display: grid; gap: 4px; padding: 12px 0; border-top: 1px solid var(--rule); }
 .slider label { font-weight: 700; display: flex; justify-content: space-between; }
 .slider p { font-size: .875rem; color: var(--muted); }
+/* Talk with Bean's chat: during a session it takes the light's place, so the conversation fills the stage. */
+#chat { display: none; width: 100%; gap: 10px; }
+body[data-phase="talk"] { & #chat { display: grid; } & #light { display: none; } }
+#chat-log { list-style: none; margin: 0; padding: 4px; display: grid; gap: 8px; align-content: start; min-height: 30vh; max-height: 50vh; overflow-y: auto; text-align: left; }
+#chat-log li { max-width: 80%; padding: 10px 14px; border: var(--bw) solid var(--line); border-radius: var(--radius-btn); background: var(--surface); }
+#chat-log li.kid { justify-self: end; background: var(--accent); }
+#chat-log li.wait { color: var(--muted); font-style: italic; }
+#chat-form { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+#chat-input { font: 700 1.0625rem/1.2 var(--font-body); min-height: 48px; min-width: 0; padding: 8px 12px; color: var(--fg); background: var(--surface); border: var(--bw) solid var(--line); border-radius: var(--radius-btn); }
+.words select {
+  appearance: none; font: 700 1.0625rem/1.2 var(--font-body); min-height: 48px; width: 100%; padding: 8px 44px 8px 12px; color: var(--fg); cursor: pointer;
+  border: var(--bw) solid var(--line); border-radius: var(--radius-btn); box-shadow: 0 3px 0 var(--line);
+  /* the arrow, in ink like the rest of the controls */
+  background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6' fill='none' stroke='%232b2140' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center / 20px;
+}
+.words select:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.words p.error { color: var(--error); font-weight: 700; }
+.words input[aria-invalid="true"] { border-color: var(--error); outline: 2px solid var(--error); outline-offset: 1px; }
 .powered { padding: 12px 0; border-top: 1px solid var(--rule); color: var(--muted); }
 .gemini { font: 700 1.125rem var(--font-display); color: var(--say); }
 

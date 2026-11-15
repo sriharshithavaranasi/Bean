@@ -202,13 +202,13 @@ The Talk tab holds Talk with Bean. Its game was removed on 2026-11-15; only its 
 
 | Setting | Choices or default |
 | --- | --- |
-| Kid's first name | empty |
+| First name | empty (Start needs it) |
 | Speaking style | Natural (default), Witty, Boring |
-| Play time limit | 5 to 60 minutes in 5-minute steps, default 15 (to keep sessions short) |
+| Play time limit | 1 to 10 minutes, default 5 (to keep sessions short) |
 | Fun | Play Mad Libs, on or off (off by default): Bean asks the kid for words and fills them into a silly story (to be built) |
 | AI chat | Fixed text: "Powered by **Gemini**" (not a switch) |
 
-Start on the Talk tab does nothing yet. The tabs, their warning on a mid-round switch and the saved tab (`bean-tab`) are unchanged.
+Start on the Talk tab begins a typed chat with Bean (Gemini model `gemini-3.5-flash` through `POST /talk` in `scripts/talk.ts`; override with `GEMINI_MODEL`): it needs the kid's first name (otherwise the stage asks for it and the name box gets focus), shows "Talking with <name>" and the minutes left, and ends on its own when the play time limit runs out ("Time's up!", and Bean says goodbye). Stop ends it early. Speaking style and Play Mad Libs are not used yet. The tabs, their warning on a mid-round switch and the saved tab (`bean-tab`) are unchanged.
 
 **Bean's voice (ElevenLabs).** Every line Bean says goes through `say` in `app/signals.ts`. It asks `POST /voice` (`scripts/voice.ts`, laptop only) for the line as MP3 in voice `PKtsQbgKDa44YlyHnywy` (override with `ELEVENLABS_VOICE_ID`) on `eleven_flash_v2_5` (override with `ELEVENLABS_MODEL`), with the key from `ELEVENLABS_API_KEY`. Each line is fetched once per page load and kept; the game's fixed cues are fetched when Start unlocks sound, so "Red light!" is on time. With no key, no internet or no answer in 1.5 s, the browser's voice says the line and `/voice` rests for a minute. The lines sent include the kid's first name and AI chat replies. The webcam practice page (`app/watch.ts`) keeps the browser's voice.
 
@@ -229,7 +229,7 @@ Proposed by the speech area. It changes section 2 ("Out of scope: the camera"), 
 | Setting | Choices or default |
 | --- | --- |
 | Camera | Default camera, or a named one |
-| Webcam wiggle room | 20% of shoulder width, from 5 to 60%. Retune on `app/watch.html`: the earlier tuning was in torso lengths. Tuned on `app/watch.html` with the Logitech: standing still drifted 0.00 to 0.11, real moves 0.20 to 1.49 |
+| Webcam detection wiggle room | 20% of shoulder width, from 5 to 60%. Retune on `app/watch.html`: the earlier tuning was in torso lengths. Tuned on `app/watch.html` with the Logitech: standing still drifted 0.00 to 0.11, real moves 0.20 to 1.49 |
 
 **Privacy.** Frames are processed in the browser on the laptop and are never recorded, stored or sent. The model and its files are in `app/vendor/mediapipe/`, so it needs no internet. The camera turns off when the round stops. The pitch says so.
 

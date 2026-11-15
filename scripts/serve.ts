@@ -4,13 +4,14 @@ import { readFile } from 'node:fs/promises';
 import { stripTypeScriptTypes } from 'node:module';
 import type { AddressInfo } from 'node:net';
 import { extname, join, normalize, sep } from 'node:path';
+import { answer } from './talk.ts';
 import { speak } from './voice.ts';
 
 // Each laptop keeps its keys in a .env file in the repo folder, which git ignores (.env.example lists them).
 try {
   process.loadEnvFile(new URL('../.env', import.meta.url)); // does not replace a variable that is already set
 } catch {
-  // no .env: /voice answers 503 and Bean speaks in the browser voice
+  // no .env: /talk and /voice answer 503, and Bean speaks in the browser voice
 }
 
 const root = join(import.meta.dirname, '..', 'app');
@@ -18,7 +19,7 @@ const root = join(import.meta.dirname, '..', 'app');
 const types: Record<string, string> = { '.html': 'text/html', '.js': 'text/javascript', '.ts': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2', '.wasm': 'application/wasm' };
 const port = process.env.PORT ? Number(process.env.PORT) : 8000; // PORT=0 (tests) means any free port, not 8000
 
-// /voice spends an API key, so it answers only this laptop's own tab.
+// /talk and /voice spend API keys, so they answer only this laptop's own tab.
 const loopback = (req: IncomingMessage) =>
   ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress ?? '') &&
   /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(req.headers.host ?? ''); // the Host check stops DNS rebinding
@@ -36,6 +37,12 @@ async function body(req: IncomingMessage) {
 }
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', 'http://x');
+  if (url.pathname === '/talk') {
+    // Talk with Bean's chat (scripts/talk.ts).
+    if (!loopback(req) || req.method !== 'POST') return res.writeHead(403).end();
+    const { status, body: out } = await answer(await body(req));
+    return res.writeHead(status, { 'content-type': 'application/json' }).end(JSON.stringify(out));
+  }
   if (url.pathname === '/voice') {
     // Bean's ElevenLabs voice (scripts/voice.ts): this laptop only.
     if (!loopback(req) || req.method !== 'POST') return res.writeHead(403).end();
