@@ -115,17 +115,20 @@ body:not([data-phase="idle"], [data-phase="win"], [data-phase="caught"], [data-p
 #games { display: none; grid-column: 1 / -1; gap: var(--gap); align-content: start; }
 body[data-view="games"]:has(#tab-move[aria-selected="true"]) {
   & #games { display: grid; animation: pop-in .28s cubic-bezier(.16, 1, .3, 1); }
-  & main > .col { display: none; }
+  & main > .col { display: none; transition: none; } /* at once: the play-mode fade-out would keep the cards up for .5 s */
 }
 @keyframes pop-in { from { opacity: 0; transform: translateY(8px); } }
-.game-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--gap); grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+.game-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--gap); grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr)); }
 .game-card {
-  width: 100%; display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; align-items: center; text-align: left;
-  padding: 20px; border-radius: var(--radius); background: var(--surface); box-shadow: 4px 4px 0 var(--line);
+  width: 100%; min-height: 200px; display: grid; grid-template-columns: auto 1fr; gap: 6px 24px; align-items: center; text-align: left;
+  padding: 32px 28px; border-radius: var(--radius); background: var(--surface); box-shadow: 4px 4px 0 var(--line);
 }
-.game-card svg { grid-row: span 2; width: 64px; height: 64px; }
-.game-card strong { font: 700 1.25rem/1.2 var(--font-display); align-self: end; }
-.game-card span { color: var(--muted); font-weight: 400; align-self: start; }
+.game-card svg { grid-row: span 2; width: 104px; height: 104px; }
+.game-card strong { font: 700 1.75rem/1.15 var(--font-display); align-self: end; }
+.game-card span { color: var(--muted); font-size: 1.125rem; font-weight: 400; align-self: start; }
+/* A placeholder, not a button: dashed and flat, so it never looks pressable. */
+.game-card.soon { border: var(--bw) dashed var(--line); background: none; box-shadow: none; color: var(--muted); font-weight: 700; }
+.game-card.soon svg { fill: var(--muted); }
 .back { justify-self: start; min-height: 44px; padding: 6px 14px; font-size: .9375rem; }
 #reset { min-height: 44px; padding: 6px 12px; font-size: .875rem; }
 
