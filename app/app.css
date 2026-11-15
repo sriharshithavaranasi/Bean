@@ -112,13 +112,7 @@ body:not([data-phase="idle"], [data-phase="win"], [data-phase="caught"], [data-p
 .slider p { font-size: .875rem; color: var(--muted); }
 /* Talk with Bean's chat: during a session it takes the light's place, so the conversation fills the stage. */
 #chat { display: none; width: 100%; gap: 10px; }
-body[data-phase="talk"] { & #chat { display: grid; } & #light { display: none; } }
-#chat-log { list-style: none; margin: 0; padding: 4px; display: grid; gap: 8px; align-content: start; min-height: 30vh; max-height: 50vh; overflow-y: auto; text-align: left; }
-#chat-log li { max-width: 80%; padding: 10px 14px; border: var(--bw) solid var(--line); border-radius: var(--radius-btn); background: var(--surface); }
-#chat-log li.kid { justify-self: end; background: var(--accent); }
-#chat-log li.wait { color: var(--muted); font-style: italic; }
-#chat-form { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
-#chat-input { font: 700 1.0625rem/1.2 var(--font-body); min-height: 48px; min-width: 0; padding: 8px 12px; color: var(--fg); background: var(--surface); border: var(--bw) solid var(--line); border-radius: var(--radius-btn); }
+body[data-phase="talk"] #chat { display: grid; }
 .words select {
   appearance: none; font: 700 1.0625rem/1.2 var(--font-body); min-height: 48px; width: 100%; padding: 8px 44px 8px 12px; color: var(--fg); cursor: pointer;
   border: var(--bw) solid var(--line); border-radius: var(--radius-btn); box-shadow: 0 3px 0 var(--line);
@@ -249,3 +243,22 @@ body:not([data-phase="idle"], [data-phase="win"], [data-phase="caught"], [data-p
   }
 }
 @starting-style { main > .col:last-of-type { opacity: 0; } }
+
+/* Talk with Bean: during a session the light is Bean's voice orb. talk-play.ts sets --level (0 to 1) from Bean's voice
+   every frame: the orb swells and glows with it. After the play-mode rules, which would size it like the Play light. */
+body[data-phase="talk"] #light {
+  --level: 0; width: clamp(170px, 36vh, 300px);
+  transform: scale(calc(1 + var(--level) * .1));
+  box-shadow: 0 0 calc(var(--level) * 45px) calc(var(--level) * 12px) color-mix(in srgb, var(--say) 45%, transparent);
+}
+/* What the kid said last, beside their own smiley and name. */
+#chat { justify-items: center; }
+#kid-says { display: flex; align-items: center; gap: 14px; max-width: 34rem; text-align: left; }
+#kid-says[hidden] { display: none; }
+/* The kid looks unlike Bean on purpose: a tilted rounded square in green with a line-drawn face, not Bean's blue circle. */
+.kid-face { flex: none; display: grid; place-items: center; width: 56px; aspect-ratio: 1; border-radius: 16px; border: 3px solid var(--line); background: color-mix(in srgb, var(--go) 45%, #fff); box-shadow: 3px 3px 0 var(--line); rotate: -6deg; }
+.kid-face svg { width: 70%; color: var(--line); }
+#kid-name { font: 700 .9375rem var(--font-display); }
+#kid-text { font: 700 1.25rem/1.35 var(--font-body); }
+#talk-note { color: var(--muted); font-size: .9375rem; }
+#talk-note:empty { display: none; }

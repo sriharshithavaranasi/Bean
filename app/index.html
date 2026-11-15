@@ -43,12 +43,13 @@
         <p id="hint" aria-live="polite"></p>
         <p id="readout">Distance: <output id="reading">none yet</output></p>
         <p id="cam-status" hidden></p>
-        <!-- Talk with Bean's chat (talk-play.ts): shown only during a talk session, in the light's place. -->
+        <!-- Talk with Bean (talk-play.ts): during a session the light above is Bean's voice orb, and this shows what the kid said last. -->
         <div id="chat">
-          <ol id="chat-log" aria-live="polite" aria-label="Chat with Bean"></ol>
-          <form id="chat-form"><label class="vh" for="chat-input">Message to Bean</label>
-            <input id="chat-input" type="text" autocomplete="off" maxlength="300" placeholder="Type to Bean…">
-            <button class="primary" type="submit">Send</button></form>
+          <div id="kid-says" hidden>
+            <span class="kid-face" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6.5 10q1.5-2 3 0M14.5 10q1.5-2 3 0M7 14.5q5 5 10 0"/></svg></span>
+            <div><strong id="kid-name"></strong><p id="kid-text" aria-live="polite"></p></div>
+          </div>
+          <p id="talk-note" role="status"></p>
         </div>
       </section>
 
