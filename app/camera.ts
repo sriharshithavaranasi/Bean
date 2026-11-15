@@ -19,8 +19,10 @@ export async function openCamera(video: HTMLVideoElement, deviceId?: string) {
   video.srcObject = stream;
   await video.play();
   const vision = await FilesetResolver.forVisionTasks(FILES);
+  // The full model, not lite: with the kid too close (head out of the picture) lite kept tracking a made-up skeleton that
+  // jumped about, so a still kid was caught on every Red light. Full reports nobody there instead (recorded side by side, 2026-11-15).
   const options = (delegate: 'GPU' | 'CPU') => ({
-    baseOptions: { modelAssetPath: `${FILES}/pose_landmarker_lite.task`, delegate },
+    baseOptions: { modelAssetPath: `${FILES}/pose_landmarker_full.task`, delegate },
     runningMode: 'VIDEO' as const,
     numPoses: 1,
   });
