@@ -1,5 +1,5 @@
 // Settings and progress, saved on this device only (spec, section 3).
-import { DEFAULTS, type Gate } from './game/freeze-watcher.ts';
+import { DEFAULTS } from './game/freeze-watcher.ts';
 
 // Private browsing may refuse storage: the game keeps playing without saving.
 export function load<T extends object>(key: string, fallback: T): T {
@@ -25,13 +25,9 @@ export const LIMITS = {
 export type Limited = keyof typeof LIMITS;
 
 export type Settings = Record<Limited, number> & {
-  game: 'freeze' | 'sneak';
   tab: 'move' | 'talk';
-  words: string[];
   cameraId: string; // '' = the default camera
 };
-
-const WORDS = ['rabbit', 'red', 'robot', 'run'];
 
 // Fixes bad values instead of breaking the round: a missing or non-numeric value becomes the default,
 // a number outside its limits is pulled inside, and a longest green below the shortest is raised to match.
@@ -43,19 +39,7 @@ export function fixSettings(raw: Record<string, unknown> = {}): Settings {
   }
   s.greenMaxMs = Math.max(s.greenMaxMs, s.greenMinMs);
   s.redMaxMs = Math.max(s.redMaxMs, s.redMinMs);
-  s.game = raw.game === 'sneak' ? 'sneak' : 'freeze'; // a saved Robot Says from before falls back
   s.tab = raw.tab === 'talk' ? 'talk' : 'move'; // Move or Talk tab (spec, section 15)
   s.cameraId = typeof raw.cameraId === 'string' ? raw.cameraId.slice(0, 200) : '';
-  // Typed as a comma list. Nothing saved gives the spec's words; an emptied list stays empty and switches the gate off.
-  const words = raw.words == null ? WORDS : Array.isArray(raw.words) ? raw.words : String(raw.words).split(',');
-  s.words = words.map((w) => String(w).trim().toLowerCase().slice(0, 30)).filter(Boolean).slice(0, 20);
   return s;
-}
-
-// What one round plays with. Say It to Sneak is Freeze Watcher with a word before every Green and a fixed
-// 3 second Green (spec, section 6). With no practice words there is nothing to ask for.
-export function roundSettings(s: Settings) {
-  const sneak = s.game === 'sneak';
-  const gate: Gate = sneak && s.words.length ? 'every' : 'off';
-  return { ...s, ...(sneak && { greenMinMs: 3000, greenMaxMs: 3000 }), gate };
 }

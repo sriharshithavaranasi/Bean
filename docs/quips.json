@@ -1,5 +1,5 @@
 {
-  "about": "Every line Bean speaks, and when. A copy for reading: the app speaks from the source files named in \"source\", not from this file. {word} is the practice word.",
+  "about": "Every line Bean speaks, and when. A copy for reading: the app speaks from the source files named in \"source\", not from this file.",
   "play": [
     {
       "when": "Red light starts",
@@ -24,16 +24,6 @@
       "when": "Kid got closer than the win distance during Red",
       "says": "You got me! You win!",
       "source": "app/signals.ts playCue"
-    },
-    {
-      "when": "Say It to Sneak: asking for the first word of the game",
-      "says": "Say your word to sneak closer! Say {word}",
-      "source": "app/main.ts askWord"
-    },
-    {
-      "when": "Say It to Sneak: asking for a word after the kid held still",
-      "says": "Great freezing! Say {word}",
-      "source": "app/main.ts askWord"
     }
   ],
   "tuningPage": [

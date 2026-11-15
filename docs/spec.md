@@ -4,7 +4,7 @@ Hackathon project, Entertainment track. A robot car plays Red Light, Green Light
 
 ## 1. Who it is for
 
-Kids who cannot easily join running games, mainly kids with limited mobility. They sneak by walking, crawling or rolling. A parent or therapist sets the pace and the practice words.
+Kids who cannot easily join running games, mainly kids with limited mobility. They sneak by walking, crawling or rolling. A parent or therapist sets the pace.
 
 ## 2. Scope
 
@@ -13,7 +13,7 @@ Priorities are used on every ticket.
 | Priority | Meaning | What is in it |
 | --- | --- | --- |
 | P0 | Needed for the demo | Red Light, Green Light on the real car, with music, lights and win detection, run from the parent app (section 13) |
-| P1 | Makes the pitch true | Parent app on a phone, speech practice, Say It to Sneak, grown-up settings, progress, multi-sensory signals |
+| P1 | Makes the pitch true | Parent app on a phone, speech practice, grown-up settings, progress, multi-sensory signals |
 | P2 | Stretch | Gyro spin, custom firmware |
 
 Out of scope: the camera, accounts, a server, a database, a native phone app.
@@ -67,7 +67,6 @@ Set-up: tape a straight lane about 1 m long in front of the car (the sensor read
 | Green | Head at 180 (looking away), LED green | Music plays, screen shows GO | A random time between the min and max look-away settings |
 | Red | Head at 90 (facing the kid), LED red | Music stops, screen shows FREEZE | A random time between the shortest and longest red light ends |
 | Caught | LED orange | "Caught" sound, voice "I saw you move! Game over." | Never: it ends the game, like a win. Play again starts a new one |
-| Waiting for word (P1) | Keeps facing the kid | Shows the practice word | The word is heard, or Good try is pressed |
 | Win | LED rainbow or white | Win sound | Play again is pressed |
 
 Catching movement, during Red:
@@ -85,11 +84,10 @@ Limits to say out loud in the demo: the webcam must see the kid's shoulders and 
 The parent picks a game. In both, the kid moves toward the robot and the distance sensor checks them.
 
 - **Red Light, Green Light (P0).** Section 5.
-- **Say It to Sneak (P1).** Red Light, Green Light with a practice word before every Green light and a fixed 3 second Green light. Every Green light is earned with a practice word.
 
 ## 7. Speech
 
-Web Speech API in Chrome. Recognition is weak on kids' voices, so the Good try button is always on screen whenever the app is listening. Only Say It to Sneak listens for words; Red Light, Green Light never asks the kid to speak.
+Web Speech API in Chrome. Recognition is weak on kids' voices, so the Good try button is always on screen whenever the app is listening. Only Talk with Bean listens; Red Light, Green Light never asks the kid to speak.
 
 ## 8. Signals
 
@@ -110,7 +108,6 @@ Labels are in plain words, as shown. Settings are saved on the device.
 
 | Setting | Choices or default |
 | --- | --- |
-| Game | Red Light, Green Light, Say It to Sneak |
 | Robot looks away by | Turning its head. Spinning the whole car is listed only when the P2 firmware is present |
 | Shortest green light | 3 s |
 | Longest green light | 7 s |
@@ -118,13 +115,12 @@ Labels are in plain words, as shown. Settings are saved on the device.
 | Shortest red light | 2.5 s |
 | Longest red light | 5 s |
 | Win when closer than | 12 cm |
-| Practice words (Say It to Sneak only) | rabbit, red, robot, run |
 
 Lane length stays at 150 cm, the sensor's limit, and is not shown to parents.
 
 ## 10. Progress (P1)
 
-Three totals on the main screen: Rounds, Wins, Word tries (shown only for Say It to Sneak). Times caught is counted but not shown, so the screen stays encouraging. One Reset button that asks first. Totals are saved on the device.
+Two totals on the main screen: Rounds and Wins. Times caught is counted but not shown, so the screen stays encouraging. One Reset button that asks first. Totals are saved on the device.
 
 ## 11. Code layout
 
@@ -173,13 +169,8 @@ Starting palette from the example: cream background `#fff8ef`, ink `#2b2140`, go
 
 Behaviour taken from the example:
 
-<<<<<<< Updated upstream
-- After a Red light held still, the robot praises the kid ("Great freezing!", "So still!", "I did not see a thing!").
-- Caught ends the game: Bean says so, and Play again starts a new one.
-=======
 - Bean's spoken lines (`app/signals.ts`): Red light "Red light! Hmm... I'm watchinggg...", caught "You moved!!", win "You got me! You win!". After a Red light held still it teases ("Heyy... Did you just move?" or "You're sneaky!"), or says "You're almost here!" when that Red light's last good reading was under 30 cm. The screen text is unchanged.
-- Caught ends when Kid is back at start is pressed, when the distance is back at the start distance, or after 8 seconds.
->>>>>>> Stashed changes
+- Caught ends the game: Bean says so, and Play again starts a new one.
 - Vibration: one short pulse on Green, two long pulses on Red, a pattern on a win.
 
 Not taken from the example:
@@ -237,8 +228,8 @@ Good try ends the kid's turn at any time, as in section 7. Stop ends the game an
 
 | | Move tab | Talk tab |
 | --- | --- | --- |
-| Games | Red Light, Green Light, Say It to Sneak | Talk with Bean |
-| Progress | Rounds, Wins; Word tries only for Say It to Sneak | Turns taken, Turns heard by the microphone |
+| Games | Red Light, Green Light | Talk with Bean |
+| Progress | Rounds, Wins | Turns taken, Turns heard by the microphone |
 | Settings | Section 9 rows for movement | Script, kid's first name, wait for an answer, AI chat, practice words |
 | Shared | Stage, Start, Stop, Good try, the Robot card | same |
 
@@ -287,4 +278,4 @@ Proposed by the speech area. It changes section 2 ("Out of scope: the camera"), 
 
 **Tuning.** `app/watch.html` opens the camera, draws the watched points and runs hands-free practice: a spoken 5 second countdown, then Green and Red lights until Stop, saying each result and listing the drift it measured, with a wiggle room slider. Use it on the real lane, with the real light, before the demo.
 
-**Code.** `app/camera.ts` (opens the camera, loads the model), `app/game/pose-moved.ts` and its tests, `app/watch.html`. In Red Light, Green Light and Say It to Sneak: `createGame` takes `poseWigglePct`, and `tick(now, cm, body)` keeps the webcam frames of each Red; at the end of the look time `poseMoved` decides. `main.ts` opens the camera into a hidden `<video>` when a round starts (a camera that will not open stops the Start, and says so), reads a frame each tick during Red, and closes it on Stop or the end of the game. Settings are saved in `bean-settings` as `cameraId` and `poseWigglePct`.
+**Code.** `app/camera.ts` (opens the camera, loads the model), `app/game/pose-moved.ts` and its tests, `app/watch.html`. In Red Light, Green Light: `createGame` takes `poseWigglePct`, and `tick(now, cm, body)` keeps the webcam frames of each Red; at the end of the look time `poseMoved` decides. `main.ts` opens the camera into a hidden `<video>` when a round starts (a camera that will not open stops the Start, and says so), reads a frame each tick during Red, and closes it on Stop or the end of the game. Settings are saved in `bean-settings` as `cameraId` and `poseWigglePct`.

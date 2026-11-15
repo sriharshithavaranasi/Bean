@@ -111,24 +111,11 @@ test('stop ends the round from Green, Red and Caught', () => {
   }
 });
 
-test('Red Light, Green Light (no gate): accept does nothing and Green follows a held Red', () => {
+test('Green follows a held Red', () => {
   const g = newGame();
   g.start(0, 180);
   g.tick(3000, null);
   assert.equal(run(g, 3100, 5500, () => 120), 'green');
-  g.accept(5600);
-  assert.equal(g.phase, 'green');
-});
-
-test('gate "every" (Say It to Sneak): a word before every Green, also at the start; caught still ends it', () => {
-  const g = createGame({ gate: 'every' }, () => 0);
-  g.start(0, 180);
-  assert.equal(g.phase, 'word');
-  g.accept(0);
-  g.tick(3000, null); // red
-  run(g, 3100, 5500, () => 120, sidestep(4500));
-  assert.equal(g.phase, 'caught');
-  assert.equal(g.tick(6000, 180), 'caught');
 });
 
 test('each Red lasts a random time between the shortest and longest red light', () => {

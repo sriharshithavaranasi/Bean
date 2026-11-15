@@ -94,7 +94,7 @@ button.primary { background: var(--accent); color: var(--on-accent); font-size: 
 body:not([data-phase="idle"], [data-phase="win"], [data-phase="caught"]) #start { background: var(--btn); }
 body:not([data-phase="idle"], [data-phase="win"], [data-phase="caught"]) #stop { background: var(--fg); color: #fff; }
 
-/* Totals are stickers in the colour of what they count: rounds = start yellow, wins = win, word tries = say.
+/* Totals are stickers in the colour of what they count: rounds = start yellow, wins = win.
    Talk: talks = start yellow, turns taken = win, heard by the mic = go. */
 /* 3.5rem: three across on a 320 px phone at normal text; two across when the text is made large. */
 #totals, #talk-totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(3.5rem, 1fr)); gap: 8px; text-align: center; }
@@ -104,7 +104,6 @@ body:not([data-phase="idle"], [data-phase="win"], [data-phase="caught"]) #stop {
 }
 #totals div:nth-child(1), #talk-totals div:nth-child(1) { --c: var(--accent); }
 #totals div:nth-child(2), #talk-totals div:nth-child(2) { --c: var(--win); }
-#totals div:nth-child(3) { --c: var(--say); }
 #talk-totals div:nth-child(3) { --c: var(--go); }
 #totals dt, #talk-totals dt { font-size: .8125rem; font-weight: 700; line-height: 1.25; }
 #totals dd, #talk-totals dd { font: 700 2.25rem/1.1 var(--font-display); }
@@ -151,7 +150,7 @@ input[type="range"]::-moz-range-track { box-sizing: border-box; height: 18px; bo
 input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; box-sizing: border-box; width: 30px; height: 30px; margin-top: -8px; border-radius: 50%; background: var(--accent); border: 2px solid var(--line); box-shadow: 0 3px 0 var(--line); }
 input[type="range"]::-moz-range-thumb { box-sizing: border-box; width: 30px; height: 30px; border-radius: 50%; background: var(--accent); border: 2px solid var(--line); box-shadow: 0 3px 0 var(--line); }
 
-/* The practice word list. */
+/* Text and choice rows in settings (the camera picker, Talk with Bean). */
 .words { display: grid; gap: 6px; padding: 12px 0; border-top: 1px solid var(--rule); }
 .words label { font-weight: 700; }
 .words input { font: 700 1.0625rem/1.2 var(--font-body); min-height: 48px; width: 100%; padding: 8px 12px; color: var(--fg); background: var(--surface); border: var(--bw) solid var(--line); border-radius: var(--radius-btn); }

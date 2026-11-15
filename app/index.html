@@ -49,16 +49,11 @@
         <dl id="totals">
           <div><dt>Rounds</dt><dd id="t-rounds">0</dd></div>
           <div><dt>Wins</dt><dd id="t-wins">0</dd></div>
-          <div><dt>Word tries</dt><dd id="t-words">0</dd></div>
         </dl>
       </section>
 
       <details id="settings" class="card">
         <summary>Grown-up settings</summary>
-        <fieldset class="choice"><legend>Game</legend>
-          <label><input id="s-freeze" type="radio" name="s-game" checked> Red Light, Green Light</label>
-          <label><input id="s-sneak" type="radio" name="s-game"> Say It to Sneak</label>
-        </fieldset>
         <div id="camera-row" class="words" hidden><label for="s-cameraId">Camera</label>
           <select id="s-cameraId"><option value="">Default camera</option></select></div>
         <div class="field"><label for="s-poseWigglePct">Webcam wiggle room <span class="vh">(percent of body)</span></label>
@@ -75,9 +70,6 @@
           <span class="num"><span class="val"><input id="s-redMax" type="number" inputmode="decimal" step="0.5"><span class="unit" aria-hidden="true">sec</span></span></span></div>
         <div class="field"><label for="s-winCm">Win when closer than <span class="vh">(cm)</span></label>
           <span class="num"><span class="val"><input id="s-winCm" type="number" inputmode="numeric"><span class="unit" aria-hidden="true">cm</span></span></span></div>
-        <div class="words"><label for="s-words">Practice words</label>
-          <input id="s-words" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="s-words-help">
-          <p id="s-words-help">Put a comma between words.</p></div>
       </details>
       </div>
 

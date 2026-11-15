@@ -65,7 +65,7 @@ Optional keys go in a `.env` file in the repo folder (git ignores it), set befor
 ### 5. Connect and play
 
 1. Connect the car by cable: press **Connect by cable**, then pick the car's port (unplug and replug the car to see which one it is). On Windows it shows as `USB-SERIAL CH340`; if no such port appears, install the CH340 driver (`CH341SER.EXE` from wch-ic.com) and replug. The car resets and takes about 2 seconds to wake up. Set the shield's switch (next to the USB port) to **upload** first: on **cam**, the camera board holds the line the cable uses and the car hears nothing.
-2. Open **Grown-up settings** to pick the game (Red Light, Green Light or Say It to Sneak).
+2. Open **Grown-up settings** to set the lights, the camera and the webcam wiggle room.
 3. The kid stands on the start line, facing Bean.
 4. Press **Start**. Turn the volume up: the music, voice and cues come from the laptop.
 5. Green light: Bean looks away and the kid sneaks closer. Red light: Bean looks back and the kid freezes. Moving during Red light sends the kid back to the start. Reaching Bean wins.

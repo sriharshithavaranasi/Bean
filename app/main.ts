@@ -4,8 +4,8 @@ import type { Frame } from './game/pose-moved.ts';
 import { makeMockRobot } from './robot-mock.ts';
 import { connectSerial } from './robot-serial.ts';
 import { playCue, praise, say, silence, unlockAudio } from './signals.ts';
-import { canHear, listenFor, stopListening } from './speech.ts';
-import { fixSettings, LIMITS, load, roundSettings, save, type Limited, type Settings } from './store.ts';
+import { stopListening } from './speech.ts';
+import { fixSettings, LIMITS, load, save, type Limited, type Settings } from './store.ts';
 import { playTalk, stopTalk } from './talk-play.ts';
 import type { Robot } from './robot.ts';
 
@@ -27,7 +27,7 @@ const SCREEN: Record<string, { status?: string; hint: string; glyph: string }> =
   word: { status: 'Say your word', hint: 'Say it out loud, or press Good try.', glyph: 'M4 4h16v12h-9l-5 4v-4H4z' },
   win: { status: 'You got me!', hint: 'You reached Bean!', glyph: 'M12 2l3 7 7 .6-5.3 4.7 1.7 7.2L12 17.8 5.6 21.5l1.7-7.2L2 9.6 9 9z' },
 };
-const LIGHT: Record<string, [number, number, number]> = { green: [0, 255, 0], red: [255, 0, 0], caught: [255, 80, 0], word: [0, 0, 255], win: [255, 255, 255] };
+const LIGHT: Record<string, [number, number, number]> = { green: [0, 255, 0], red: [255, 0, 0], caught: [255, 80, 0], win: [255, 255, 255] };
 
 // ---------- grown-up settings ----------
 // field id -> [game setting, how many of the game's units one of the field's units is]
@@ -40,8 +40,7 @@ const rulers: Record<string, HTMLInputElement> = {};
 const talking = () => $('tab-talk').getAttribute('aria-selected') === 'true';
 function settings() {
   const raw: Record<string, unknown> = {
-    game: $<HTMLInputElement>('s-sneak').checked ? 'sneak' : 'freeze',
-    words: $<HTMLInputElement>('s-words').value, tab: talking() ? 'talk' : 'move',
+    tab: talking() ? 'talk' : 'move',
     cameraId: $<HTMLSelectElement>('s-cameraId').value,
   };
   for (const [id, [key, unit]] of Object.entries(FIELDS)) {
@@ -53,12 +52,6 @@ function settings() {
 // The boxes show what the next round will really use: a bad value is fixed where the grown-up typed it.
 function showSettings(s: Settings) {
   for (const [id, [key, unit]] of Object.entries(FIELDS)) $<HTMLInputElement>(`s-${id}`).value = rulers[id].value = String(s[key] / unit);
-  // Say It to Sneak has a fixed Green (store.ts roundSettings), so its Green boxes are hidden; they keep their values.
-  for (const id of ['greenMin', 'greenMax']) $(`s-${id}`).closest<HTMLElement>('.field')!.hidden = s.game === 'sneak';
-  // Only Say It to Sneak asks for practice words.
-  $('s-words').closest<HTMLElement>('.words')!.hidden = $('t-words').parentElement!.hidden = s.game !== 'sneak';
-  $<HTMLInputElement>(`s-${s.game}`).checked = true;
-  $<HTMLInputElement>('s-words').value = s.words.join(', ');
   // Webcam: the camera picker shows when a camera is found.
   const box = $<HTMLSelectElement>('s-cameraId');
   if (![...box.options].some((o) => o.value === s.cameraId)) box.append(new Option('Saved camera', s.cameraId)); // before the list is read
@@ -98,7 +91,7 @@ for (const [id, [key, unit]] of Object.entries(FIELDS)) {
   ruler.addEventListener('input', () => ((input.value = ruler.value), changed()));
   input.addEventListener('change', () => settingChanged());
 }
-for (const id of ['s-freeze', 's-sneak', 's-words', 's-cameraId']) $(id).addEventListener('change', () => settingChanged());
+for (const id of ['s-cameraId']) $(id).addEventListener('change', () => settingChanged());
 showSettings(fixSettings(load('bean-settings', {})));
 
 // Lists the cameras so a grown-up can pick the Logitech. Names show once the browser has been allowed a camera.
@@ -118,8 +111,8 @@ if (!remote && navigator.mediaDevices) {
 if (matchMedia('(min-width: 860px)').matches) $<HTMLDetailsElement>('settings').open = true;
 
 // ---------- progress ----------
-// caught is counted but never shown (spec, section 10). words = every try, heard = the tries the microphone caught itself.
-const ZERO = { rounds: 0, wins: 0, words: 0, heard: 0, caught: 0 };
+// caught is counted but never shown (spec, section 10).
+const ZERO = { rounds: 0, wins: 0, caught: 0 };
 let totals = load('bean-progress', ZERO);
 function drawTotals() {
   for (const dd of document.querySelectorAll('#totals dd')) dd.textContent = String(totals[dd.id.slice(2) as keyof typeof ZERO]);
@@ -168,7 +161,6 @@ const closeCam = () => {
 let chain: Promise<unknown> = Promise.resolve();
 const queued = <T>(job: () => T) => (chain = chain.then(job).catch((e) => void console.error(e)));
 
-const chosenGame = () => document.querySelector<HTMLInputElement>('[name="s-game"]:checked')!.labels![0].textContent!.trim();
 let restartUntil = 0; // Restart was pressed once: a second press before this time restarts
 const over = (phase: string) => phase === 'idle' || phase === 'win' || phase === 'caught'; // no round running
 const startLabel = () =>
@@ -180,7 +172,7 @@ const tabWarn = (tab: string, label = '') => {
   $('tab-note').textContent = label && `Press ${label} again to stop the round.`;
 };
 const TALK_GLYPH = $('tab-talk').querySelector('path')!.getAttribute('d')!; // the speech bubble on the Talk tab
-const idleStatus = () => (talking() ? 'Talk with Bean' : `Let’s play ${chosenGame()}`);
+const idleStatus = () => (talking() ? 'Talk with Bean' : 'Let’s play Red Light, Green Light');
 function show(phase: string, hint = talking() ? 'Press Start, then take turns talking with Bean.' : SCREEN[phase].hint, status = phase === 'idle' ? idleStatus() : (SCREEN[phase].status ?? '')) {
   shown = phase;
   document.body.dataset.phase = phase;
@@ -213,37 +205,14 @@ function keepAwake() {
 }
 document.addEventListener('visibilitychange', keepAwake);
 
-// ---------- practice word ----------
-let round = roundSettings(fixSettings()); // the settings this round was started with
-let toldNoMic = false;
-function askWord(lead: string) {
-  const word = round.words[Math.floor(Math.random() * round.words.length)];
-  // Without speech recognition only the button is used: say so once.
-  const hint = canHear ? undefined : toldNoMic ? 'Press Good try when they say it.' : 'This browser cannot listen for words. Press Good try when they say it.';
-  toldNoMic = true;
-  show('word', hint, `Say “${word}”`);
-  listenFor([word], $('goodtry'), say(`${lead}Say ${word}`)).then((how) => {
-    if (!how) return; // the round was stopped
-    bump('words');
-    if (how === 'heard') bump('heard');
-    game.accept(performance.now());
-  });
-}
-
 async function enter(phase: string) {
-  const held = shown === 'red' && (phase === 'green' || phase === 'word');
+  const held = shown === 'red' && phase === 'green';
   if (phase === 'win') bump('wins');
   if (phase === 'caught') bump('caught');
-<<<<<<< Updated upstream
   if (phase === 'win' || phase === 'caught') closeCam();
-=======
   if (phase === 'red') lastCm = null; // only this Red light's readings say how close the kid is
->>>>>>> Stashed changes
-  if (phase === 'word') askWord(held ? 'Great freezing! ' : shown === 'idle' ? 'Say your word to sneak closer! ' : '');
-  else {
-    if (held) praise(lastCm);
-    show(phase);
-  }
+  if (held) praise(lastCm);
+  show(phase);
   playCue(phase);
   // Head first, then light: the firmware clears the LED on any other command.
   if (phase === 'green') await robot.lookAway();
@@ -260,12 +229,8 @@ setInterval(() => {
     // The head points away during Green, so there is nothing to measure.
     const cm = game.phase === 'green' ? null : await robot.distanceCm();
     if (cm != null) $('reading').textContent = `${cm} cm`;
-<<<<<<< Updated upstream
-    // During Red the webcam adds a frame: the kid's body, or null when nobody was found.
-=======
     if (cm != null && cm > 0 && cm < 150) lastCm = cm;
-    // During Red the webcam, when it watches, adds a frame: the kid's body, or null when nobody was found.
->>>>>>> Stashed changes
+    // During Red the webcam adds a frame: the kid's body, or null when nobody was found.
     let body: Frame | undefined;
     if (game.phase === 'red' && cam) {
       try {
@@ -303,7 +268,7 @@ function start() {
       playTalk({ show, say, light: (rgb) => void queued(() => robot.setLight(...rgb)), goodtry: $('goodtry') });
       return;
     }
-    round = roundSettings(settings());
+    const round = settings();
     const startCm = await robot.distanceCm();
     if (!startCm) {
       show('idle', 'Bean cannot see you. Stand in the lane, facing Bean, and press Start again.');
