@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeLink, makeRobot, parseReplies } from './robot.ts';
+import { headToward, makeLink, makeRobot, parseReplies } from './robot.ts';
 
 test('parses replies and keeps a partial one', () => {
   assert.deepEqual(parseReplies('{1_ok}{2_137}{3_1'), {
@@ -44,4 +44,30 @@ test('a link matches each reply to its command, and a missing reply is null', as
   assert.equal(await cm, 42);
   assert.deepEqual(sent[0], { H: '1', N: 21, D1: 2 });
   assert.equal(await link.robot.lookAway(), null); // no reply within 20 ms
+});
+
+// Talk: the webcam rides on the head. x is where the kid's nose is across the picture (0 left, 1 right).
+test('the head stays put while the kid is near the middle of the picture', () => {
+  for (const x of [0.5, 0.42, 0.58]) assert.equal(headToward(90, x), 90);
+});
+
+test('the head turns toward the kid, part of the way, so it settles instead of swinging past', () => {
+  const right = headToward(90, 0.9); // the kid is at the right of the picture: a smaller angle turns the head right
+  assert.ok(right < 90 && right > 90 - 0.4 * 45, String(right)); // less than the whole way for a 45 degree view
+  assert.equal(headToward(90, 0.1), 180 - right); // the same turn the other way
+  assert.equal(headToward(60, 0.9), right - 30); // from wherever the head is now
+});
+
+test('the head never turns past its limits', () => {
+  let angle = 90;
+  for (let i = 0; i < 20; i++) angle = headToward(angle, 1);
+  assert.equal(angle, 30);
+  for (let i = 0; i < 20; i++) angle = headToward(angle, 0);
+  assert.equal(angle, 150);
+});
+
+test('lookAt turns the head to an angle', async () => {
+  const sent: object[] = [];
+  await makeRobot(async (c) => (sent.push(c), 'ok')).lookAt(75);
+  assert.deepEqual(sent, [{ N: 5, D1: 1, D2: 75 }]);
 });

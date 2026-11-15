@@ -5,7 +5,12 @@
 // Gemini decides when the kid has finished and lets the kid talk over Bean. Needs the first name; ends when the
 // play time limit runs out. With mini games allowed, the kid can start Mad Libs or Guess the Animal by asking; Gemini runs the games from
 // its instructions, and the app only nudges Bean when the kid goes quiet. Speaking style is not used yet.
+// While they talk, Bean's head follows the kid: the webcam rides on the head and the pose model finds the kid's nose.
+import { openCamera } from './camera.ts';
+import { headSeen } from './game/pose-moved.ts';
 import type { Mode, ModeContext } from './mode.ts';
+import { HEAD_KID, headToward } from './robot.ts';
+import { load } from './store.ts';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const MODEL = 'models/gemini-3.1-flash-live-preview';
@@ -279,6 +284,24 @@ export function createTalk(ctx: ModeContext): Mode {
     };
   }
 
+  // ---------- Bean's head follows the kid ----------
+  // About three looks a second: each turn waits for the car to finish it, so the next look is at a still picture.
+  // No webcam, or it is not allowed: Bean talks without turning its head. Frames stay on the laptop (camera.ts).
+  async function followKid(mine: number) {
+    const on = () => mine === session && ctx.shown() === 'talk';
+    const cam = await openCamera($<HTMLVideoElement>('cam-video'), load('bean-settings', { cameraId: '' }).cameraId || undefined).catch(() => null);
+    let angle = HEAD_KID;
+    let unseen = 0; // looks in a row with no head in the picture
+    while (cam && on()) {
+      const body = cam.frame();
+      // After about 3 seconds with nobody in the picture, face the middle again, where the kid is most likely to come back.
+      const next = headSeen(body) ? ((unseen = 0), headToward(angle, body[0].x)) : ++unseen === 10 ? HEAD_KID : angle;
+      if (next !== angle) await ctx.queued(() => on() && ctx.robot().lookAt((angle = next)));
+      await new Promise((r) => setTimeout(r, 300));
+    }
+    cam?.close();
+  }
+
   // The play time limit: the mic closes, Bean says goodbye in its own voice, then the session ends.
   function timesUp(name: string) {
     clearInterval(timer);
@@ -326,6 +349,7 @@ export function createTalk(ctx: ModeContext): Mode {
       tick();
       timer = setInterval(tick, 1000);
       connect(name, $<HTMLInputElement>('t-minigames').checked, mine); // not awaited: Stop must work while Bean is waking up
+      followKid(mine).catch((e) => console.error(e)); // not awaited either: the webcam and the body model take a moment to load
     },
     stop() {
       clearInterval(timer);

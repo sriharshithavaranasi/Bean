@@ -16,7 +16,7 @@ const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getEleme
 const mock = makeMockRobot(
   () => Number($<HTMLInputElement>('distance').value),
   ({ head, light }) => {
-    if (head != null) $('mock-head').textContent = head === 90 ? 'Bean is facing the kid' : 'Bean is looking away';
+    if (head != null) $('mock-head').textContent = head === 90 ? 'Bean is facing the kid' : head === 180 ? 'Bean is looking away' : `Bean’s head is at ${head}°`;
     if (light) $('mock-light').style.background = light;
   },
 );

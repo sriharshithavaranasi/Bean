@@ -5,6 +5,20 @@
 export const HEAD_AWAY = 180;
 export const HEAD_KID = 90;
 
+// Talk with Bean: the webcam rides on the head, so turning the head moves the picture. x is where the kid's nose is
+// across the picture (0 left, 1 right). Returns the angle that brings the kid toward the middle of the picture, or the
+// same angle when the kid is near enough to it. Each turn goes only part of the way, so the head settles instead of swinging past.
+// shortcut: these four numbers are not measured on the car. If Bean turns away from the kid, the servo or the camera is
+// the other way round: make TURN negative. If the head swings back and forth, lower TURN; if it is slow to arrive, raise it.
+const TURN = 27; // degrees for a kid at the very edge to reach the middle: about 0.6 of the webcam's 45 degree view
+const NEAR = 0.12; // this close to the middle (as a share of the picture's width) the head stays put
+const [HEAD_MIN, HEAD_MAX] = [30, 150]; // short of the servo's ends, for the webcam's cable
+export function headToward(angle: number, x: number) {
+  const off = x - 0.5;
+  if (Math.abs(off) < NEAR) return angle;
+  return Math.round(Math.min(HEAD_MAX, Math.max(HEAD_MIN, angle - off * TURN))); // 0 is to the right, 180 to the left
+}
+
 export type Command = Record<string, number>;
 export type Send = (command: Command, wantReply: boolean) => Promise<string | null>;
 export type Robot = ReturnType<typeof makeRobot>;
@@ -13,6 +27,7 @@ export function makeRobot(send: Send) {
   return {
     lookAway: () => send({ N: 5, D1: 1, D2: HEAD_AWAY }, true),
     lookAtKid: () => send({ N: 5, D1: 1, D2: HEAD_KID }, true),
+    lookAt: (angle: number) => send({ N: 5, D1: 1, D2: angle }, true),
     // The firmware switches the LED off when any other mode command arrives,
     // so set the light after the head, never before.
     setLight: (r: number, g: number, b: number) => send({ N: 8, D1: 0, D2: r, D3: g, D4: b }, true),
