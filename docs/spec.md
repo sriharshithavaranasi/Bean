@@ -77,7 +77,7 @@ Catching movement, during Red:
 2. The webcam decides, as in section 16, after every frame: the catch lands when the kid moves, not when the Red light ends. The distance sensor no longer catches anyone: on the car it was inconsistent and gave many false catches.
 3. When the kid's head is out of the picture (too close, or nobody found), the pose is not trusted: a change in the picture itself is the catch, as in section 16.
 
-Win: during Red, after the time to freeze, every reading under the win distance (30 cm) for half a second. One close reading is not enough: the sensor gives stray echoes. A far reading, a 0 or a missing reading starts the half second again, and moving in during it is still caught.
+Win: during Red, after the time to freeze, every reading under the win distance (30 cm) for one second. One close reading is not enough: the sensor gives stray echoes. A far reading, a 0 or a missing reading starts the second again, and moving in during it is still caught.
 
 Limits to say out loud in the demo: the webcam must see the kid's head, shoulders and hips to forgive hands and heads; closer than that, any change in the picture counts as moving.
 
@@ -116,7 +116,7 @@ Labels are in plain words, as shown. Settings are saved on the device.
 | Time to freeze before the robot checks | 1 s |
 | Shortest red light | 2.5 s |
 | Longest red light | 5 s |
-| Win when closer than | 30 cm, held for half a second |
+| Win when closer than | 30 cm, held for one second |
 
 Lane length stays at 150 cm, the sensor's limit, and is not shown to parents.
 
@@ -228,7 +228,7 @@ Proposed by the speech area. It changes section 2 ("Out of scope: the camera"), 
 
 **When the head is out of the picture.** Close to the camera the kid's head leaves the picture, and the pose model then finds nobody or guesses, so the pose is trusted only in frames where the nose is in the picture (`headSeen`). In every other frame the picture itself is watched (`app/game/picture-moved.ts`): each frame is shrunk to a 64 by 48 grey picture and compared with the Red light's first picture, with the middle change taken out so the camera adjusting its exposure does not count. The kid is caught when more than 10 % of the picture changed (`pictureChangePct`; a pixel counts when its grey level moved more than 25 of 255). Both numbers are arbitrary: see the table below. In this mode hands and heads count, and so does anyone else moving in the picture. The distance sensor is never used for this. A round does not start without the webcam.
 
-**What stays the same.** The distance sensor still detects the win (under 30 cm for half a second during Red) and still records the start distance. Green, Red, Caught and Win, their timing and their signals are unchanged.
+**What stays the same.** The distance sensor still detects the win (under 30 cm for one second during Red) and still records the start distance. Green, Red, Caught and Win, their timing and their signals are unchanged.
 
 **Settings (added to section 9).**
 

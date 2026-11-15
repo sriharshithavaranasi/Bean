@@ -11,7 +11,7 @@ export const DEFAULTS = {
   redMaxMs: 5000,
   settleMs: 1000, // head is still turning and the kid is still stopping
   winCm: 30,
-  winHoldMs: 500, // every reading must stay under the win distance this long: one stray echo from the sensor is not a win
+  winHoldMs: 1000, // every reading must stay under the win distance this long: one stray echo from the sensor is not a win
   maxRedLights: 12, // after this many Red lights with no catch and no win, nobody is playing: the game ends
   poseWigglePct: 20, // webcam wiggle room, in % of shoulder width; retune on watch.html (was 15 % of torso length)
   pictureChangePct: 10, // head out of the picture: % of the picture that may change. shortcut: arbitrary, never measured (spec, section 16); tune it on watch.html if it catches wrongly

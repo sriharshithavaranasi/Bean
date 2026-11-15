@@ -41,10 +41,10 @@ test('full round: held still, then a win', () => {
   assert.equal(run(g, 3100, 5400, () => 120), 'red');
   assert.equal(g.tick(5500, 120, body()), 'green');
 
-  // Next Red at 8500, kid is touching the robot: win once the freeze time is over and the reading has held for half a second.
+  // Next Red at 8500, kid is touching the robot: win once the freeze time is over and the reading has held for a second.
   assert.equal(g.tick(8500, null), 'red');
-  assert.equal(run(g, 8600, 9900, () => 6), 'red');
-  assert.equal(g.tick(10000, 6), 'win');
+  assert.equal(run(g, 8600, 10400, () => 6), 'red');
+  assert.equal(g.tick(10500, 6), 'win');
 });
 
 test('the game starts with a 3 second countdown, then the first Green', () => {
@@ -137,23 +137,23 @@ test('one stray close reading is not a win', () => {
   assert.equal(run(g, 4600, 5400, () => 120), 'red');
 });
 
-test('the win comes when every reading has been under the win distance for half a second', () => {
+test('the win comes when every reading has been under the win distance for a second', () => {
   const g = redLight();
-  assert.equal(run(g, 3100, 4400, () => 25), 'red'); // under 30 cm, but the half second starts after the time to freeze
-  assert.equal(g.tick(4500, 25, body()), 'win');
+  assert.equal(run(g, 3100, 4900, () => 25), 'red'); // under 30 cm, but the second starts after the time to freeze
+  assert.equal(g.tick(5000, 25, body()), 'win');
 });
 
-test('a far reading, or none, starts the half second again', () => {
+test('a far reading, or none, starts the second again', () => {
   for (const gap of [120, 0, null]) {
     const g = redLight();
     assert.equal(run(g, 4000, 4300, () => 25), 'red');
     assert.equal(g.tick(4400, gap, body()), 'red');
-    assert.equal(run(g, 4500, 4900, () => 25), 'red');
-    assert.equal(g.tick(5000, 25, body()), 'win');
+    assert.equal(run(g, 4500, 5400, () => 25), 'red');
+    assert.equal(g.tick(5500, 25, body()), 'win'); // on the Red light's last tick: the win is checked before Green
   }
 });
 
-test('moving in during Red is caught before the half second is up', () => {
+test('moving in during Red is caught before the second is up', () => {
   const g = redLight();
   assert.equal(g.tick(4000, 25, body()), 'red');
   assert.equal(g.tick(4100, 25, body(0.1)), 'caught');
