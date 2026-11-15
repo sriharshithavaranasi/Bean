@@ -203,7 +203,7 @@ The Talk tab holds Talk with Bean. Its game was removed on 2026-11-15; only its 
 | Setting | Choices or default |
 | --- | --- |
 | First name | empty (Start needs it) |
-| Age | a number from 2 to 12, empty by default. Start needs it (red message under the field otherwise), but nothing else uses it yet |
+| Age | a number, empty by default. Start needs it (red message under the field otherwise), but nothing else uses it yet |
 | Speaking style | Natural (default), Witty, Boring |
 | Play time limit | 1 to 10 minutes, default 5 (to keep sessions short) |
 | Allow mini games | A checkbox (off by default), above the list of mini games: 🤪 Mad Libs, 🦁 Guess the Animal |

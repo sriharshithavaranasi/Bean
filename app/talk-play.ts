@@ -299,8 +299,7 @@ export function createTalk(ctx: ModeContext): Mode {
     showsDistance: false,
     async start() {
       const name = nameBox.value.replace(/[^\p{L} '-]/gu, '').trim().slice(0, 20); // it goes into Bean's instructions
-      const age = Number(ageBox.value);
-      const ageOk = Number.isInteger(age) && age >= 2 && age <= 12;
+      const ageOk = ageBox.value.trim() !== ''; // a number box: anything typed in it is a number
       fieldError(nameBox, !name);
       fieldError(ageBox, !ageOk);
       if (!name || !ageOk) {
