@@ -15,8 +15,6 @@ const TRACKED = [11, 12, 23, 24, 25, 26, 27, 28];
 let cam: Awaited<ReturnType<typeof openCamera>> | null = null;
 let collecting: Frame[] | null = null; // frames of the current check (the pose when the head is in the picture, else null), or null
 let shots: Picture[] = []; // the same frames as small grey pictures
-// Every frame of the last practice, for Save frames: time, light, each point as [x, y, visibility], and the small grey picture (base64).
-let recorded: { t: number; phase?: string; body: number[][] | null; pic: string }[] = [];
 
 const note = (text: string) => $('log').append(Object.assign(document.createElement('li'), { textContent: text }));
 wiggleBox.oninput = () => ($<HTMLOutputElement>('wiggle-out').value = Number(wiggleBox.value).toFixed(2));
@@ -57,7 +55,6 @@ function loop() {
     collecting.push(headSeen(body) ? body : null);
     shots.push(picture);
   }
-  if (running) recorded.push({ t: Math.round(performance.now()), phase: document.body.dataset.phase, body: body && body.map((p) => [p.x, p.y, p.visibility ?? 0].map((n) => Math.round(n * 1e4) / 1e4)), pic: btoa(String.fromCharCode(...picture)) });
   ctx.clearRect(0, 0, 640, 480);
   for (const [i, p] of (body ?? []).entries()) {
     if ((p.visibility ?? 0) < 0.5) continue;
@@ -79,17 +76,10 @@ const say = (text: string) => {
 };
 let running = false;
 stopButton.onclick = () => (running = false);
-// Saves the last practice's body points and small grey pictures as bean-frames.json (the browser's Downloads folder), to replay a wrong catch off the lane.
-$('save').onclick = () => {
-  const video = $<HTMLVideoElement>('video');
-  const file = new Blob([JSON.stringify({ video: [video.videoWidth, video.videoHeight], camera: camBox.selectedOptions[0].text, wiggle: Number(wiggleBox.value), frames: recorded })]);
-  Object.assign(document.createElement('a'), { href: URL.createObjectURL(file), download: 'bean-frames.json' }).click();
-};
 $('copy').onclick = () => navigator.clipboard.writeText([...$('log').children].map((li) => li.textContent).join('\n'));
 
 tryButton.onclick = async () => {
   running = true;
-  recorded = [];
   tryButton.disabled = true;
   stopButton.disabled = false;
   for (let n = 5; n > 0 && running; n--) {
