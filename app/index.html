@@ -57,6 +57,8 @@
         <button id="start" class="primary">Start</button>
         <button id="stop">Stop</button>
       </div>
+      <!-- Dev tool for demos: hold it, or the M key, to cut the mic during a Talk session (talk-play.ts). -->
+      <button id="mute" type="button" aria-pressed="false">Hold M to mute</button>
       <!-- Shown during a Talk session when mini games are allowed (CSS). -->
       <p id="talk-tip">Say “Let’s play <span aria-hidden="true">🤪</span> Mad Libs!” or “Let’s play <span aria-hidden="true">🦁</span> Guess the Animal!”</p>
 
@@ -107,7 +109,8 @@
               <input id="t-name" type="text" autocomplete="off" spellcheck="false" maxlength="20" aria-describedby="t-name-error">
               <p id="t-name-error" class="error" role="alert" hidden>Enter a first name to start.</p></div>
             <div class="words"><label for="t-age">Age</label>
-              <input id="t-age" type="number" inputmode="numeric" min="2" max="12" step="1" placeholder="For example 6"></div>
+              <input id="t-age" type="number" inputmode="numeric" min="2" max="12" step="1" placeholder="For example 6" aria-describedby="t-age-error">
+              <p id="t-age-error" class="error" role="alert" hidden>Enter an age from 2 to 12 to start.</p></div>
             <fieldset class="choice"><legend>Speaking style</legend>
               <label><input type="radio" name="t-style" value="natural" checked> Natural</label>
               <label><input type="radio" name="t-style" value="witty"> Witty</label>

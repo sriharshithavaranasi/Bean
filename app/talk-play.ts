@@ -84,11 +84,13 @@ export function createTalk(ctx: ModeContext): Mode {
   const time = $<HTMLInputElement>('t-time');
   time.addEventListener('input', () => ($('t-time-out').textContent = `${time.value} min`)); // the label follows the slider
   const nameBox = $<HTMLInputElement>('t-name');
-  const nameError = (show: boolean) => {
-    $('t-name-error').hidden = !show;
-    nameBox.setAttribute('aria-invalid', String(show));
+  const ageBox = $<HTMLInputElement>('t-age'); // required to start, but not used yet
+  // A red message under a field that Start needs; typing in the field clears it.
+  const fieldError = (box: HTMLInputElement, show: boolean) => {
+    $(`${box.id}-error`).hidden = !show;
+    box.setAttribute('aria-invalid', String(show));
   };
-  nameBox.addEventListener('input', () => nameError(false));
+  for (const box of [nameBox, ageBox]) box.addEventListener('input', () => fieldError(box, false));
 
   let timer: ReturnType<typeof setInterval> | undefined;
   let session = 0; // Stop and Start change it, so nothing from an old session lands in the next one
@@ -131,6 +133,21 @@ export function createTalk(ctx: ModeContext): Mode {
     if (!stillOrb) requestAnimationFrame(frame);
   }
 
+  // ---------- push to mute ----------
+  // A dev tool for demos: hold the button or the M key to cut the mic (to talk to people nearby). Nothing else changes.
+  const muteBtn = $<HTMLButtonElement>('mute');
+  let muted = false;
+  function setMuted(on: boolean) {
+    muted = on;
+    live?.mic?.getAudioTracks().forEach((t) => (t.enabled = !on));
+    muteBtn.setAttribute('aria-pressed', String(on));
+    muteBtn.textContent = on ? '🔇 Mic muted' : 'Hold M to mute';
+  }
+  muteBtn.addEventListener('pointerdown', () => setMuted(true));
+  for (const end of ['pointerup', 'pointerleave']) muteBtn.addEventListener(end, () => setMuted(false));
+  addEventListener('keydown', (e) => e.key.toLowerCase() === 'm' && ctx.shown() === 'talk' && setMuted(true));
+  addEventListener('keyup', (e) => e.key.toLowerCase() === 'm' && setMuted(false));
+
   // ---------- the live session ----------
   function endLive() {
     const me = live;
@@ -141,6 +158,7 @@ export function createTalk(ctx: ModeContext): Mode {
     me.inCtx?.close();
     me.out.close();
     setGame('');
+    setMuted(false);
   }
   function stopVoice(me: Live) {
     for (const s of me.playing) s.stop();
@@ -172,6 +190,7 @@ export function createTalk(ctx: ModeContext): Mode {
     const node = new AudioWorkletNode(inCtx, 'mic');
     inCtx.createMediaStreamSource(mic).connect(node);
     Object.assign(me, { mic, inCtx });
+    mic.getAudioTracks().forEach((t) => (t.enabled = !muted)); // muted before the mic was ready
     let parts: Float32Array[] = [];
     let count = 0;
     node.port.onmessage = ({ data }: MessageEvent<Float32Array>) => {
@@ -280,9 +299,12 @@ export function createTalk(ctx: ModeContext): Mode {
     showsDistance: false,
     async start() {
       const name = nameBox.value.replace(/[^\p{L} '-]/gu, '').trim().slice(0, 20); // it goes into Bean's instructions
-      nameError(!name);
-      if (!name) {
-        nameBox.focus();
+      const age = Number(ageBox.value);
+      const ageOk = Number.isInteger(age) && age >= 2 && age <= 12;
+      fieldError(nameBox, !name);
+      fieldError(ageBox, !ageOk);
+      if (!name || !ageOk) {
+        (name ? ageBox : nameBox).focus();
         return;
       }
       await ctx.robot().lookAtKid();

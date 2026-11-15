@@ -134,6 +134,9 @@ body[data-phase="talk"][data-game="guess_the_animal"] { --state-soft: color-mix(
 .toggle-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0 8px; border-top: 1px solid var(--rule); }
 .toggle-row label { font-weight: 700; cursor: pointer; }
 .toggle-row input { flex: none; width: 28px; height: 28px; margin: 0; accent-color: var(--fg); cursor: pointer; }
+#mute { display: none; justify-self: center; min-height: 36px; padding: 4px 14px; font-size: .875rem; box-shadow: none; }
+body[data-phase="talk"] #mute { display: block; }
+#mute[aria-pressed="true"] { background: var(--stop); color: var(--on-stop); }
 #talk-tip { display: none; text-align: center; font: 700 1.5rem var(--font-display); color: var(--muted); }
 body[data-phase="talk"]:has(#t-minigames:checked) #talk-tip { display: block; }
 .game-names { list-style: none; margin: 0; padding: 0 0 12px; display: flex; flex-wrap: wrap; gap: 8px; }
