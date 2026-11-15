@@ -13,7 +13,7 @@ Priorities are used on every ticket.
 | Priority | Meaning | What is in it |
 | --- | --- | --- |
 | P0 | Needed for the demo | Red Light, Green Light on the real car, with music, lights and win detection, run from the parent app (section 13) |
-| P1 | Makes the pitch true | Parent app on a phone, speech practice, grown-up settings, progress, multi-sensory signals |
+| P1 | Makes the pitch true | Parent app, speech practice, grown-up settings, progress, multi-sensory signals |
 | P2 | Stretch | Gyro spin, custom firmware |
 
 Out of scope: the camera, accounts, a server, a database, a native phone app.
@@ -24,9 +24,9 @@ Group play needs no extra work. The sensor sees the nearest person in the lane, 
 
 1. **The robot turns its head, not its body.** The servo head is faster and the car stays in the lane. Spinning the car with the gyroscope is P2.
 2. **The car runs Elegoo's stock firmware.** It already accepts every command the core game needs over serial, so P0 needs no Arduino code. Custom firmware is only for the P2 add-ons.
-3. **The laptop talks to the car over a USB cable** with the Web Serial API (Chrome or Edge on a laptop). The head turns and the car does not drive, so a cable is fine. A phone cannot use the USB cable, so the parent's phone reaches the car through the laptop (section 13).
+3. **The laptop talks to the car over a USB cable** with the Web Serial API (Chrome or Edge on a laptop). The head turns and the car does not drive, so a cable is fine.
 4. **The app is one static web page** in plain JavaScript modules with no build step. Game logic is pure functions tested with `node --test`.
-5. **All sound, speech and vibration come from the laptop or phone.** The kit has no speaker.
+5. **All sound and speech come from the laptop.** The kit has no speaker.
 6. **Every screen works against a mock robot** (a distance slider), so app work never waits for the car.
 7. **Progress and settings live in `localStorage`.** Nothing leaves the device.
 
@@ -121,7 +121,7 @@ Lane length stays at 150 cm, the sensor's limit, and is not shown to parents.
 
 ## 10. Progress (P1)
 
-Two totals on the main screen: Rounds and Wins. Times caught is counted but not shown, so the screen stays encouraging. One Reset button that asks first. Totals are saved on the device.
+Two totals on the main screen: Games played (games that ended in a catch or a win; a Stop or "Bean stopped" does not count) and Wins. Times caught is counted but not shown, so the screen stays encouraging. One Reset button that asks first. Totals are saved on the device.
 
 ## 11. Code layout
 
@@ -132,8 +132,8 @@ app/
   index.html        play screen, settings, dashboard
   app.css           the one stylesheet: design tokens in :root, then layout and controls
   fonts/            Fredoka and Nunito (OFL), served locally so the demo works offline
-  main.ts           the shell: tabs, stage, Start / Stop / Restart, robot link, screen lock, phone remote
-  mode.ts           the contract between the shell and each activity (screen, start, stop, phone sync)
+  main.ts           the shell: tabs, stage, Start / Stop / Restart, robot link, screen lock
+  mode.ts           the contract between the shell and each activity (screen, start, stop)
   play.ts           Play with Bean: its settings, progress, webcam and Red Light, Green Light loop
   talk-play.ts      Talk with Bean: its settings, progress and turn-by-turn talk
   camera.ts         opens the webcam and the pose model
@@ -155,11 +155,11 @@ firmware/           P2 only
 - A full round from Start to Win on the taped lane.
 - The same round on the mock robot with the car unplugged.
 
-## 13. Parent app (phone)
+## 13. Parent app
 
-The reference is the team's single-page example (`message.txt`, shared 2026-11-13). The app is the grown-up's remote: the kid watches the robot, and the parent holds the phone.
+The reference is the team's single-page example (`message.txt`, shared 2026-11-13). The app runs on the laptop next to the car: the kid watches the robot, and the grown-up uses the laptop.
 
-One page, phone first, in this order:
+One page, in this order:
 
 1. **Stage.** A big round light in the state colour, a status line ("Bean is ready", "Green light!", "Red light!", "I saw you!", "You got me!"), a hint line and the live distance.
 2. **Start and Stop.** Stop is always available. It ends the round, silences music and speech, stops listening, turns the robot to face the kid and sends the stop command. During a round Start becomes Restart, which asks first: a second press within 4 seconds restarts.
@@ -182,10 +182,6 @@ Not taken from the example:
 
 - It checks for a win during Green. With the head turned away the sensor cannot see the kid, so the win is checked when the robot looks (section 5).
 - It catches movement away from the robot as well as toward it. Section 5 catches movement toward the robot only.
-
-**Phone to car.** A phone cannot open the USB serial port. The recommended route (ticket "Control the robot from a phone") keeps the laptop next to the car: the laptop tab holds the USB link, runs the game and plays the sound, and the phone opens the same page from the laptop over the local network as a remote. Speech recognition stays on the laptop, because a phone page loaded over plain HTTP may not use the microphone.
-
-This route is built. Start the server with `node scripts/serve.ts --lan` (or set `HOST`); without it the server stays on localhost and the phone remote is off. The laptop tab shows the phone address with a 6-digit code that changes on every server start. A phone with the right code copies the laptop's stage (status, light, buttons, progress and settings) within half a second and sends Start, Stop, the grown-up buttons, Reset and settings back. The laptop does a press only while that button is on its own screen. A wrong code gets nothing, and after 20 wrong codes no phone may connect until the server restarts. Click once on the laptop tab before playing (Connect by cable does this), so the browser lets it play sound, and keep that tab in front, because a background tab runs its timers slowly. Venue WiFi often blocks device-to-device traffic: use a phone hotspot.
 
 ## 14. Custom firmware protocol (P2)
 
@@ -223,7 +219,7 @@ Proposed by the speech area. It changes the scope in section 2 in two places, so
 
 Good try ends the kid's turn at any time, as in section 7. Stop ends the game and silences Bean at once. A game is 6 turns, then Bean says goodbye.
 
-**AI chat, server side.** `POST /talk` on `scripts/serve.ts`, laptop only (same `loopback` and JSON body checks as the relay). The body is the last few turns as text. The server adds the system instruction and the key from the `GEMINI_API_KEY` environment variable and calls a fast Flash-Lite model. The key never reaches the browser and is never written to a file in the repo. Without the variable, `/talk` answers 503 and the game stays scripted.
+**AI chat, server side.** `POST /talk` on `scripts/serve.ts`, laptop only (same `loopback` and JSON body checks as `/voice`). The body is the last few turns as text. The server adds the system instruction and the key from the `GEMINI_API_KEY` environment variable and calls a fast Flash-Lite model. The key never reaches the browser and is never written to a file in the repo. Without the variable, `/talk` answers 503 and the game stays scripted.
 
 **Bean's voice (ElevenLabs).** Every line Bean says, in both games, goes through `say` in `app/signals.ts`. It asks `POST /voice` (`scripts/voice.ts`, laptop only, same checks as `/talk`) for the line as MP3 in voice `PKtsQbgKDa44YlyHnywy` (override with `ELEVENLABS_VOICE_ID`) on `eleven_flash_v2_5` (override with `ELEVENLABS_MODEL`), with the key from `ELEVENLABS_API_KEY`. Each line is fetched once per page load and kept; the game's fixed cues are fetched when Start unlocks sound, so "Red light!" is on time. With no key, no internet or no answer in 1.5 s, the browser's voice says the line and `/voice` rests for a minute. The lines sent include the kid's first name and AI chat replies. The webcam practice page (`app/watch.ts`) keeps the browser's voice.
 
@@ -234,11 +230,11 @@ Good try ends the kid's turn at any time, as in section 7. Stop ends the game an
 | | Move tab | Talk tab |
 | --- | --- | --- |
 | Games | Red Light, Green Light | Talk with Bean |
-| Progress | Rounds, Wins | Turns taken, Turns heard by the microphone |
+| Progress | Games played, Wins | Turns taken, Turns heard by the microphone |
 | Settings | Section 9 rows for movement | Script, kid's first name, wait for an answer, AI chat, practice words |
 | Shared | Stage, Start, Stop, Good try, the Robot card | same |
 
-Tabs are a real tab list (`role="tablist"`, arrow keys move between tabs, the chosen tab is remembered on the device). Switching tab during a round asks first, as Restart does: the first press turns the pressed tab amber with "Press again to stop", and a second press within 4 seconds stops the round and switches. The kid's hint on the stage is never replaced by the warning. The phone remote copies the chosen tab.
+Tabs are a real tab list (`role="tablist"`, arrow keys move between tabs, the chosen tab is remembered on the device). Switching tab during a round asks first, as Restart does: the first press turns the pressed tab amber with "Press again to stop", and a second press within 4 seconds stops the round and switches. The kid's hint on the stage is never replaced by the warning.
 
 **Settings (added to section 9).**
 

@@ -16,7 +16,6 @@ The full design is in [docs/spec.md](docs/spec.md).
 - A laptop with Chrome or Edge, and [Node.js](https://nodejs.org) 22.18 or newer.
 - The USB cable from the kit.
 - Tape, and about 1.5 m of clear floor (the lane is 1 m).
-- Optional: a phone on the same WiFi as the laptop, to run the game from across the room.
 
 No car yet? Skip to step 4. The app plays with a pretend robot: a slider stands in for the distance sensor.
 
@@ -45,7 +44,7 @@ Say these out loud before playing, so nobody is surprised:
 
 - The sensor sees a narrow cone straight ahead. Keep the kid inside the lane.
 - It sees movement toward the car, not side to side.
-- The real car needs Chrome or Edge on a laptop. A phone cannot plug into the car; it works as a remote through the laptop (step 6).
+- The real car needs Chrome or Edge on a laptop.
 
 ### 4. Start the app
 
@@ -72,22 +71,6 @@ Optional keys go in a `.env` file in the repo folder (git ignores it), set befor
 
 If the car is lost (cable out, car off), the app says so and keeps playing with the pretend robot. Fix it and press the connect button again.
 
-### 6. Optional: run it from a phone
-
-The laptop stays next to the car and does the sound and listening. The phone becomes a remote.
-
-1. Start the server with the phone remote on:
-
-   ```sh
-   npm start -- --lan
-   ```
-
-2. On Windows, allow Node.js through the firewall when asked.
-3. Open http://localhost:8000 on the laptop and connect the car (step 5). That click also lets the laptop play sound. Keep that tab in front.
-4. The Robot card on the laptop shows an address with a 6-digit code. Open that address on the phone.
-
-The phone shows the same game screen and sends the button presses to the laptop. A phone without the code cannot control the game. Venue WiFi often blocks phones from reaching laptops: if the phone cannot connect, put both on a phone hotspot.
-
 ### Not yet checked on the real car
 
 Checked on the car: the head and LED commands, distance readings over the cable, a full round in the app, the fallback when the cable comes out, the 15 cm wiggle room (#3), and the lane's length and width (#4). Still to check: catches over many real rounds (#11). See the open issues.
@@ -100,7 +83,7 @@ npm test
 npm run typecheck
 ```
 
-The app is plain HTML, CSS and TypeScript modules in `app/`, with no build step and no runtime dependencies. `scripts/serve.ts` strips the types as it serves each `.ts` file, so only erasable TypeScript is allowed (no enums, namespaces or parameter properties), and imports name the `.ts` file. Game logic is pure functions in `app/game/`, tested with `node --test`. `scripts/serve.ts` serves the app and runs the phone relay. `npm run typecheck` runs `tsc`; the `typescript` and `@types/node` dev dependencies are only for that.
+The app is plain HTML, CSS and TypeScript modules in `app/`, with no build step and no runtime dependencies. `scripts/serve.ts` strips the types as it serves each `.ts` file, so only erasable TypeScript is allowed (no enums, namespaces or parameter properties), and imports name the `.ts` file. Game logic is pure functions in `app/game/`, tested with `node --test`. `scripts/serve.ts` serves the app on localhost. `npm run typecheck` runs `tsc`; the `typescript` and `@types/node` dev dependencies are only for that.
 
 ## Working here with Claude Code
 

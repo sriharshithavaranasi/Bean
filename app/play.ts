@@ -48,7 +48,6 @@ export function createPlay(ctx: ModeContext): Mode {
     $('camera-row').hidden = !camerasFound;
   }
   function settingChanged(s = settings()) {
-    if (ctx.remote) ctx.send({ settings: s });
     showSettings(s);
     save('bean-settings', s);
   }
@@ -87,15 +86,29 @@ export function createPlay(ctx: ModeContext): Mode {
     );
     showSettings(fixSettings(load('bean-settings', {})));
   }
-  if (!ctx.remote && navigator.mediaDevices) {
+  if (navigator.mediaDevices) {
     fillCameras();
     navigator.mediaDevices.addEventListener('devicechange', fillCameras);
   }
   if (matchMedia('(min-width: 860px)').matches) $<HTMLDetailsElement>('settings').open = true;
 
+  // ---------- games list ----------
+  // The Play tab opens on the list (CSS shows it while data-view is "games"); a game's card opens its screen.
+  document.body.dataset.view = 'games';
+  $('game-rlgl').addEventListener('click', () => {
+    delete document.body.dataset.view;
+    $('start').focus();
+  });
+  // Back sits in the grown-up column, which is hidden during a round, so a running game is never left behind.
+  $('back-games').addEventListener('click', () => {
+    if (gameOver(ctx.shown()) && ctx.shown() !== 'idle') ctx.show('idle'); // a finished game reopens fresh
+    document.body.dataset.view = 'games';
+    $('game-rlgl').focus();
+  });
+
   // ---------- progress ----------
-  // caught is counted but never shown (spec, section 10).
-  const ZERO = { rounds: 0, wins: 0, caught: 0 };
+  // games = games played to the end (caught or won; not Stop, not "Bean stopped"). caught is counted but never shown (spec, section 10).
+  const ZERO = { games: 0, wins: 0, caught: 0 };
   let totals = load('bean-progress', ZERO);
   function drawTotals() {
     for (const dd of document.querySelectorAll('#totals dd')) dd.textContent = String(totals[dd.id.slice(2) as keyof typeof ZERO]);
@@ -134,6 +147,7 @@ export function createPlay(ctx: ModeContext): Mode {
   async function enter(phase: string) {
     const robot = ctx.robot();
     const held = ctx.shown() === 'red' && phase === 'green';
+    if (phase === 'win' || phase === 'caught') bump('games');
     if (phase === 'win') bump('wins');
     if (phase === 'caught') bump('caught');
     if (gameOver(phase)) closeCam();
@@ -190,14 +204,11 @@ export function createPlay(ctx: ModeContext): Mode {
     $('cam-status').hidden = false;
     fillCameras(); // the camera names show now that it is allowed
     $('reading').textContent = `${startCm} cm`;
-    bump('rounds');
     game = createGame(round);
     game.start(performance.now(), startCm);
     await enter(game.phase);
   }
 
-  // ---------- phone remote ----------
-  let mirrored = '';
   return {
     screen: SCREEN,
     showsDistance: true,
@@ -205,18 +216,6 @@ export function createPlay(ctx: ModeContext): Mode {
     stop() {
       game.stop();
       closeCam();
-    },
-    sync: {
-      state: () => ({ settings: settings(), totals }),
-      mirror(state) {
-        const s = state as { settings: Settings; totals: typeof ZERO };
-        totals = s.totals;
-        drawTotals();
-        // Settings are copied only when the laptop's change, so a box being typed in on the phone is left alone.
-        if (JSON.stringify(s.settings) !== mirrored) showSettings(s.settings);
-        mirrored = JSON.stringify(s.settings);
-      },
-      apply: (s) => settingChanged(fixSettings(s as Record<string, unknown>)),
     },
   };
 }

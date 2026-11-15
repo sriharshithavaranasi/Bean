@@ -1,4 +1,4 @@
-// Bean's page shell: the tabs, the stage, Start / Stop / Restart, the robot link, the screen lock and the phone remote.
+// Bean's page shell: the tabs, the stage, Start / Stop / Restart, the robot link and the screen lock.
 // Each activity is its own mode (mode.ts) with its own settings, progress and game: Play with Bean (play.ts) on the
 // Play tab and Talk with Bean (talk-play.ts) on the Talk tab. The shell never looks inside a mode.
 import type { Mode, ModeContext } from './mode.ts';
@@ -12,12 +12,6 @@ import { createTalk } from './talk-play.ts';
 import type { Robot } from './robot.ts';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
-// A phone opens the laptop's address with ?code=: it is then only a remote for the game running on the laptop.
-const remote = new URLSearchParams(location.search).get('code');
-const send = (message: object) =>
-  fetch(`/relay/press?code=${encodeURIComponent(remote!)}`, {
-    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(message),
-  }).catch(() => {});
 
 // ---------- robot ----------
 const mock = makeMockRobot(
@@ -35,7 +29,7 @@ const queued = <T>(job: () => T) => (chain = chain.then(job).catch((e) => void c
 
 // ---------- modes ----------
 let shown = 'idle';
-const ctx: ModeContext = { show, shown: () => shown, queued, robot: () => robot, remote, send };
+const ctx: ModeContext = { show, shown: () => shown, queued, robot: () => robot };
 const modes: Record<'move' | 'talk', Mode> = { move: createPlay(ctx), talk: createTalk(ctx) };
 type Tab = keyof typeof modes;
 let tab: Tab = load('bean-tab', { tab: 'move' }).tab === 'talk' ? 'talk' : 'move';
@@ -142,7 +136,7 @@ for (const t of ['move', 'talk'] as const) {
     });
   });
 }
-// Arrow keys, Home and End move between the tabs (ARIA tabs pattern). click() so a phone sends it to the laptop.
+// Arrow keys, Home and End move between the tabs (ARIA tabs pattern).
 $('tabs').addEventListener('keydown', (e) => {
   const other = (e.target as Element).id === 'tab-talk' ? 'move' : 'talk';
   const to = { ArrowLeft: other, ArrowRight: other, Home: 'move', End: 'talk' }[e.key];
@@ -186,64 +180,3 @@ $('connect').addEventListener('click', () => connectRobot(connectSerial, 'Check 
 
 showTab();
 show('idle');
-
-// ---------- phone remote (spec, section 13) ----------
-// The laptop sends what its screen shows; the phone copies it and sends its presses back through scripts/serve.ts.
-const CLICKS = ['start', 'stop', 'goodtry', 'reset', 'tab-move', 'tab-talk'];
-const TEXTS = ['status', 'hint', 'reading', 'cam-status', 'start', 'reset', 'warn-move', 'warn-talk', 'tab-note'];
-const HIDDEN = ['readout', 'cam-status', 'controls', 'parent', 'goodtry'];
-const snapshot = () => ({
-  phase: document.body.dataset.phase,
-  glyph: $('glyph-path').getAttribute('d')!,
-  text: Object.fromEntries(TEXTS.map((id) => [id, $(id).textContent] as const)),
-  hidden: Object.fromEntries(HIDDEN.map((id) => [id, $(id).hidden] as const)),
-  tab,
-  modes: Object.fromEntries(Object.entries(modes).map(([t, m]) => [t, m.sync?.state()] as const)),
-});
-function mirror(s: ReturnType<typeof snapshot>) {
-  if (!s.text) return; // the laptop tab has not sent anything yet
-  document.body.dataset.phase = s.phase;
-  $('glyph-path').setAttribute('d', s.glyph);
-  for (const [id, text] of Object.entries(s.text)) if ($(id).textContent !== text) $(id).textContent = text; // no repeat announcements
-  for (const [id, hidden] of Object.entries(s.hidden)) $(id).hidden = hidden;
-  if (s.tab !== tab) (tab = s.tab), showTab();
-  for (const [t, m] of Object.entries(modes)) if (s.modes[t] !== undefined) m.sync?.mirror(s.modes[t]);
-}
-
-if (remote) {
-  $('connect').hidden = $('mock').hidden = true;
-  $('link').textContent = 'Connecting to the laptop…';
-  // Capture phase: these buttons only ask the laptop.
-  addEventListener('click', (e) => {
-    const id = (e.target as Element).closest('button')?.id;
-    if (!id || !CLICKS.includes(id)) return;
-    e.stopImmediatePropagation();
-    send({ click: id });
-  }, true);
-  const stage = new EventSource(`/relay/state?code=${encodeURIComponent(remote)}`);
-  stage.onopen = () => ($('link').textContent = 'Phone remote. Bean plays the sound and listens on the laptop.');
-  stage.onmessage = (e) => mirror(JSON.parse(e.data));
-  stage.onerror = () => ($('link').textContent = 'Cannot reach the laptop. Check that both are on the same WiFi and the code is right.');
-} else {
-  fetch('/relay/code').then((r) => r.ok && r.json()).then((relay) => {
-    if (!relay) return; // the server was started without --lan
-    $('phone').hidden = false;
-    $('phone').textContent = relay.urls.length
-      ? `Phone remote: on a phone on the same WiFi, open ${relay.urls.join(' or ')}`
-      : 'Phone remote: this laptop is not on a network yet.';
-    let last = '';
-    setInterval(() => {
-      const now = JSON.stringify(snapshot());
-      if (now === last) return;
-      last = now;
-      fetch('/relay/state', { method: 'POST', headers: { 'content-type': 'application/json' }, body: now }).catch(() => {});
-    }, 150);
-    // A phone press does what the same press on the laptop does, and only while that button is on screen.
-    // Play's settings typed on the phone come as settings; tabs come as clicks, so a round is never left running.
-    new EventSource('/relay/commands').onmessage = (e) => {
-      const { click, settings: s } = JSON.parse(e.data);
-      if (CLICKS.includes(click) && !$(click).closest('[hidden]')) $(click).click();
-      else if (s) modes.move.sync?.apply(s);
-    };
-  }).catch(() => {});
-}

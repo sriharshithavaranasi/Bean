@@ -17,6 +17,18 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm3 6.5a1.5 1.5 0 1 0 0 .01Zm5 0a1.5 1.5 0 1 0 0 .01Zm5 0a1.5 1.5 0 1 0 0 .01Z"/></svg><span class="label">Talk to Bean</span><span class="warn" id="warn-talk"></span></button>
     </div>
 
+    <!-- Play with Bean's games (play.ts): the Play tab opens here, and picking a game opens its screen below. -->
+    <section id="games" aria-labelledby="games-h">
+      <h2 id="games-h">Pick a game</h2>
+      <ul class="game-list">
+        <li><button id="game-rlgl" class="game-card" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="1" width="12" height="22" rx="5" fill="var(--line)"/><circle cx="12" cy="6.5" r="2.8" fill="var(--stop)"/><circle cx="12" cy="12" r="2.8" fill="var(--wait)"/><circle cx="12" cy="17.5" r="2.8" fill="var(--go)"/></svg>
+          <strong>Red Light, Green Light</strong>
+          <span>Sneak up on Bean while it looks away. Freeze when it turns back!</span>
+        </button></li>
+      </ul>
+    </section>
+
     <div class="col">
       <section id="stage" class="card" aria-label="Game">
         <div id="light" aria-hidden="true">
@@ -40,6 +52,7 @@
 
     <div class="col">
       <div id="panel-move" class="col" role="tabpanel" aria-labelledby="tab-move">
+      <button id="back-games" class="back" type="button">← All games</button>
       <!-- First in this column, not under the game: on a phone the order is the same, and on a laptop the sticky game column fits the screen. -->
       <section id="progress" class="card" aria-labelledby="progress-h">
         <div class="head">
@@ -47,7 +60,7 @@
           <button id="reset">Reset</button>
         </div>
         <dl id="totals">
-          <div><dt>Rounds</dt><dd id="t-rounds">0</dd></div>
+          <div><dt>Games played</dt><dd id="t-games">0</dd></div>
           <div><dt>Wins</dt><dd id="t-wins">0</dd></div>
         </dl>
       </section>
@@ -84,7 +97,6 @@
           <button id="connect">Connect by cable</button>
           <p id="link" role="status">Playing with the pretend robot.</p>
         </div>
-        <p id="phone" hidden></p>
         <div id="mock">
           <label for="distance">Pretend robot: how far away the kid is <output id="distance-out" for="distance">180 cm</output></label>
           <input id="distance" type="range" min="0" max="200" value="180">
