@@ -92,6 +92,11 @@ button.primary { background: var(--accent); color: var(--on-accent); font-size: 
 /* During a round Stop is the loud button. Sizes stay put so a second tap on Start cannot land on Stop. */
 body:not([data-phase="idle"], [data-phase="win"], [data-phase="caught"], [data-phase="ended"]) #start { background: var(--btn); }
 body:not([data-phase="idle"], [data-phase="win"], [data-phase="caught"], [data-phase="ended"]) #stop { background: var(--fg); color: #fff; }
+/* Stop only matters while something runs: otherwise it is hidden and Start takes the whole row. */
+body:is([data-phase="idle"], [data-phase="win"], [data-phase="caught"], [data-phase="ended"]) {
+  & #stop { display: none; }
+  & #controls { grid-template-columns: 1fr; }
+}
 
 /* Totals are stickers in the colour of what they count: games played = start yellow, wins = win. */
 /* 3.5rem: three across on a 320 px phone at normal text; two across when the text is made large. */
@@ -113,6 +118,9 @@ body:not([data-phase="idle"], [data-phase="win"], [data-phase="caught"], [data-p
 /* Talk with Bean's chat: during a session it takes the light's place, so the conversation fills the stage. */
 #chat { display: none; width: 100%; gap: 10px; }
 body[data-phase="talk"] #chat { display: grid; }
+/* A mini game is on (Bean said so with set_game, talk-play.ts): the talk card takes the game's tint. */
+body[data-phase="talk"][data-game="mad_libs"] { --state-soft: color-mix(in srgb, var(--accent) 45%, #fff); }
+body[data-phase="talk"][data-game="guess_the_animal"] { --state-soft: color-mix(in srgb, var(--go) 35%, #fff); }
 .words select {
   appearance: none; font: 700 1.0625rem/1.2 var(--font-body); min-height: 48px; width: 100%; padding: 8px 44px 8px 12px; color: var(--fg); cursor: pointer;
   border: var(--bw) solid var(--line); border-radius: var(--radius-btn); box-shadow: 0 3px 0 var(--line);
@@ -122,8 +130,17 @@ body[data-phase="talk"] #chat { display: grid; }
 .words select:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 .words p.error { color: var(--error); font-weight: 700; }
 .words input[aria-invalid="true"] { border-color: var(--error); outline: 2px solid var(--error); outline-offset: 1px; }
-.powered { padding: 12px 0; border-top: 1px solid var(--rule); color: var(--muted); }
-.gemini { font: 700 1.125rem var(--font-display); color: var(--say); }
+/* A label on the left, its checkbox on the right. */
+.toggle-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0 8px; border-top: 1px solid var(--rule); }
+.toggle-row label { font-weight: 700; cursor: pointer; }
+.toggle-row input { flex: none; width: 28px; height: 28px; margin: 0; accent-color: var(--fg); cursor: pointer; }
+#talk-tip { display: none; text-align: center; font: 700 1.5rem var(--font-display); color: var(--muted); }
+body[data-phase="talk"]:has(#t-minigames:checked) #talk-tip { display: block; }
+.game-names { list-style: none; margin: 0; padding: 0 0 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+.game-names li { padding: 6px 14px; border: var(--bw) dashed var(--line); border-radius: 999px; font-weight: 700; }
+#talk-settings:has(#t-minigames:not(:checked)) .game-names { opacity: .45; } /* greyed while mini-games are not allowed */
+.powered { padding: 12px 0; border-top: 1px solid var(--rule); color: var(--muted); font-size: 1.125rem; }
+.gemini { font: 700 1.5rem var(--font-display); color: var(--say); }
 
 /* Play with Bean's games list. While it shows on the Play tab (play.ts sets data-view), the game screen waits below it. */
 #games { display: none; grid-column: 1 / -1; gap: var(--gap); align-content: start; }

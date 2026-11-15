@@ -57,6 +57,8 @@
         <button id="start" class="primary">Start</button>
         <button id="stop">Stop</button>
       </div>
+      <!-- Shown during a Talk session when mini games are allowed (CSS). -->
+      <p id="talk-tip">Say “Let’s play <span aria-hidden="true">🤪</span> Mad Libs!” or “Let’s play <span aria-hidden="true">🦁</span> Guess the Animal!”</p>
 
     </div>
 
@@ -104,14 +106,16 @@
             <div class="words"><label for="t-name">First name</label>
               <input id="t-name" type="text" autocomplete="off" spellcheck="false" maxlength="20" aria-describedby="t-name-error">
               <p id="t-name-error" class="error" role="alert" hidden>Enter a first name to start.</p></div>
+            <div class="words"><label for="t-age">Age</label>
+              <input id="t-age" type="number" inputmode="numeric" min="2" max="12" step="1" placeholder="For example 6"></div>
             <fieldset class="choice"><legend>Speaking style</legend>
               <label><input type="radio" name="t-style" value="natural" checked> Natural</label>
               <label><input type="radio" name="t-style" value="witty"> Witty</label>
               <label><input type="radio" name="t-style" value="boring"> Boring</label>
             </fieldset>
-            <fieldset class="choice"><legend>Fun</legend>
-              <label><input id="t-madlibs" type="checkbox"> <span aria-hidden="true">🤪</span> Play Mad Libs</label>
-            </fieldset>
+            <div class="toggle-row"><label for="t-minigames">Allow mini games</label><input id="t-minigames" type="checkbox"></div>
+            <!-- The mini-games Bean knows; the kid starts one by asking ("let's play Mad Libs"). -->
+            <ul class="game-names" aria-label="Mini games Bean can play"><li><span aria-hidden="true">🤪</span> Mad Libs</li><li><span aria-hidden="true">🦁</span> Guess the Animal</li></ul>
             <div class="slider"><label for="t-time">Play time limit <output id="t-time-out" for="t-time">5 min</output></label>
               <input id="t-time" type="range" min="1" max="10" step="1" value="5" aria-describedby="t-time-help">
               <p id="t-time-help">A short session keeps it fun and stops kids playing too long.</p></div>
