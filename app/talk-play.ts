@@ -238,8 +238,9 @@ export function createTalk(ctx: ModeContext): Mode {
       generationConfig: { responseModalities: ['AUDIO'] },
       systemInstruction: { parts: [{ text: rules(name, games) }] },
       inputAudioTranscription: {}, // the kid's words, shown under the orb
-      // Kids pause mid-sentence: wait a full second of quiet before Bean answers.
-      realtimeInputConfig: { automaticActivityDetection: { silenceDurationMs: 1000 } },
+      // Kids pause mid-sentence: wait a full second of quiet before Bean answers. Low start sensitivity, so room noise
+      // (an expo, Bean's own voice from the speaker) does not count as the kid talking and cut Bean off.
+      realtimeInputConfig: { automaticActivityDetection: { silenceDurationMs: 1000, startOfSpeechSensitivity: 'START_SENSITIVITY_LOW' } },
       ...(games && { tools: [SET_GAME] }),
     } }));
     me.ws.onmessage = async (e) => {

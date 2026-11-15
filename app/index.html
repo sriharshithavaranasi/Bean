@@ -36,6 +36,8 @@
 
     <div class="col">
       <section id="stage" class="card" aria-label="Game">
+        <!-- Dev tool for demos: hold it, or the M key, to cut the mic during a Talk session (talk-play.ts). Top left of the card. -->
+        <button id="mute" type="button" aria-pressed="false">Hold M to mute</button>
         <div id="light" aria-hidden="true">
           <svg id="glyph" viewBox="0 0 24 24"><path id="glyph-path" fill-rule="evenodd" d=""/></svg>
         </div>
@@ -57,8 +59,6 @@
         <button id="start" class="primary">Start</button>
         <button id="stop">Stop</button>
       </div>
-      <!-- Dev tool for demos: hold it, or the M key, to cut the mic during a Talk session (talk-play.ts). -->
-      <button id="mute" type="button" aria-pressed="false">Hold M to mute</button>
       <!-- Shown during a Talk session when mini games are allowed (CSS). -->
       <p id="talk-tip">Say “Let’s play <span aria-hidden="true">🤪</span> Mad Libs!” or “Let’s play <span aria-hidden="true">🦁</span> Guess the Animal!”</p>
 

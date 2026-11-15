@@ -119,8 +119,9 @@ body:is([data-phase="idle"], [data-phase="win"], [data-phase="caught"], [data-ph
 #chat { display: none; width: 100%; gap: 10px; }
 body[data-phase="talk"] #chat { display: grid; }
 /* A mini game is on (Bean said so with set_game, talk-play.ts): the talk card takes the game's tint. */
-body[data-phase="talk"][data-game="mad_libs"] { --state-soft: color-mix(in srgb, var(--accent) 45%, #fff); }
-body[data-phase="talk"][data-game="guess_the_animal"] { --state-soft: color-mix(in srgb, var(--go) 35%, #fff); }
+/* The orb (--state) and the card (--state-soft) both take the game's colour; without data-game they go back to Talk's blue. */
+body[data-phase="talk"][data-game="mad_libs"] { --state: var(--accent); --on-state: var(--on-accent); --state-soft: color-mix(in srgb, var(--accent) 45%, #fff); }
+body[data-phase="talk"][data-game="guess_the_animal"] { --state: var(--stop); --on-state: var(--on-stop); --state-soft: color-mix(in srgb, var(--stop) 25%, #fff); }
 .words select {
   appearance: none; font: 700 1.0625rem/1.2 var(--font-body); min-height: 48px; width: 100%; padding: 8px 44px 8px 12px; color: var(--fg); cursor: pointer;
   border: var(--bw) solid var(--line); border-radius: var(--radius-btn); box-shadow: 0 3px 0 var(--line);
@@ -134,7 +135,7 @@ body[data-phase="talk"][data-game="guess_the_animal"] { --state-soft: color-mix(
 .toggle-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0 8px; border-top: 1px solid var(--rule); }
 .toggle-row label { font-weight: 700; cursor: pointer; }
 .toggle-row input { flex: none; width: 28px; height: 28px; margin: 0; accent-color: var(--fg); cursor: pointer; }
-#mute { display: none; justify-self: center; min-height: 36px; padding: 4px 14px; font-size: .875rem; box-shadow: none; }
+#mute { display: none; position: absolute; top: 10px; left: 10px; z-index: 1; min-height: 0; padding: 3px 10px; font-size: .75rem; border-width: 1px; border-radius: 999px; box-shadow: none; }
 body[data-phase="talk"] #mute { display: block; }
 #mute[aria-pressed="true"] { background: var(--stop); color: var(--on-stop); }
 #talk-tip { display: none; text-align: center; font: 700 1.5rem var(--font-display); color: var(--muted); }
@@ -269,7 +270,7 @@ body:not([data-phase="idle"], [data-phase="win"], [data-phase="caught"], [data-p
 body[data-phase="talk"] #light {
   --level: 0; width: clamp(170px, 36vh, 300px);
   transform: scale(calc(1 + var(--level) * .1));
-  box-shadow: 0 0 calc(var(--level) * 45px) calc(var(--level) * 12px) color-mix(in srgb, var(--say) 45%, transparent);
+  box-shadow: 0 0 calc(var(--level) * 45px) calc(var(--level) * 12px) color-mix(in srgb, var(--state) 45%, transparent); /* glows in the orb's colour */
 }
 /* What the kid said last, beside their own smiley and name. */
 #chat { justify-items: center; }
