@@ -117,7 +117,7 @@ export function playCue(phase: string) {
   } else if (phase === 'caught') {
     tone(196, 0, 0.25, 'sawtooth');
     tone(147, 0.25, 0.5, 'sawtooth');
-    say('I saw you! Go back.');
+    say('I saw you move! Game over.');
   } else if (phase === 'win') {
     [523, 659, 784, 1047].forEach((f, n) => tone(f, n * 0.15, 0.3));
     say('You got me! You win!');

@@ -98,7 +98,7 @@ tryButton.onclick = async () => {
     const drift = poseDrift(frames);
     const wiggle = Number(wiggleBox.value);
     const seen = frames.filter(Boolean).length;
-    const verdict = seen < 6 ? 'Could not see you' : drift > wiggle ? 'I saw you move' : 'So still';
+    const verdict = drift === 0 && seen < 2 ? 'Could not see you' : drift > wiggle ? 'I saw you move' : 'So still';
     say(verdict);
     $('log').append(Object.assign(document.createElement('li'), {
       textContent: `${verdict}: drift ${drift.toFixed(2)}, wiggle room ${wiggle.toFixed(2)}, ${seen} of ${frames.length} frames with a body, ${camBox.selectedOptions[0].text}`,

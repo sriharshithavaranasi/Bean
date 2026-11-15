@@ -1,5 +1,5 @@
 // Settings and progress, saved on this device only (spec, section 3).
-import { DEFAULTS, type Gate, type Watch } from './game/freeze-watcher.ts';
+import { DEFAULTS, type Gate } from './game/freeze-watcher.ts';
 
 // Private browsing may refuse storage: the game keeps playing without saving.
 export function load<T extends object>(key: string, fallback: T): T {
@@ -20,7 +20,7 @@ export function save(key: string, value: unknown) {
 // Lowest and highest value a grown-up may set, in the game's own units.
 export const LIMITS = {
   greenMinMs: [1000, 30000], greenMaxMs: [1000, 30000], settleMs: [200, 5000],
-  lookMs: [1000, 10000], leewayCm: [2, 50], winCm: [5, 50], poseWigglePct: [5, 60],
+  redMinMs: [1000, 30000], redMaxMs: [1000, 30000], winCm: [5, 50], poseWigglePct: [5, 60],
 } satisfies Record<string, [number, number]>;
 export type Limited = keyof typeof LIMITS;
 
@@ -28,7 +28,6 @@ export type Settings = Record<Limited, number> & {
   game: 'freeze' | 'sneak';
   tab: 'move' | 'talk';
   words: string[];
-  watch: Watch;
   cameraId: string; // '' = the default camera
 };
 
@@ -43,9 +42,9 @@ export function fixSettings(raw: Record<string, unknown> = {}): Settings {
     s[key] = Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : DEFAULTS[key];
   }
   s.greenMaxMs = Math.max(s.greenMaxMs, s.greenMinMs);
+  s.redMaxMs = Math.max(s.redMaxMs, s.redMinMs);
   s.game = raw.game === 'sneak' ? 'sneak' : 'freeze'; // a saved Robot Says from before falls back
   s.tab = raw.tab === 'talk' ? 'talk' : 'move'; // Move or Talk tab (spec, section 15)
-  s.watch = raw.watch === 'camera' ? 'camera' : 'sensor'; // what watches during Red (spec, section 16)
   s.cameraId = typeof raw.cameraId === 'string' ? raw.cameraId.slice(0, 200) : '';
   // Typed as a comma list. Nothing saved gives the spec's words; an emptied list stays empty and switches the gate off.
   const words = raw.words == null ? WORDS : Array.isArray(raw.words) ? raw.words : String(raw.words).split(',');

@@ -18,7 +18,7 @@ Priorities are used on every ticket.
 
 Out of scope: the camera, accounts, a server, a database, a native phone app.
 
-Group play needs no extra work. The sensor sees the nearest person in the lane, so siblings and parents sneak together and anyone caught moving sends the group back.
+Group play needs no extra work. The sensor sees the nearest person in the lane, so siblings and parents sneak together and anyone caught moving ends the game for the group.
 
 ## 3. Simplifications (decided here)
 
@@ -65,22 +65,20 @@ Set-up: tape a straight lane about 1 m long in front of the car (the sensor read
 | State | Robot | App | Leaves when |
 | --- | --- | --- | --- |
 | Green | Head at 180 (looking away), LED green | Music plays, screen shows GO | A random time between the min and max look-away settings |
-| Red | Head at 90 (facing the kid), LED red | Music stops, screen shows FREEZE | The look time ends |
-| Caught | LED orange | "Go back" sound and voice | Distance is back at the start distance, Kid is back at start is pressed, or 8 seconds pass |
+| Red | Head at 90 (facing the kid), LED red | Music stops, screen shows FREEZE | A random time between the shortest and longest red light ends |
+| Caught | LED orange | "Caught" sound, voice "I saw you move! Game over." | Never: it ends the game, like a win. Play again starts a new one |
 | Waiting for word (P1) | Keeps facing the kid | Shows the practice word | The word is heard, or Good try is pressed |
 | Win | LED rainbow or white | Win sound | Play again is pressed |
 
 Catching movement, during Red:
 
 1. Ignore the "time to freeze" setting (1 s by default). The servo is settling and the kid is still stopping.
-2. Read the distance about every 100 ms for the rest of the look time.
-3. Drop readings of 0, and of 150 or more: the stock firmware caps at 150 and sends 150 when it hears no echo.
-4. Compare the median of the first three readings with the median of the last three. The kid is caught if the distance shrank by more than the leeway.
-5. With fewer than four good readings, the kid is not caught. Standing still must never be caught.
+2. The webcam decides, as in section 16. The distance sensor no longer catches anyone: on the car it was inconsistent and gave many false catches.
+3. With no frame that sees both of the kid's shoulders, the kid is not caught.
 
 Win: a reading under the win distance during Red.
 
-Limits to say out loud in the demo: the sensor sees a narrow cone straight ahead, and it sees movement toward the robot, not side to side.
+Limits to say out loud in the demo: the webcam must see the kid's shoulders and hips; a kid who leaves the picture is not caught.
 
 ## 6. Games
 
@@ -117,8 +115,8 @@ Labels are in plain words, as shown. Settings are saved on the device.
 | Shortest green light | 3 s |
 | Longest green light | 7 s |
 | Time to freeze before the robot checks | 1 s |
-| How long the robot stares | 2.5 s |
-| Wiggle room before caught | 15 cm (still readings on the car, 2026-11-14: the old 6 cm with 150s kept falsely caught 9 of 43 Red lights; 15 cm with 150s dropped caught 0; recheck with a person, #3) |
+| Shortest red light | 2.5 s |
+| Longest red light | 5 s |
 | Win when closer than | 12 cm |
 | Practice words (Say It to Sneak only) | rabbit, red, robot, run |
 
@@ -164,7 +162,7 @@ One page, phone first, in this order:
 
 1. **Stage.** A big round light in the state colour, a status line ("Bean is ready", "Green light!", "Red light!", "I saw you!", "You got me!"), a hint line and the live distance.
 2. **Start and Stop.** Stop is always available. It ends the round, silences music and speech, stops listening, turns the robot to face the kid and sends the stop command. During a round Start becomes Restart, which asks first: a second press within 4 seconds restarts.
-3. **Parent buttons.** Good try (word), Kid is back at start. Each is shown only while the game is waiting for it.
+3. **Parent buttons.** Good try, shown only while the game waits for the word.
 4. **Progress.** Section 10.
 5. **Robot.** Connect, link state, and the pretend-robot distance slider when no car is connected.
 6. **Grown-up settings.** Section 9.
@@ -176,7 +174,7 @@ Starting palette from the example: cream background `#fff8ef`, ink `#2b2140`, go
 Behaviour taken from the example:
 
 - After a Red light held still, the robot praises the kid ("Great freezing!", "So still!", "I did not see a thing!").
-- Caught ends when Kid is back at start is pressed, when the distance is back at the start distance, or after 8 seconds.
+- Caught ends the game: Bean says so, and Play again starts a new one.
 - Vibration: one short pulse on Green, two long pulses on Red, a pattern on a win.
 
 Not taken from the example:
@@ -267,9 +265,9 @@ Proposed by the speech area. It changes section 2 ("Out of scope: the camera"), 
 
 **Why.** The distance sensor only sees movement toward the robot, straight ahead, in a narrow cone (section 5). A webcam sees a kid step sideways, shuffle a foot or sneak at the edge of the lane, so Red Light, Green Light catches what a kid actually sees as cheating.
 
-**How it decides.** A USB webcam (the team's Logitech) stands about 1 to 1.5 m behind the car, raised (on the laptop or a stand) and angled down the lane, so the kid's shoulders and hips stay in the picture from the start line to the car. Feet may be out of the picture: knees and ankles count only when they are seen. Not on the car: as the kid comes close, a camera on the car sees only their legs and loses them (on the first tuning run, a body filling 120 to 260% of the picture height was lost in about half the rounds). MediaPipe Pose Landmarker (lite model) finds 33 body points in each frame on the laptop. During Red, after the time to freeze, about 10 frames a second are kept. `poseDrift` in `app/game/pose-moved.ts` compares the shoulders, hips, knees and ankles with where they were in the first three frames, as a share of the kid's torso length, so the same setting works near and far. The kid is caught when, in any three frames in a row, at least two of those points drifted more than the wiggle room. Hands and head never count: they move without meaning to, and some kids cannot hold them still. Fewer than six frames with a body, or no body found, is not caught, as in section 5.
+**How it decides.** A USB webcam (the team's Logitech) stands about 1 to 1.5 m behind the car, raised (on the laptop or a stand) and angled down the lane, so the kid's shoulders and hips stay in the picture from the start line to the car. Feet may be out of the picture: knees and ankles count only when they are seen. Not on the car: as the kid comes close, a camera on the car sees only their legs and loses them (on the first tuning run, a body filling 120 to 260% of the picture height was lost in about half the rounds). MediaPipe Pose Landmarker (lite model) finds 33 body points in each frame on the laptop. During Red, after the time to freeze, about 10 frames a second are kept. `poseDrift` in `app/game/pose-moved.ts` compares the shoulders, hips, knees and ankles with where they were in the first frame that saw both shoulders, as a share of the kid's shoulder width, so the same setting works near and far. Any point seen in both frames counts, so the shoulders alone are enough. The kid is caught when any one point, in any one frame, drifted more than the wiggle room. Hands and head never count: they move without meaning to, and some kids cannot hold them still. With no frame that sees both shoulders, the kid is not caught.
 
-**When the camera loses the kid.** No body found is not "still": that round falls back to the distance sensor (section 5), so stepping out of the picture never escapes being caught. Practice on the tuning page, like a game round, starts only once the kid is in the picture.
+**When the camera loses the kid.** With no frame that sees both shoulders, the kid is not caught: there is no other watcher. A round does not start without the webcam. Practice on the tuning page, like a game round, starts only once the kid is in the picture.
 
 **What stays the same.** The distance sensor still detects the win (under 12 cm during Red) and still records the start distance. Green, Red, Caught and Win, their timing and their signals are unchanged.
 
@@ -277,12 +275,11 @@ Proposed by the speech area. It changes section 2 ("Out of scope: the camera"), 
 
 | Setting | Choices or default |
 | --- | --- |
-| Bean watches with | The distance sensor, or the webcam (shown when a camera is found) |
 | Camera | Default camera, or a named one |
-| Webcam wiggle room (shown while the webcam is chosen) | 15% of torso length, from 5 to 60%. Tuned on `app/watch.html` with the Logitech: standing still drifted 0.00 to 0.11, real moves 0.20 to 1.49 |
+| Webcam wiggle room | 20% of shoulder width, from 5 to 60%. Retune on `app/watch.html`: the earlier tuning was in torso lengths. Tuned on `app/watch.html` with the Logitech: standing still drifted 0.00 to 0.11, real moves 0.20 to 1.49 |
 
 **Privacy.** Frames are processed in the browser on the laptop and are never recorded, stored or sent. The model and its files are in `app/vendor/mediapipe/`, so it needs no internet. The camera turns off when the round stops. The pitch says so.
 
 **Tuning.** `app/watch.html` opens the camera, draws the watched points and runs hands-free practice: a spoken 5 second countdown, then Green and Red lights until Stop, saying each result and listing the drift it measured, with a wiggle room slider. Use it on the real lane, with the real light, before the demo.
 
-**Code.** `app/camera.ts` (opens the camera, loads the model), `app/game/pose-moved.ts` and its tests, `app/watch.html`. In Red Light, Green Light and Say It to Sneak: `createGame` takes `watch` and `poseWigglePct`, and `tick(now, cm, body)` keeps the webcam frames of each Red; at the end of the look time `poseMoved` decides when at least 6 frames saw the torso (`bodyFrames`), otherwise `moved(readings)` does. `main.ts` opens the camera into a hidden `<video>` when a webcam round starts (a camera that will not open plays that round with the sensor, and says so), reads a frame each tick during Red, and closes it on Stop or a win. Settings are saved in `bean-settings` as `watch`, `cameraId` and `poseWigglePct`.
+**Code.** `app/camera.ts` (opens the camera, loads the model), `app/game/pose-moved.ts` and its tests, `app/watch.html`. In Red Light, Green Light and Say It to Sneak: `createGame` takes `poseWigglePct`, and `tick(now, cm, body)` keeps the webcam frames of each Red; at the end of the look time `poseMoved` decides. `main.ts` opens the camera into a hidden `<video>` when a round starts (a camera that will not open stops the Start, and says so), reads a frame each tick during Red, and closes it on Stop or the end of the game. Settings are saved in `bean-settings` as `cameraId` and `poseWigglePct`.

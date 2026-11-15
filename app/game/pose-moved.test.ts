@@ -42,31 +42,41 @@ test('waving both hands is not caught: hands are ignored', () => {
   assert.equal(poseMoved(frames, opts), false);
 });
 
-test('one glitched frame is not caught', () => {
+test('one frame that moved is enough to be caught', () => {
   const frames = jitter(10);
   frames[6] = body({ dx: 0.3 });
-  assert.equal(poseMoved(frames, opts), false);
+  assert.equal(poseMoved(frames, opts), true);
 });
 
 test('more wiggle room forgives a small sway', () => {
-  const frames = [...jitter(4), ...Array.from({ length: 6 }, () => body({ dx: 0.08 }))];
+  const frames = [...jitter(4), ...Array.from({ length: 6 }, () => body({ dx: 0.03 }))]; // 30% of shoulder width
   assert.equal(poseMoved(frames, { wiggle: 0.2 }), true);
   assert.equal(poseMoved(frames, { wiggle: 0.4 }), false);
 });
 
-test('too few frames or nobody seen is never caught', () => {
-  assert.equal(poseMoved([body(), body({ dx: 0.3 }), body({ dx: 0.3 })], opts), false);
+test('two frames are enough; nobody seen, or shoulders never seen, is not caught', () => {
+  assert.equal(poseMoved([body(), body({ dx: 0.3 })], opts), true);
   assert.equal(poseMoved([...jitter(4), ...Array.from({ length: 6 }, () => null)], opts), false);
   assert.equal(poseMoved(Array.from({ length: 10 }, (_, i) => body({ dx: i * 0.05, seen: 0.1 })), opts), false);
 });
 
-test('one jumpy landmark alone is not caught: two points must agree', () => {
+test('one point that moved is enough: an ankle stepping out is caught', () => {
   const frames = jitter(10);
-  for (const f of frames.slice(4)) f[27] = { ...f[27], x: f[27].x + 0.2 }; // the model misplaces one ankle
-  assert.equal(poseMoved(frames, opts), false);
+  for (const f of frames.slice(4)) f[27] = { ...f[27], x: f[27].x + 0.2 };
+  assert.equal(poseMoved(frames, opts), true);
 });
 
-test('feet out of the picture is fine: shoulders and hips are enough', () => {
+test('shoulders alone are enough: hips and legs out of the picture', () => {
+  const shouldersOnly = (dx = 0) => {
+    const f = body({ dx });
+    for (const i of [23, 24, 25, 26, 27, 28]) f[i].visibility = 0.05;
+    return f;
+  };
+  assert.equal(poseMoved(Array.from({ length: 10 }, () => shouldersOnly()), opts), false);
+  assert.equal(poseMoved([shouldersOnly(), shouldersOnly(), shouldersOnly(0.1)], opts), true);
+});
+
+test('feet out of the picture is fine', () => {
   const still = Array.from({ length: 10 }, (_, i) => body({ legs: false, dx: (i % 3 - 1) * 0.005 }));
   assert.equal(poseMoved(still, opts), false);
   const step = [...still.slice(0, 4), ...Array.from({ length: 6 }, () => body({ legs: false, dx: 0.1 }))];

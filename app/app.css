@@ -91,8 +91,8 @@ button.primary { background: var(--accent); color: var(--on-accent); font-size: 
 #controls { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
 #parent { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 10px; }
 /* During a round Stop is the loud button. Sizes stay put so a second tap on Start cannot land on Stop. */
-body:not([data-phase="idle"], [data-phase="win"]) #start { background: var(--btn); }
-body:not([data-phase="idle"], [data-phase="win"]) #stop { background: var(--fg); color: #fff; }
+body:not([data-phase="idle"], [data-phase="win"], [data-phase="caught"]) #start { background: var(--btn); }
+body:not([data-phase="idle"], [data-phase="win"], [data-phase="caught"]) #stop { background: var(--fg); color: #fff; }
 
 /* Totals are stickers in the colour of what they count: rounds = start yellow, wins = win, word tries = say.
    Talk: talks = start yellow, turns taken = win, heard by the mic = go. */

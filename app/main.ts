@@ -23,7 +23,7 @@ const SCREEN: Record<string, { status?: string; hint: string; glyph: string }> =
   idle: { hint: 'Stand on the start line, then press Start.', glyph: 'M8 7a2 2 0 100 4 2 2 0 000-4zm8 0a2 2 0 100 4 2 2 0 000-4zM7 14h10a5 5 0 01-10 0z' },
   green: { status: 'Green light!', hint: 'Bean is not looking. Sneak closer!', glyph: 'M12 4l7 8h-4v8H9v-8H5z' },
   red: { status: 'Red light!', hint: 'Bean is looking. Freeze!', glyph: 'M7 5h4v14H7zM13 5h4v14h-4z' },
-  caught: { status: 'I saw you!', hint: 'Go back to the start line.', glyph: 'M12 5C6 5 2 12 2 12s4 7 10 7 10-7 10-7-4-7-10-7zm0 11a4 4 0 110-8 4 4 0 010 8z' },
+  caught: { status: 'I saw you!', hint: 'Game over. Press Play again to try again.', glyph: 'M12 5C6 5 2 12 2 12s4 7 10 7 10-7 10-7-4-7-10-7zm0 11a4 4 0 110-8 4 4 0 010 8z' },
   word: { status: 'Say your word', hint: 'Say it out loud, or press Good try.', glyph: 'M4 4h16v12h-9l-5 4v-4H4z' },
   win: { status: 'You got me!', hint: 'You reached Bean!', glyph: 'M12 2l3 7 7 .6-5.3 4.7 1.7 7.2L12 17.8 5.6 21.5l1.7-7.2L2 9.6 9 9z' },
 };
@@ -33,16 +33,16 @@ const LIGHT: Record<string, [number, number, number]> = { green: [0, 255, 0], re
 // field id -> [game setting, how many of the game's units one of the field's units is]
 const FIELDS: Record<string, [Limited, number]> = {
   greenMin: ['greenMinMs', 1000], greenMax: ['greenMaxMs', 1000], settle: ['settleMs', 1000],
-  look: ['lookMs', 1000], leewayCm: ['leewayCm', 1], winCm: ['winCm', 1], poseWigglePct: ['poseWigglePct', 1],
+  redMin: ['redMinMs', 1000], redMax: ['redMaxMs', 1000], winCm: ['winCm', 1], poseWigglePct: ['poseWigglePct', 1],
 };
-let camerasFound = false; // the webcam rows show only when the laptop has a camera (spec, section 16)
+let camerasFound = false; // the camera picker shows only when the laptop has a camera
 const rulers: Record<string, HTMLInputElement> = {};
 const talking = () => $('tab-talk').getAttribute('aria-selected') === 'true';
 function settings() {
   const raw: Record<string, unknown> = {
     game: $<HTMLInputElement>('s-sneak').checked ? 'sneak' : 'freeze',
     words: $<HTMLInputElement>('s-words').value, tab: talking() ? 'talk' : 'move',
-    watch: $<HTMLInputElement>('s-camera').checked ? 'camera' : 'sensor', cameraId: $<HTMLSelectElement>('s-cameraId').value,
+    cameraId: $<HTMLSelectElement>('s-cameraId').value,
   };
   for (const [id, [key, unit]] of Object.entries(FIELDS)) {
     const v = $<HTMLInputElement>(`s-${id}`).value;
@@ -59,13 +59,11 @@ function showSettings(s: Settings) {
   $('s-words').closest<HTMLElement>('.words')!.hidden = $('t-words').parentElement!.hidden = s.game !== 'sneak';
   $<HTMLInputElement>(`s-${s.game}`).checked = true;
   $<HTMLInputElement>('s-words').value = s.words.join(', ');
-  // Webcam: the choice shows when a camera is found; the camera and its wiggle room only while the webcam is chosen.
-  $<HTMLInputElement>(`s-${s.watch}`).checked = true;
+  // Webcam: the camera picker shows when a camera is found.
   const box = $<HTMLSelectElement>('s-cameraId');
   if (![...box.options].some((o) => o.value === s.cameraId)) box.append(new Option('Saved camera', s.cameraId)); // before the list is read
   box.value = s.cameraId;
-  $('watch-row').hidden = !camerasFound;
-  $('camera-row').hidden = $('s-poseWigglePct').closest<HTMLElement>('.field')!.hidden = !camerasFound || s.watch !== 'camera';
+  $('camera-row').hidden = !camerasFound;
   for (const tab of ['move', 'talk']) {
     $(`tab-${tab}`).setAttribute('aria-selected', String(s.tab === tab));
     $(`tab-${tab}`).tabIndex = s.tab === tab ? 0 : -1;
@@ -100,7 +98,7 @@ for (const [id, [key, unit]] of Object.entries(FIELDS)) {
   ruler.addEventListener('input', () => ((input.value = ruler.value), changed()));
   input.addEventListener('change', () => settingChanged());
 }
-for (const id of ['s-freeze', 's-sneak', 's-words', 's-sensor', 's-camera', 's-cameraId']) $(id).addEventListener('change', () => settingChanged());
+for (const id of ['s-freeze', 's-sneak', 's-words', 's-cameraId']) $(id).addEventListener('change', () => settingChanged());
 showSettings(fixSettings(load('bean-settings', {})));
 
 // Lists the cameras so a grown-up can pick the Logitech. Names show once the browser has been allowed a camera.
@@ -158,7 +156,7 @@ const mock = makeMockRobot(
 let robot: Robot = mock;
 let game = createGame();
 let shown = 'idle';
-// The webcam is on only during a webcam round: opened by Start, closed by Stop or a win.
+// The webcam watches every round: opened by Start, closed by Stop or the end of the game.
 let cam: Awaited<ReturnType<typeof openCamera>> | null = null;
 const closeCam = () => {
   cam?.close();
@@ -172,9 +170,10 @@ const queued = <T>(job: () => T) => (chain = chain.then(job).catch((e) => void c
 
 const chosenGame = () => document.querySelector<HTMLInputElement>('[name="s-game"]:checked')!.labels![0].textContent!.trim();
 let restartUntil = 0; // Restart was pressed once: a second press before this time restarts
+const over = (phase: string) => phase === 'idle' || phase === 'win' || phase === 'caught'; // no round running
 const startLabel = () =>
   ($('start').textContent =
-    shown === 'win' ? 'Play again' : shown === 'idle' ? 'Start' : performance.now() < restartUntil ? 'Press again to restart' : 'Restart');
+    shown === 'win' || shown === 'caught' ? 'Play again' : shown === 'idle' ? 'Start' : performance.now() < restartUntil ? 'Press again to restart' : 'Restart');
 let tabUntil = 0; // a tab was pressed once during a round: a second press before this time stops the round and switches
 const tabWarn = (tab: string, label = '') => {
   $(`warn-${tab}`).textContent = label && 'Press again to stop';
@@ -189,15 +188,14 @@ function show(phase: string, hint = talking() ? 'Press Start, then take turns ta
   $('hint').textContent = hint;
   $('readout').hidden = talking(); // Talk has no distance to show
   $('glyph-path').setAttribute('d', phase === 'idle' && talking() ? TALK_GLYPH : SCREEN[phase].glyph);
-  if (phase === 'idle' || phase === 'win') {
+  if (over(phase)) {
     restartUntil = tabUntil = 0;
     tabWarn('move');
     tabWarn('talk');
   }
   startLabel();
-  $('ready').hidden = phase !== 'caught';
   $('goodtry').hidden = phase !== 'word'; // on screen whenever the app waits for the word
-  $('parent').hidden = !['caught', 'word'].includes(phase);
+  $('parent').hidden = phase !== 'word';
   keepAwake();
 }
 
@@ -205,7 +203,7 @@ function show(phase: string, hint = talking() ? 'Press Start, then take turns ta
 // The browser drops the lock when the tab is hidden; coming back asks again.
 let wake: Promise<WakeLockSentinel | null> | null = null; // promise of the screen lock (null inside it if the browser refused)
 function keepAwake() {
-  if (shown === 'idle' || shown === 'win') {
+  if (over(shown)) {
     wake?.then((lock) => lock?.release());
     wake = null;
   } else if (!wake && document.visibilityState === 'visible' && navigator.wakeLock) {
@@ -234,11 +232,9 @@ function askWord(lead: string) {
 
 async function enter(phase: string) {
   const held = shown === 'red' && (phase === 'green' || phase === 'word');
-  if (phase === 'win') {
-    bump('wins');
-    closeCam();
-  }
+  if (phase === 'win') bump('wins');
   if (phase === 'caught') bump('caught');
+  if (phase === 'win' || phase === 'caught') closeCam();
   if (phase === 'word') askWord(held ? 'Great freezing! ' : shown === 'idle' ? 'Say your word to sneak closer! ' : '');
   else {
     if (held) praise();
@@ -253,13 +249,13 @@ async function enter(phase: string) {
 
 let ticking = false;
 setInterval(() => {
-  if (ticking || game.phase === 'idle' || game.phase === 'win') return;
+  if (ticking || over(game.phase)) return;
   ticking = true;
   queued(async () => {
     // The head points away during Green, so there is nothing to measure.
     const cm = game.phase === 'green' ? null : await robot.distanceCm();
     if (cm != null) $('reading').textContent = `${cm} cm`;
-    // During Red the webcam, when it watches, adds a frame: the kid's body, or null when nobody was found.
+    // During Red the webcam adds a frame: the kid's body, or null when nobody was found.
     let body: Frame | undefined;
     if (game.phase === 'red' && cam) {
       try {
@@ -303,30 +299,26 @@ function start() {
       show('idle', 'Bean cannot see you. Stand in the lane, facing Bean, and press Start again.');
       return;
     }
-    let noCam = false;
-    if (round.watch === 'camera') {
-      show('idle', 'Starting the webcam…');
-      try {
-        cam = await openCamera($<HTMLVideoElement>('cam-video'), round.cameraId || undefined);
-        $('cam-status').textContent = 'Webcam: on';
-        $('cam-status').hidden = false;
-        fillCameras(); // the camera names show now that it is allowed
-      } catch {
-        round = { ...round, watch: 'sensor' }; // no camera, or not allowed: this round uses the sensor
-        noCam = true;
-      }
+    show('idle', 'Starting the webcam…');
+    try {
+      cam = await openCamera($<HTMLVideoElement>('cam-video'), round.cameraId || undefined);
+    } catch {
+      show('idle', 'Bean needs the webcam to watch. Plug it in, allow the camera, and press Start again.');
+      return;
     }
+    $('cam-status').textContent = 'Webcam: on';
+    $('cam-status').hidden = false;
+    fillCameras(); // the camera names show now that it is allowed
     $('reading').textContent = `${startCm} cm`;
     bump('rounds');
     game = createGame(round);
     game.start(performance.now(), startCm);
     await enter(game.phase);
-    if (noCam) $('hint').textContent = 'The webcam did not start, so Bean watches with the distance sensor this round.';
   });
 }
 // Restart throws the round away, so it asks first: a second press within 4 seconds restarts.
 $('start').addEventListener('click', () => {
-  if (shown === 'idle' || shown === 'win' || performance.now() < restartUntil) return start();
+  if (over(shown) || performance.now() < restartUntil) return start();
   restartUntil = performance.now() + 4000;
   startLabel();
   setTimeout(startLabel, 4000);
@@ -336,7 +328,7 @@ $('start').addEventListener('click', () => {
 for (const tab of ['move', 'talk']) {
   $(`tab-${tab}`).addEventListener('click', () => {
     if (tab === settings().tab) return;
-    if (shown !== 'idle' && shown !== 'win' && performance.now() >= tabUntil) {
+    if (!over(shown) && performance.now() >= tabUntil) {
       tabUntil = performance.now() + 4000;
       tabWarn(tab, $(`tab-${tab}`).querySelector('.label')!.textContent ?? '');
       setTimeout(() => performance.now() >= tabUntil && tabWarn(tab), 4000);
@@ -360,8 +352,6 @@ $('tabs').addEventListener('keydown', (e) => {
   $(`tab-${to}`).focus();
   $(`tab-${to}`).click();
 });
-
-$('ready').addEventListener('click', () => game.ready(performance.now()));
 
 $('distance').addEventListener('input', () => {
   $('distance-out').textContent = `${$<HTMLInputElement>('distance').value} cm`;
@@ -398,9 +388,9 @@ show('idle');
 
 // ---------- phone remote (spec, section 13) ----------
 // The laptop sends what its screen shows; the phone copies it and sends its presses back through scripts/serve.ts.
-const CLICKS = ['start', 'stop', 'ready', 'goodtry', 'reset', 'tab-move', 'tab-talk'];
+const CLICKS = ['start', 'stop', 'goodtry', 'reset', 'tab-move', 'tab-talk'];
 const TEXTS = ['status', 'hint', 'reading', 'cam-status', 'start', 'reset', 'warn-move', 'warn-talk', 'tab-note'];
-const HIDDEN = ['readout', 'cam-status', 'controls', 'parent', 'ready', 'goodtry'];
+const HIDDEN = ['readout', 'cam-status', 'controls', 'parent', 'goodtry'];
 const snapshot = () => ({
   phase: document.body.dataset.phase,
   glyph: $('glyph-path').getAttribute('d')!,

@@ -1,0 +1,74 @@
+{
+  "about": "Every line Bean speaks, and when. A copy for reading: the app speaks from the source files named in \"source\", not from this file. {word} is the practice word.",
+  "play": [
+    {
+      "when": "Red light starts",
+      "says": "Red light!",
+      "source": "app/signals.ts playCue"
+    },
+    {
+      "when": "Kid held still through a Red light (Red Light, Green Light), one at random",
+      "says": [
+        "Great freezing!",
+        "So still!",
+        "I did not see a thing!"
+      ],
+      "source": "app/signals.ts PRAISE"
+    },
+    {
+      "when": "Kid moved during a Red light: the game ends",
+      "says": "I saw you move! Game over.",
+      "source": "app/signals.ts playCue"
+    },
+    {
+      "when": "Kid got closer than the win distance during Red",
+      "says": "You got me! You win!",
+      "source": "app/signals.ts playCue"
+    },
+    {
+      "when": "Say It to Sneak: asking for the first word of the game",
+      "says": "Say your word to sneak closer! Say {word}",
+      "source": "app/main.ts askWord"
+    },
+    {
+      "when": "Say It to Sneak: asking for a word after the kid held still",
+      "says": "Great freezing! Say {word}",
+      "source": "app/main.ts askWord"
+    }
+  ],
+  "tuningPage": [
+    {
+      "when": "Practice starts, counting down",
+      "says": [
+        "Get into place. 5",
+        "4",
+        "3",
+        "2",
+        "1"
+      ],
+      "source": "app/watch.ts"
+    },
+    {
+      "when": "Each practice light",
+      "says": [
+        "Green light!",
+        "Red light!"
+      ],
+      "source": "app/watch.ts"
+    },
+    {
+      "when": "Result of each practice Red light",
+      "says": [
+        "So still",
+        "I saw you move",
+        "Could not see you"
+      ],
+      "source": "app/watch.ts"
+    },
+    {
+      "when": "Practice stopped",
+      "says": "Stopped.",
+      "source": "app/watch.ts"
+    }
+  ]
+}
