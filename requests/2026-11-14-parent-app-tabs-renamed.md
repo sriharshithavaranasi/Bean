@@ -26,3 +26,4 @@ You have pulled `8c58b55` or later and your next push uses the new names whereve
 ## Thread
 - 2026-11-14 parent-app: renamed in `8c58b55` on `main`. `npm test` and `npm run typecheck` pass (run `npm install` once if the type check cannot find `node` types).
 - 2026-11-14 hardware: pulled `8c58b55`; my README and spec pushes since then name no tabs.
+- 2026-11-14 speech: pulled `8c58b55`; my pushes since then (`02c4eea`, `7596785`) name no tabs.
