@@ -10,6 +10,15 @@ const EDGE = 0.05; // points this close to the picture's edge are the model's gu
 const inside = (v: number) => v >= EDGE && v <= 1 - EDGE;
 const seen = (p?: Landmark): p is Landmark => !!p && (p.visibility ?? 0) >= SEEN && inside(p.x) && inside(p.y);
 
+// shortcut: every tracked point is compared one frame at a time, so a lean toward the camera (the shoulders spread)
+// or one glitchy frame can catch a still kid, mostly when the kid is close. Next steps if it is still too twitchy,
+// best first, once tuned on watch.html with a real kid:
+//   1. Track the torso's centre (midpoint of shoulders and hips) instead of each point: a lean or a size change
+//      leaves it in place, a real step moves it.
+//   2. Smooth over 3 frames (median position) for the start and for each check, so one bad frame cannot catch.
+//   3. Allow more wiggle room when the distance sensor says the kid is close (for example x1.5 under 50 cm).
+//   4. Raise the default wiggle room (poseWigglePct in freeze-watcher.ts) from 20 to 30-35 %.
+//   5. Keep the camera 1 to 1.5 m behind the car, raised (spec, section 16): close up, the kid then stays in frame.
 // frames: one landmark array per camera frame (null when nobody was found).
 // Returns how far the body drifted, as a share of the kid's shoulder width, so it means the same whether
 // the kid stands near the camera or far from it: the farthest any tracked point got from where it was in the
