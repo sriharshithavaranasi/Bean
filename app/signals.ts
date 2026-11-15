@@ -100,7 +100,7 @@ export function silence() {
 }
 
 // Bean's Red Light, Green Light lines. After a Red light held still it teases, or says the kid is close (last reading under 30 cm).
-const RED = "Red light! Hmm... I'm watchinggg...";
+const RED = "Red light! Hmm... I'm watchinggg";
 const CAUGHT = 'You moved!!';
 const WIN = 'You got me! You win!';
 const ALMOST = "You're almost here!";

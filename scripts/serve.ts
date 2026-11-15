@@ -91,7 +91,7 @@ const server = createServer(async (req, res) => {
   if (url.pathname === '/voice') {
     // Bean's ElevenLabs voice (scripts/voice.ts): laptop only, like /talk, so the key is never used for a phone.
     if (!loopback(req) || req.method !== 'POST') return res.writeHead(403).end();
-    const { status, type, body: out } = await speak(await body(req));
+    const { status, type, body: out } = await speak(await body(req), { dir: join(import.meta.dirname, '..', '.voice-cache') });
     return res.writeHead(status, { 'content-type': type }).end(out);
   }
   const path = normalize(join(root, decodeURIComponent(url.pathname)));
