@@ -1,6 +1,6 @@
 // Play with Bean: Red Light, Green Light with the webcam watching (spec, sections 5 and 16).
 // Its grown-up settings, progress, webcam and game loop. The shell (main.ts) starts and stops it.
-import { cameras, openCamera } from './camera.ts';
+import { askForWebcam, cameras, openCamera, webcamReady } from './camera.ts';
 import { createGame } from './game/freeze-watcher.ts';
 import type { Picture } from './game/picture-moved.ts';
 import { headSeen, type Frame } from './game/pose-moved.ts';
@@ -201,6 +201,7 @@ export function createPlay(ctx: ModeContext): Mode {
 
   async function start() {
     const round = settings();
+    if (!(await webcamReady(round.cameraId))) return; // asked for in a pop-up, before Bean says or does anything
     const startCm = await ctx.robot().distanceCm();
     if (!startCm) {
       ctx.show('idle', 'Bean cannot see you. Stand in the lane, facing Bean, and press Start again.');
@@ -213,6 +214,7 @@ export function createPlay(ctx: ModeContext): Mode {
     } catch {
       silence();
       ctx.show('idle', 'Bean needs the webcam to watch. Plug it in, allow the camera, and press Start again.');
+      askForWebcam('Bean could not turn its webcam on. Allow the camera for this page, close anything else that is using it, then press Start again.');
       return;
     }
     $('cam-status').textContent = 'Webcam: on';

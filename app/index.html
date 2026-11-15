@@ -143,6 +143,12 @@
     <!-- Read out when a tab press during a round only warns (the tab itself shows it). -->
     <p id="tab-note" class="vh" aria-live="assertive"></p>
   </main>
+  <!-- Start found no webcam (camera.ts): a gentle pop-up. OK, Esc or the backdrop's form closes it. -->
+  <dialog id="no-webcam" aria-labelledby="no-webcam-title" aria-describedby="no-webcam-text">
+    <h2 id="no-webcam-title">Bean can’t see yet</h2>
+    <p id="no-webcam-text"></p>
+    <form method="dialog"><button class="primary" autofocus>OK</button></form>
+  </dialog>
   <!-- The webcam's picture, for the pose model only: never shown, recorded or sent. -->
   <video id="cam-video" class="vh" muted playsinline aria-hidden="true"></video>
   <script type="module" src="main.ts"></script>

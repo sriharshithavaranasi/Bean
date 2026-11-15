@@ -6,7 +6,7 @@
 // play time limit runs out. With mini games allowed, the kid can start Mad Libs or Guess the Animal by asking; Gemini runs the games from
 // its instructions, and the app only nudges Bean when the kid goes quiet. Speaking style is not used yet.
 // While they talk, Bean's head follows the kid: the webcam rides on the head and the pose model finds the kid's nose.
-import { openCamera } from './camera.ts';
+import { openCamera, webcamReady } from './camera.ts';
 import { headSeen } from './game/pose-moved.ts';
 import type { Mode, ModeContext } from './mode.ts';
 import { HEAD_KID, headSearch, headToward } from './robot.ts';
@@ -292,7 +292,8 @@ export function createTalk(ctx: ModeContext): Mode {
 
   // ---------- Bean's head follows the kid ----------
   // About three looks a second: each turn waits for the car to finish it, so the next look is at a still picture.
-  // No webcam, or it is not allowed: Bean talks without turning its head. Frames stay on the laptop (camera.ts).
+  // Start checks the webcam is plugged in. If it still cannot be opened (not allowed, or in use), Bean talks without turning
+  // its head. Frames stay on the laptop (camera.ts).
   async function followKid(mine: number) {
     const on = () => mine === session && ctx.shown() === 'talk';
     const cam = await openCamera($<HTMLVideoElement>('cam-video'), load('bean-settings', { cameraId: '' }).cameraId || undefined).catch(() => null);
@@ -347,6 +348,7 @@ export function createTalk(ctx: ModeContext): Mode {
         (name ? ageBox : nameBox).focus();
         return;
       }
+      if (!(await webcamReady(load('bean-settings', { cameraId: '' }).cameraId))) return; // Bean's head follows the kid with it
       await ctx.robot().lookAtKid();
       const mine = ++session;
       $('kid-name').textContent = name;

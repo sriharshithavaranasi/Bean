@@ -11,6 +11,23 @@ export async function cameras() {
   return (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'videoinput');
 }
 
+// Is the webcam plugged in? The one picked in the settings, or any camera when none is picked.
+// Before the browser has been allowed a camera it hides their ids: then any camera counts, and opening it decides.
+export const cameraFound = (list: { deviceId: string }[], deviceId = '') =>
+  list.length > 0 && (!deviceId || list.every((d) => !d.deviceId) || list.some((d) => d.deviceId === deviceId));
+
+// Checked before a round starts. When the webcam is missing, a gentle pop-up (index.html) asks a grown-up to plug it in.
+export async function webcamReady(deviceId = '') {
+  if (cameraFound(await cameras().catch(() => []), deviceId)) return true;
+  askForWebcam('Plug Bean’s webcam in, then press Start again.');
+  return false;
+}
+export function askForWebcam(text: string) {
+  document.getElementById('no-webcam-text')!.textContent = text;
+  const popup = document.getElementById('no-webcam') as HTMLDialogElement;
+  if (!popup.open) popup.showModal();
+}
+
 // Opens the camera into `video` and loads the pose model. frame() returns the body's 33 landmarks, or null.
 // picture() returns the frame as a small grey picture, for watching by picture change (game/picture-moved.ts).
 export async function openCamera(video: HTMLVideoElement, deviceId?: string) {
