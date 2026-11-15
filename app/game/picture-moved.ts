@@ -5,8 +5,8 @@ import type { Frame } from './pose-moved.ts';
 
 export type Picture = Uint8Array;
 
-// shortcut: both limits are first guesses, not yet tuned on the lane. Tune them from a Save frames recording
-// (watch.html) of a kid standing still and then moving, up close.
+// shortcut: this limit and pictureChangePct (freeze-watcher.ts) are arbitrary, never measured (spec, section 16). If they
+// catch wrongly, tune them from a Save frames recording (watch.html) of a kid standing still and then moving, up close.
 const LEVEL = 25; // a pixel changed when its grey level moved more than this: above camera noise and flicker from the lights
 
 // Share of the picture that changed from a to b, 0 to 1. The middle (median) change is taken out first: the camera

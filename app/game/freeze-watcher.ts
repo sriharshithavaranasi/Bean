@@ -13,7 +13,7 @@ export const DEFAULTS = {
   winCm: 12,
   maxRedLights: 12, // after this many Red lights with no catch and no win, nobody is playing: the game ends
   poseWigglePct: 20, // webcam wiggle room, in % of shoulder width; retune on watch.html (was 15 % of torso length)
-  pictureChangePct: 10, // head out of the picture: % of the picture that may change. shortcut: a first guess, tune it on watch.html
+  pictureChangePct: 10, // head out of the picture: % of the picture that may change. shortcut: arbitrary, never measured (spec, section 16); tune it on watch.html if it catches wrongly
 };
 export type GameSettings = typeof DEFAULTS;
 
