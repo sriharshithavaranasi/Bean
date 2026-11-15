@@ -4,8 +4,10 @@ let musicTimer: ReturnType<typeof setInterval> | undefined;
 
 // Browsers block sound until a tap: call this from the Start button.
 export function unlockAudio() {
+  const first = !ctx;
   ctx ??= new AudioContext();
   ctx.resume();
+  if (first) CUES.forEach(clip); // fetch the game's cues now, so "Red light!" is not late the first time
 }
 
 function tone(freq: number, startIn: number, length: number, type: OscillatorType = 'triangle', volume = 0.15) {
@@ -36,13 +38,57 @@ export function stopMusic() {
   clearInterval(musicTimer);
 }
 
-// Resolves when the voice is done, or after 5 seconds: some browsers never report the end.
-export function say(text: string) {
+// Bean's ElevenLabs voice from the laptop's server (POST /voice, scripts/voice.ts). Each line is fetched once and kept.
+// No key, no internet or no answer in 1.5 s: the browser's voice says the line, and /voice rests for a minute.
+const clips = new Map<string, Promise<AudioBuffer | null>>();
+let voiceRestsUntil = 0;
+let playing: AudioBufferSourceNode | undefined;
+let line = 0; // the newest say() or silence(): an older line that is still loading never plays
+
+function clip(text: string) {
+  if (!ctx || Date.now() < voiceRestsUntil) return Promise.resolve(null);
+  let c = clips.get(text);
+  if (!c) {
+    c = fetch('/voice', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text }), signal: AbortSignal.timeout(1500) })
+      .then(async (r) => (r.ok ? ctx!.decodeAudioData(await r.arrayBuffer()) : null))
+      .catch(() => null)
+      .then((buffer) => {
+        if (!buffer) {
+          clips.delete(text);
+          voiceRestsUntil = Date.now() + 60_000;
+        }
+        return buffer;
+      });
+    clips.set(text, c);
+  }
+  return c;
+}
+
+function quiet() {
+  line++;
+  playing?.stop();
+  playing = undefined;
   speechSynthesis.cancel();
-  const words = new SpeechSynthesisUtterance(text);
+}
+
+// Resolves when the voice is done, or after 5 seconds: some browsers never report the end.
+export async function say(text: string) {
+  quiet();
+  const mine = line;
+  const buffer = await clip(text);
+  if (mine !== line) return; // Stop or a newer line came first
   return new Promise<void>((resolve) => {
+    setTimeout(resolve, buffer ? buffer.duration * 1000 + 500 : 5000);
+    if (buffer) {
+      const source = (playing = ctx!.createBufferSource());
+      source.buffer = buffer;
+      source.onended = () => resolve();
+      source.connect(ctx!.destination);
+      source.start();
+      return;
+    }
+    const words = new SpeechSynthesisUtterance(text);
     words.onend = words.onerror = () => resolve();
-    setTimeout(resolve, 5000);
     speechSynthesis.speak(words);
   });
 }
@@ -50,10 +96,11 @@ export function say(text: string) {
 // Stop pressed: nothing may keep playing or talking.
 export function silence() {
   stopMusic();
-  speechSynthesis.cancel();
+  quiet();
 }
 
 const PRAISE = ['Great freezing!', 'So still!', 'I did not see a thing!'];
+const CUES = ['Red light!', 'I saw you! Go back.', 'You got me! You win!', ...PRAISE];
 export const praise = () => say(PRAISE[Math.floor(Math.random() * PRAISE.length)]);
 
 const buzz = (pattern: VibratePattern) => navigator.vibrate?.(pattern); // phones only

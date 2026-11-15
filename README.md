@@ -57,6 +57,11 @@ npm start
 
 Open http://localhost:8000 in Chrome or Edge on the laptop.
 
+Optional keys go in a `.env` file in the repo folder (git ignores it), set before `npm start`:
+
+- `ELEVENLABS_API_KEY=...` gives Bean its own ElevenLabs voice. Without it, Bean uses the browser's voice.
+- `GEMINI_API_KEY=...` turns on AI chat in Talk to Bean. Without it, Talk to Bean uses its scripts.
+
 ### 5. Connect and play
 
 1. Connect the car by cable: press **Connect by cable**, then pick the car's port (unplug and replug the car to see which one it is). On Windows it shows as `USB-SERIAL CH340`; if no such port appears, install the CH340 driver (`CH341SER.EXE` from wch-ic.com) and replug. The car resets and takes about 2 seconds to wake up. Set the shield's switch (next to the USB port) to **upload** first: on **cam**, the camera board holds the line the cable uses and the car hears nothing.

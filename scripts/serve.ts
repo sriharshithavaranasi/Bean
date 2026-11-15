@@ -8,6 +8,7 @@ import type { AddressInfo } from 'node:net';
 import { networkInterfaces } from 'node:os';
 import { extname, join, normalize, sep } from 'node:path';
 import { answer } from './talk.ts';
+import { speak } from './voice.ts';
 
 const root = join(import.meta.dirname, '..', 'app');
 // A .ts file goes out as JavaScript: its types are stripped as it is served, so there is no build step.
@@ -86,6 +87,12 @@ const server = createServer(async (req, res) => {
     if (!loopback(req) || req.method !== 'POST') return res.writeHead(403).end();
     const { status, body: out } = await answer(await body(req));
     return res.writeHead(status, { 'content-type': 'application/json' }).end(JSON.stringify(out));
+  }
+  if (url.pathname === '/voice') {
+    // Bean's ElevenLabs voice (scripts/voice.ts): laptop only, like /talk, so the key is never used for a phone.
+    if (!loopback(req) || req.method !== 'POST') return res.writeHead(403).end();
+    const { status, type, body: out } = await speak(await body(req));
+    return res.writeHead(status, { 'content-type': type }).end(out);
   }
   const path = normalize(join(root, decodeURIComponent(url.pathname)));
   if (!path.startsWith(root + sep)) return res.writeHead(403).end();
