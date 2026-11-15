@@ -204,7 +204,9 @@ The Talk tab holds Talk with Bean. Its game was removed on 2026-11-15; only its 
 | --- | --- |
 | Kid's first name | empty |
 | Speaking style | Natural (default), Witty, Boring |
-| AI chat | Fixed text: "AI chat powered by Gemini" (not a switch) |
+| Play time limit | 5 to 60 minutes in 5-minute steps, default 15 (to keep sessions short) |
+| Fun | Play Mad Libs, on or off (off by default): Bean asks the kid for words and fills them into a silly story (to be built) |
+| AI chat | Fixed text: "Powered by **Gemini**" (not a switch) |
 
 Start on the Talk tab does nothing yet. The tabs, their warning on a mid-round switch and the saved tab (`bean-tab`) are unchanged.
 

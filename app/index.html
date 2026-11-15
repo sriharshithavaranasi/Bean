@@ -100,7 +100,13 @@
               <label><input type="radio" name="t-style" value="witty"> Witty</label>
               <label><input type="radio" name="t-style" value="boring"> Boring</label>
             </fieldset>
-            <p class="words">AI chat powered by Gemini</p>
+            <fieldset class="choice"><legend>Fun</legend>
+              <label><input id="t-madlibs" type="checkbox"> <span aria-hidden="true">🤪</span> Play Mad Libs</label>
+            </fieldset>
+            <div class="slider"><label for="t-time">Play time limit <output id="t-time-out" for="t-time">15 min</output></label>
+              <input id="t-time" type="range" min="5" max="60" step="5" value="15" aria-describedby="t-time-help">
+              <p id="t-time-help">A short session keeps it fun and stops kids playing too long.</p></div>
+            <p class="powered">Powered by <strong class="gemini">Gemini</strong></p>
           </details>
         </section>
       </div>
